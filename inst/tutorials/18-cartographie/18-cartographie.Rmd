@@ -6,7 +6,7 @@ output:
     progressive: true
     allow_skip: true
     theme: cosmo
-    css: ../css/custom.css
+    css: css/custom.css
 runtime: shiny_prerendered
 description: "sf, ggplot2 + geom_sf, cartes thématiques et projections"
 ---

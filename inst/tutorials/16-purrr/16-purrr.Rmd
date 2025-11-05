@@ -6,7 +6,7 @@ output:
     progressive: true
     allow_skip: true
     theme: cosmo
-    css: ../css/custom.css
+    css: css/custom.css
 runtime: shiny_prerendered
 description: "map(), map2(), pmap(), nested data et programmation fonctionnelle"
 ---
