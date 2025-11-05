@@ -43,52 +43,69 @@ Ce package propose une série de **18 tutoriels interactifs** pour apprendre le 
 # Installer le package remotes si nécessaire
 install.packages("remotes")
 
+# Installer gradethis depuis GitHub
+remotes::install_github("rstudio/gradethis")
+
 # Installer IntechmeR_Tuto depuis GitHub
 remotes::install_github("gallonr/IntechmeRTuto")
+
 ```
 ---
 
 ## 🚀 Utilisation
 
-### Démarrage
+### Installation rapide
 
 ```r
-# Charger le lanceur de tutoriels
-source("lanceur_tutoriels.R")
+# 1. Installer le package remotes
+install.packages("remotes")
 
-# Afficher la liste des tutoriels
-afficher_tutoriels()
-# ou : at()
-
-# Lancer un tutoriel par son numéro
-lancer_tutoriel(1)
-# ou : lt(1)
+# 2. Installer IntechmeR_Tuto depuis GitHub
+remotes::install_github("gallonr/IntechmeR_Tuto")
 ```
 
-### Commandes disponibles
-
-| Fonction | Raccourci | Description |
-|----------|-----------|-------------|
-| `afficher_tutoriels()` | `at()` | Liste tous les tutoriels disponibles |
-| `lancer_tutoriel(n)` | `lt(n)` | Lance le tutoriel n°n |
-| `verifier_packages()` | `vp()` | Vérifie les packages installés |
-| `installer_packages()` | `ip()` | Installe les packages manquants |
-| `nouveau_tutoriel(n, nom)` | `nt(n, nom)` | Crée un nouveau tutoriel |
-| `statistiques_progression()` | `sp()` | Affiche les stats de progression |
-
-### Filtrer par niveau
+### Utilisation de base
 
 ```r
-# Afficher uniquement les tutoriels débutants
-afficher_tutoriels(niveau = "Débutant")
+# Charger le package
+library(IntechmeRTuto)
 
-# Autres niveaux : "Intermédiaire", "Avancé", "Bonus"
+# Voir tous les tutoriels disponibles
+list_tutorials()
 ```
----
+
+Vous verrez une liste comme celle-ci :
+```
+                 name
+1      01-objets-base
+2   02-import-donnees
+3       03-dplyr-base
+4     04-dplyr-mutate
+5       05-agregation
+...
+```
+
+### Lancer un tutoriel
+
+```r
+# Lancer le premier tutoriel
+run_tutorial("01-objets-base")
+
+# Lancer le tutoriel sur ggplot2
+run_tutorial("10-ggplot2-intro")
+```
+
+Le tutoriel s'ouvrira dans votre navigateur web. Vous pourrez :
+- Lire les explications
+- Exécuter du code R directement
+- Faire les exercices
+- Consulter les indices et solutions
+- Répondre aux quiz
+
 
 ## 📚 Liste des tutoriels
 
-### Niveau Débutant (Semaines 1-4)
+### Niveau Débutant (1-4)
 
 | # | Titre | Durée | Statut |
 |---|-------|-------|--------|
@@ -97,7 +114,7 @@ afficher_tutoriels(niveau = "Débutant")
 | 3 | dplyr - Base | 60 min | 📝 |
 | 4 | dplyr - Mutate | 45 min | 📝 |
 
-### Niveau Intermédiaire (Semaines 5-8)
+### Niveau Intermédiaire (5-8)
 
 | # | Titre | Durée | Statut |
 |---|-------|-------|--------|
@@ -110,7 +127,7 @@ afficher_tutoriels(niveau = "Débutant")
 | 11 | ggplot2 - Univarié | 45 min | 📝 |
 | 12 | ggplot2 - Bivarié | 45 min | 📝 |
 
-### Niveau Avancé (Semaines 9-12)
+### Niveau Avancé (9-12)
 
 | # | Titre | Durée | Statut |
 |---|-------|-------|--------|
