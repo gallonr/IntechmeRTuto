@@ -44,7 +44,7 @@ Ce package propose une série de **18 tutoriels interactifs** pour apprendre le 
 install.packages("remotes")
 
 # Installer IntechmeR_Tuto depuis GitHub
-remotes::install_github("gallonr/IntechmeR_Tuto")
+remotes::install_github("gallonr/IntechmeRTuto")
 ```
 
 C'est tout ! Les tutoriels sont maintenant disponibles.
@@ -96,7 +96,7 @@ afficher_tutoriels(niveau = "Débutant")
 
 | # | Titre | Durée | Statut |
 |---|-------|-------|--------|
-| 1 | Objets de base et tibbles | 45 min | ✅ |
+| 1 | Objets de base et tibbles | 45 min | 📝 |
 | 2 | Import et exploration | 60 min | 📝 |
 | 3 | dplyr - Base | 60 min | 📝 |
 | 4 | dplyr - Mutate | 45 min | 📝 |
