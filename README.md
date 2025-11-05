@@ -46,9 +46,6 @@ install.packages("remotes")
 # Installer IntechmeR_Tuto depuis GitHub
 remotes::install_github("gallonr/IntechmeRTuto")
 ```
-
-C'est tout ! Les tutoriels sont maintenant disponibles.
-
 ---
 
 ## 🚀 Utilisation
@@ -87,7 +84,6 @@ afficher_tutoriels(niveau = "Débutant")
 
 # Autres niveaux : "Intermédiaire", "Avancé", "Bonus"
 ```
-
 ---
 
 ## 📚 Liste des tutoriels
