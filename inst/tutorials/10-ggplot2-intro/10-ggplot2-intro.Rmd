@@ -1,0 +1,314 @@
+---
+title: "ggplot2 - Introduction à la visualisation"
+subtitle: "La grammaire des graphiques"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hints: "Indice"
+          solution: "Solution"
+runtime: shiny_prerendered
+description: "Comprendre la logique de ggplot2 et créer vos premiers graphiques"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+penguins <- palmerpenguins::penguins |> drop_na()
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+### Introduction
+
+Bienvenue dans le monde de **ggplot2**, le système de visualisation le plus puissant de R !
+
+ggplot2 est basé sur la "Grammaire des Graphiques" : une façon cohérente et logique de construire n'importe quel graphique en assemblant des composants de base.
+
+**Objectifs :**
+
+- ✅ Comprendre la **grammaire des graphiques**
+- ✅ Maîtriser la structure **`data + aes() + geom_*()`**
+- ✅ Créer des graphiques simples
+- ✅ Personnaliser avec `labs()` et `theme()`
+- ✅ Sauvegarder avec `ggsave()`
+
+**Durée :** 60 minutes
+
+---
+
+## Section 1 : La grammaire des graphiques
+
+### Les 3 composants essentiels
+
+Tout graphique ggplot2 a au minimum 3 éléments :
+
+1. **Data** : Les données
+2. **Aesthetics** (`aes()`) : Le mapping des variables vers les propriétés visuelles
+3. **Geom** : Le type de géométrie (points, lignes, barres, etc.)
+
+```{r demo-structure, exercise=TRUE}
+# Structure de base
+ggplot(data = penguins) +                           # 1. Data
+  aes(x = flipper_length_mm, y = body_mass_g) +    # 2. Aesthetics
+  geom_point()                                      # 3. Geom
+```
+
+### Le système en couches
+
+ggplot2 fonctionne par **empilement de couches** avec `+` :
+
+```{r demo-layers, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point() +               # Couche 1 : points
+  geom_smooth() +              # Couche 2 : courbe de tendance
+  labs(title = "Mon graphique")  # Couche 3 : labels
+```
+
+---
+
+## Section 2 : Votre premier graphique
+
+### Exercice 1 : Créer un nuage de points
+
+Créez un graphique montrant la relation entre la longueur du bec (`bill_length_mm`) et sa profondeur (`bill_depth_mm`) :
+
+```{r ex1-scatter, exercise=TRUE}
+ggplot(_____, aes(x = _____, y = _____)) +
+  geom_point()
+```
+
+```{r ex1-scatter-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point()
+```
+
+---
+
+## Section 3 : Les esthétiques (aesthetics)
+
+### Mapper des variables aux propriétés visuelles
+
+Les esthétiques lient vos données aux propriétés visuelles :
+
+| Esthétique | Propriété |
+|------------|-----------|
+| `x`, `y` | Position |
+| `color` | Couleur des points/lignes |
+| `fill` | Couleur de remplissage |
+| `size` | Taille |
+| `shape` | Forme |
+| `alpha` | Transparence |
+
+```{r demo-color, exercise=TRUE}
+# Couleur selon l'espèce
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point()
+```
+
+### Exercice 2 : Ajouter de la couleur
+
+Reprenez votre graphique précédent et colorez les points selon l'espèce :
+
+```{r ex2-color, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, _____ = _____)) +
+  geom_point()
+```
+
+```{r ex2-color-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point()
+```
+
+### Esthétiques fixes vs mappées
+
+```{r demo-fixed-mapped, exercise=TRUE}
+# Mappée (dans aes) : varie selon les données
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point()
+
+# Fixe (hors aes) : identique pour tous les points
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(color = "blue", size = 3, alpha = 0.5)
+```
+
+---
+
+## Section 4 : Les géométries courantes
+
+### geom_point() - Nuages de points
+
+```{r demo-geom-point, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(size = 2, alpha = 0.6)
+```
+
+### geom_line() - Lignes
+
+```{r demo-geom-line, exercise=TRUE}
+# Données de série temporelle
+economie <- economics |> filter(date >= as.Date("2000-01-01"))
+
+ggplot(economie, aes(x = date, y = unemploy)) +
+  geom_line(color = "darkblue")
+```
+
+### geom_smooth() - Courbe de tendance
+
+```{r demo-geom-smooth, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm")  # Régression linéaire
+```
+
+---
+
+## Section 5 : Labels et titres
+
+### La fonction labs()
+
+```{r demo-labs, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point() +
+  labs(
+    title = "Relation entre taille des nageoires et masse corporelle",
+    subtitle = "Données sur les manchots de Palmer",
+    x = "Longueur des nageoires (mm)",
+    y = "Masse corporelle (g)",
+    color = "Espèce",
+    caption = "Source: palmerpenguins package"
+  )
+```
+
+### Exercice 3 : Personnaliser les labels
+
+Ajoutez des titres appropriés à votre graphique :
+
+```{r ex3-labs, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point() +
+  labs(
+    title = _____,
+    x = _____,
+    y = _____
+  )
+```
+
+```{r ex3-labs-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point() +
+  labs(
+    title = "Dimensions du bec des manchots de Palmer",
+    x = "Longueur du bec (mm)",
+    y = "Profondeur du bec (mm)",
+    color = "Espèce"
+  )
+```
+
+---
+
+## Section 6 : Thèmes
+
+### Les thèmes prédéfinis
+
+```{r demo-themes, exercise=TRUE}
+p <- ggplot(penguins, aes(x = species, fill = species)) +
+  geom_bar() +
+  labs(title = "Nombre de manchots par espèce")
+
+# Différents thèmes
+p + theme_minimal()
+p + theme_bw()
+p + theme_classic()
+p + theme_dark()
+```
+
+---
+
+## Section 7 : Sauvegarder
+
+### La fonction ggsave()
+
+```{r demo-ggsave, exercise=TRUE, eval=FALSE}
+# Créer un graphique
+mon_graphique <- ggplot(penguins, aes(x = species, fill = species)) +
+  geom_bar() +
+  theme_minimal()
+
+# Sauvegarder
+ggsave("mon_graphique.png", mon_graphique, width = 8, height = 6, dpi = 300)
+```
+
+---
+
+## Défi final
+
+Créez un graphique complet montrant la relation entre longueur des nageoires et masse, avec :
+- Points colorés par espèce
+- Courbe de tendance par espèce
+- Titres appropriés
+- Thème minimal
+
+```{r defi-final, exercise=TRUE, exercise.lines=15}
+ggplot(penguins, aes(_____, _____, _____)) +
+  _____ +
+  _____ +
+  _____ +
+  _____
+```
+
+```{r defi-final-solution}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Relation taille-masse chez les manchots",
+    x = "Longueur des nageoires (mm)",
+    y = "Masse corporelle (g)",
+    color = "Espèce"
+  ) +
+  theme_minimal()
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# STRUCTURE DE BASE
+ggplot(data, aes(x = var1, y = var2)) +
+  geom_*()
+
+# ESTHÉTIQUES
+aes(x, y, color, fill, size, shape, alpha)
+
+# GÉOMÉTRIES COURANTES
+geom_point()      # Nuage de points
+geom_line()       # Ligne
+geom_smooth()     # Courbe de tendance
+geom_bar()        # Barres
+geom_histogram()  # Histogramme
+
+# PERSONNALISATION
+labs(title, x, y, color, caption)
+theme_minimal(), theme_bw(), theme_classic()
+
+# SAUVEGARDER
+ggsave("fichier.png", width = 8, height = 6)
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

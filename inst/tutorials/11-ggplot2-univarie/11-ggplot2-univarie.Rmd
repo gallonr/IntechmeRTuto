@@ -1,0 +1,258 @@
+---
+title: "ggplot2 - Graphiques univariés"
+subtitle: "Visualiser une seule variable"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "Histogrammes, densités, boxplots et diagrammes en barres"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+penguins <- palmerpenguins::penguins |> drop_na()
+diamonds_petit <- diamonds |> sample_n(1000)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Créer des **histogrammes** avec `geom_histogram()`
+- ✅ Visualiser des **densités** avec `geom_density()`
+- ✅ Créer des **boxplots** avec `geom_boxplot()`
+- ✅ Faire des **diagrammes en barres** avec `geom_bar()` et `geom_col()`
+- ✅ Personnaliser les graphiques
+
+**Durée :** 45 minutes
+
+---
+
+## Section 1 : Histogrammes
+
+### geom_histogram()
+
+L'histogramme montre la distribution d'une variable numérique.
+
+```{r demo-histogram, exercise=TRUE}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  labs(title = "Distribution de la masse corporelle",
+       x = "Masse (g)", y = "Fréquence")
+```
+
+### Contrôler le nombre de bins
+
+```{r demo-bins, exercise=TRUE}
+# Peu de bins
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(bins = 10)
+
+# Beaucoup de bins
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(bins = 50)
+
+# Largeur fixe
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 200)
+```
+
+### Exercice 1 : Histogramme
+
+Créez un histogramme de la longueur des nageoires avec 25 bins :
+
+```{r ex1-histogram, exercise=TRUE}
+ggplot(penguins, aes(x = _____)) +
+  geom_histogram(bins = _____, fill = "coral") +
+  labs(title = "Distribution de la longueur des nageoires")
+```
+
+```{r ex1-histogram-solution}
+ggplot(penguins, aes(x = flipper_length_mm)) +
+  geom_histogram(bins = 25, fill = "coral") +
+  labs(title = "Distribution de la longueur des nageoires")
+```
+
+---
+
+## Section 2 : Courbes de densité
+
+### geom_density()
+
+La courbe de densité est une version lissée de l'histogramme.
+
+```{r demo-density, exercise=TRUE}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_density(fill = "lightblue", alpha = 0.5) +
+  labs(title = "Densité de la masse corporelle")
+```
+
+### Comparer plusieurs groupes
+
+```{r demo-density-groups, exercise=TRUE}
+ggplot(penguins, aes(x = body_mass_g, fill = species)) +
+  geom_density(alpha = 0.4) +
+  labs(title = "Distribution de la masse par espèce")
+```
+
+### Exercice 2 : Densités par groupe
+
+Créez une courbe de densité de la longueur du bec par espèce :
+
+```{r ex2-density, exercise=TRUE}
+ggplot(penguins, aes(x = _____, fill = _____)) +
+  geom_density(alpha = 0.5)
+```
+
+```{r ex2-density-solution}
+ggplot(penguins, aes(x = bill_length_mm, fill = species)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Distribution de la longueur du bec par espèce")
+```
+
+---
+
+## Section 3 : Boxplots
+
+### geom_boxplot()
+
+Le boxplot montre la médiane, quartiles et valeurs aberrantes.
+
+```{r demo-boxplot, exercise=TRUE}
+ggplot(penguins, aes(y = body_mass_g)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "Boxplot de la masse corporelle")
+```
+
+### Boxplots par groupe
+
+```{r demo-boxplot-groups, exercise=TRUE}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot() +
+  labs(title = "Masse corporelle par espèce") +
+  theme(legend.position = "none")
+```
+
+### Exercice 3 : Boxplot comparatif
+
+Créez un boxplot de la longueur des nageoires par île :
+
+```{r ex3-boxplot, exercise=TRUE}
+ggplot(penguins, aes(x = _____, y = _____, fill = _____)) +
+  geom_boxplot()
+```
+
+```{r ex3-boxplot-solution}
+ggplot(penguins, aes(x = island, y = flipper_length_mm, fill = island)) +
+  geom_boxplot() +
+  labs(title = "Longueur des nageoires par île") +
+  theme_minimal()
+```
+
+---
+
+## Section 4 : Diagrammes en barres
+
+### geom_bar() - Comptage automatique
+
+```{r demo-bar, exercise=TRUE}
+ggplot(penguins, aes(x = species, fill = species)) +
+  geom_bar() +
+  labs(title = "Nombre de manchots par espèce",
+       y = "Nombre")
+```
+
+### geom_col() - Valeurs pré-calculées
+
+```{r demo-col, exercise=TRUE}
+# Données résumées
+resume <- penguins |>
+  group_by(species) |>
+  summarise(masse_moyenne = mean(body_mass_g, na.rm = TRUE))
+
+ggplot(resume, aes(x = species, y = masse_moyenne, fill = species)) +
+  geom_col() +
+  labs(title = "Masse moyenne par espèce")
+```
+
+### Exercice 4 : Barres empilées
+
+Créez un diagramme en barres montrant le nombre de manchots par espèce et par sexe :
+
+```{r ex4-stacked, exercise=TRUE}
+ggplot(penguins, aes(x = species, fill = sex)) +
+  geom_bar()
+```
+
+```{r ex4-stacked-solution}
+ggplot(penguins, aes(x = species, fill = sex)) +
+  geom_bar() +
+  labs(title = "Répartition des manchots par espèce et sexe",
+       fill = "Sexe") +
+  theme_minimal()
+```
+
+---
+
+## Défi final
+
+Créez un graphique composite montrant :
+1. Un histogramme de la masse corporelle
+2. Une courbe de densité superposée
+3. Séparé par espèce (couleur)
+4. Avec titres appropriés
+
+```{r defi-final, exercise=TRUE, exercise.lines=10}
+ggplot(penguins, aes(x = body_mass_g, fill = species)) +
+  _____ +
+  _____ +
+  _____
+```
+
+```{r defi-final-solution}
+ggplot(penguins, aes(x = body_mass_g, fill = species)) +
+  geom_histogram(aes(y = after_stat(density)), alpha = 0.5, bins = 30) +
+  geom_density(alpha = 0.3) +
+  labs(
+    title = "Distribution de la masse corporelle par espèce",
+    x = "Masse corporelle (g)",
+    y = "Densité",
+    fill = "Espèce"
+  ) +
+  theme_minimal()
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# HISTOGRAMME
+geom_histogram(bins = 30)
+geom_histogram(binwidth = 100)
+
+# DENSITÉ
+geom_density(fill = "blue", alpha = 0.5)
+
+# BOXPLOT
+geom_boxplot()
+geom_boxplot(aes(x = groupe, y = valeur))
+
+# BARRES
+geom_bar()           # Compte automatique
+geom_col()           # Valeurs pré-calculées
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

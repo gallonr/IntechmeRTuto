@@ -1,0 +1,452 @@
+---
+title: "ggplot2 - Personnalisation avancée"
+subtitle: "Facettes, échelles, et thèmes"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "Maîtriser facet_wrap, facet_grid, scales et thèmes personnalisés"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+penguins <- palmerpenguins::penguins |> drop_na()
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Créer des **facettes** avec `facet_wrap()` et `facet_grid()`
+- ✅ Personnaliser les **échelles** de couleur, taille et axes
+- ✅ Modifier les **thèmes** prédéfinis
+- ✅ Créer un **thème personnalisé**
+- ✅ Contrôler les **légendes**
+
+**Durée :** 60 minutes
+
+---
+
+## Section 1 : Facettes
+
+### facet_wrap() - Grille flexible
+
+Crée une grille de sous-graphiques basée sur une variable :
+
+```{r demo-facet-wrap, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species)) +
+  facet_wrap(~island) +
+  labs(title = "Dimensions du bec par île")
+```
+
+### Contrôler le nombre de colonnes
+
+```{r demo-facet-cols, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~species, ncol = 1) +
+  labs(title = "Masse vs nageoires (3 rangées)")
+```
+
+### Exercice 1 : facet_wrap()
+
+Créez un histogramme de la masse corporelle avec une facette par espèce (2 colonnes) :
+
+```{r ex1-facet, exercise=TRUE}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(bins = 20, fill = "steelblue") +
+  facet_wrap(~_____, ncol = _____)
+```
+
+```{r ex1-facet-solution}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(bins = 20, fill = "steelblue", color = "white") +
+  facet_wrap(~species, ncol = 2) +
+  labs(title = "Distribution de la masse par espèce",
+       x = "Masse (g)", y = "Fréquence") +
+  theme_minimal()
+```
+
+---
+
+## Section 2 : facet_grid()
+
+### Facettes à deux dimensions
+
+```{r demo-facet-grid, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species), alpha = 0.6) +
+  facet_grid(sex ~ island) +
+  labs(title = "Bec : Sexe (lignes) × Île (colonnes)")
+```
+
+### Échelles libres
+
+Permettre aux axes de varier par facette :
+
+```{r demo-scales-free, exercise=TRUE}
+# Échelles fixes (par défaut)
+p1 <- ggplot(penguins, aes(x = flipper_length_mm)) +
+  geom_histogram(bins = 15) +
+  facet_wrap(~species) +
+  labs(title = "Échelles fixes")
+
+# Échelles libres sur x
+p2 <- ggplot(penguins, aes(x = flipper_length_mm)) +
+  geom_histogram(bins = 15) +
+  facet_wrap(~species, scales = "free_x") +
+  labs(title = "Échelles libres (x)")
+
+p1
+p2
+```
+
+### Exercice 2 : facet_grid()
+
+Créez un boxplot de la longueur des nageoires avec facettes : espèce (lignes) × sexe (colonnes) :
+
+```{r ex2-grid, exercise=TRUE}
+ggplot(penguins, aes(x = island, y = flipper_length_mm, fill = island)) +
+  geom_boxplot() +
+  facet_grid(_____ ~ _____)
+```
+
+```{r ex2-grid-solution}
+ggplot(penguins, aes(x = island, y = flipper_length_mm, fill = island)) +
+  geom_boxplot() +
+  facet_grid(species ~ sex) +
+  labs(title = "Longueur des nageoires par espèce et sexe",
+       y = "Longueur (mm)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+---
+
+## Section 3 : Échelles de couleur
+
+### scale_color_manual() - Couleurs personnalisées
+
+```{r demo-color-manual, exercise=TRUE}
+couleurs_perso <- c("Adelie" = "#FF6B6B", 
+                     "Chinstrap" = "#4ECDC4", 
+                     "Gentoo" = "#45B7D1")
+
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point(size = 3) +
+  scale_color_manual(values = couleurs_perso) +
+  labs(title = "Couleurs personnalisées")
+```
+
+### scale_fill_viridis_d() - Palette colorblind-friendly
+
+```{r demo-viridis, exercise=TRUE}
+ggplot(penguins, aes(x = species, fill = species)) +
+  geom_bar() +
+  scale_fill_viridis_d(option = "plasma") +
+  labs(title = "Palette Viridis") +
+  theme_minimal()
+```
+
+### Exercice 3 : Échelles de couleur
+
+Créez un nuage de points avec une palette `viridis` pour la variable `body_mass_g` :
+
+```{r ex3-scale, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = bill_length_mm, 
+                      color = body_mass_g)) +
+  geom_point(size = 3) +
+  scale_color_viridis_c(option = "_____")
+```
+
+```{r ex3-scale-solution}
+ggplot(penguins, aes(x = flipper_length_mm, y = bill_length_mm, 
+                      color = body_mass_g)) +
+  geom_point(size = 3, alpha = 0.7) +
+  scale_color_viridis_c(option = "magma") +
+  labs(title = "Masse corporelle en gradient de couleur",
+       color = "Masse (g)") +
+  theme_minimal()
+```
+
+---
+
+## Section 4 : Échelles d'axes
+
+### scale_x/y_continuous()
+
+Contrôler les axes numériques :
+
+```{r demo-scale-axes, exercise=TRUE}
+ggplot(penguins, aes(x = body_mass_g, y = flipper_length_mm)) +
+  geom_point() +
+  scale_x_continuous(
+    breaks = seq(2500, 6500, 1000),
+    labels = scales::label_number(suffix = " g")
+  ) +
+  scale_y_continuous(
+    limits = c(170, 235),
+    breaks = seq(170, 230, 20)
+  ) +
+  labs(title = "Contrôle des axes")
+```
+
+### scale_x/y_log10()
+
+Échelle logarithmique :
+
+```{r demo-log, exercise=TRUE}
+ggplot(diamonds, aes(x = carat, y = price)) +
+  geom_point(alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10(labels = scales::label_dollar()) +
+  labs(title = "Échelles logarithmiques")
+```
+
+### Exercice 4 : Formater les axes
+
+Créez un graphique de la masse moyenne par espèce avec :
+- Axe y formaté en kilogrammes (diviser par 1000)
+- Limites de 3 à 6 kg
+
+```{r ex4-axes, exercise=TRUE}
+resume <- penguins |>
+  group_by(species) |>
+  summarise(masse_kg = mean(body_mass_g) / 1000)
+
+ggplot(resume, aes(x = species, y = masse_kg, fill = species)) +
+  geom_col() +
+  scale_y_continuous(
+    limits = c(_____, _____),
+    labels = scales::label_number(suffix = " kg")
+  )
+```
+
+```{r ex4-axes-solution}
+resume <- penguins |>
+  group_by(species) |>
+  summarise(masse_kg = mean(body_mass_g) / 1000)
+
+ggplot(resume, aes(x = species, y = masse_kg, fill = species)) +
+  geom_col() +
+  scale_y_continuous(
+    limits = c(3, 6),
+    labels = scales::label_number(suffix = " kg")
+  ) +
+  labs(title = "Masse moyenne par espèce",
+       y = "Masse (kg)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+---
+
+## Section 5 : Thèmes prédéfinis
+
+### Galerie de thèmes
+
+```{r demo-themes, exercise=TRUE}
+p <- ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot() +
+  labs(title = "Différents thèmes")
+
+p + theme_minimal()
+p + theme_classic()
+p + theme_bw()
+p + theme_dark()
+```
+
+### Exercice 5 : Thème
+
+Appliquez `theme_light()` à un graphique de votre choix :
+
+```{r ex5-theme, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point() +
+  theme_____()
+```
+
+```{r ex5-theme-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point(size = 2, alpha = 0.7) +
+  theme_light() +
+  labs(title = "Dimensions du bec avec theme_light()")
+```
+
+---
+
+## Section 6 : Personnaliser avec theme()
+
+### Modifier les éléments de texte
+
+```{r demo-theme-custom, exercise=TRUE}
+ggplot(penguins, aes(x = species, fill = species)) +
+  geom_bar() +
+  labs(title = "Thème personnalisé") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+    axis.title = element_text(size = 14, face = "italic"),
+    legend.position = "bottom",
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+### Exercice 6 : Personnalisation complète
+
+Personnalisez ce graphique :
+- Titre centré, taille 16, gras
+- Pas de légende
+- Grille majeure en pointillés
+
+```{r ex6-custom, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(size = 2) +
+  labs(title = "Graphique personnalisé") +
+  theme_minimal() +
+  theme(
+    plot.title = _____,
+    legend.position = _____,
+    panel.grid.major = _____
+  )
+```
+
+```{r ex6-custom-solution}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Graphique personnalisé",
+       x = "Longueur nageoires (mm)",
+       y = "Masse (g)") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    legend.position = "none",
+    panel.grid.major = element_line(linetype = "dashed", color = "gray70"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+---
+
+## Section 7 : Contrôle des légendes
+
+### Position et apparence
+
+```{r demo-legend, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
+  geom_point(size = 3) +
+  labs(color = "Espèce de\nmanchot") +
+  theme_minimal() +
+  theme(
+    legend.position = "top",
+    legend.background = element_rect(fill = "lightgray", color = "black"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+```
+
+### guides() - Contrôle avancé
+
+```{r demo-guides, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, 
+                      color = species, size = flipper_length_mm)) +
+  geom_point(alpha = 0.6) +
+  guides(
+    color = guide_legend(title = "Espèce", override.aes = list(size = 4)),
+    size = guide_legend(title = "Nageoire (mm)")
+  ) +
+  theme_minimal()
+```
+
+---
+
+## Défi final
+
+Créez un graphique publication-ready :
+1. Facettes par île (2 colonnes)
+2. Palette viridis pour les espèces
+3. Thème personnalisé (titre centré, fond blanc)
+4. Légende en bas, horizontale
+5. Axes bien formatés
+
+```{r defi-final, exercise=TRUE, exercise.lines=15}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  _____ +
+  _____ +
+  _____ +
+  _____ +
+  _____
+```
+
+```{r defi-final-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point(size = 2.5, alpha = 0.7) +
+  facet_wrap(~island, ncol = 2) +
+  scale_color_viridis_d(option = "plasma") +
+  labs(
+    title = "Dimensions du bec des manchots par île",
+    subtitle = "Données du Palmer Archipelago LTER",
+    x = "Longueur du bec (mm)",
+    y = "Profondeur du bec (mm)",
+    color = "Espèce",
+    caption = "Source: palmerpenguins"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5, color = "gray40"),
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(size = 12, face = "bold"),
+    strip.background = element_rect(fill = "gray90", color = NA)
+  )
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# FACETTES
+facet_wrap(~var, ncol = 2)
+facet_grid(var1 ~ var2)
+facet_wrap(~var, scales = "free")
+
+# ÉCHELLES DE COULEUR
+scale_color_manual(values = c(...))
+scale_fill_viridis_d(option = "plasma")
+scale_color_gradient(low = "blue", high = "red")
+
+# ÉCHELLES D'AXES
+scale_x_continuous(breaks = seq(...), labels = scales::label_number())
+scale_y_log10()
+
+# THÈMES
+theme_minimal()
+theme(
+  plot.title = element_text(size = 16, face = "bold"),
+  legend.position = "bottom",
+  panel.grid = element_line(linetype = "dashed")
+)
+
+# LÉGENDES
+guides(color = guide_legend(title = "..."))
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

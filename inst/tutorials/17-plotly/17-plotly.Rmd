@@ -1,0 +1,500 @@
+---
+title: "plotly - Visualisations interactives"
+subtitle: "Graphiques interactifs pour le web"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "ggplotly(), plotly natif, tooltips et interactions"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(plotly)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+penguins <- palmerpenguins::penguins |> drop_na()
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Convertir ggplot en graphique interactif avec `ggplotly()`
+- ✅ Créer des graphiques avec **plotly natif**
+- ✅ Personnaliser les **tooltips** (infobulles)
+- ✅ Utiliser les **interactions** : zoom, pan, hover
+- ✅ Créer des **graphiques 3D**
+
+**Durée :** 45 minutes
+
+---
+
+## Section 1 : ggplotly() - Conversion facile
+
+### Convertir un ggplot
+
+```{r demo-ggplotly, exercise=TRUE}
+# Créer un ggplot classique
+p <- ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, 
+                           color = species)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Dimensions du bec",
+       x = "Longueur (mm)", y = "Profondeur (mm)") +
+  theme_minimal()
+
+# Convertir en graphique interactif
+ggplotly(p)
+```
+
+### Interactions disponibles
+
+- 🔍 **Zoom** : sélectionner une zone avec la souris
+- 📍 **Pan** : déplacer la vue
+- 🖱️ **Hover** : afficher les valeurs au survol
+- 📷 **Export** : télécharger l'image
+- 🔄 **Reset** : revenir à la vue initiale
+
+### Exercice 1 : Premier ggplotly()
+
+Créez un graphique interactif de la masse vs nageoires :
+
+```{r ex1-ggplotly, exercise=TRUE}
+p <- ggplot(penguins, aes(x = _____, y = _____, color = _____)) +
+  geom_point() +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+```{r ex1-ggplotly-solution}
+p <- ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, 
+                           color = species)) +
+  geom_point(size = 2, alpha = 0.6) +
+  labs(title = "Relation nageoires-masse",
+       x = "Longueur nageoires (mm)",
+       y = "Masse (g)") +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+---
+
+## Section 2 : Personnaliser les tooltips
+
+### Contrôler les infobulles
+
+```{r demo-tooltip, exercise=TRUE}
+# Ajouter des infos dans aes(text = ...)
+p <- penguins |>
+  mutate(info = paste0(
+    "Espèce: ", species, "\n",
+    "Île: ", island, "\n",
+    "Masse: ", body_mass_g, " g"
+  )) |>
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm, 
+             color = species, text = info)) +
+  geom_point(size = 2) +
+  theme_minimal()
+
+ggplotly(p, tooltip = "text")
+```
+
+### Exercice 2 : Tooltips personnalisés
+
+Créez des tooltips affichant espèce, sexe et masse :
+
+```{r ex2-tooltip, exercise=TRUE}
+p <- penguins |>
+  mutate(info = paste0(
+    _____,
+    _____,
+    _____
+  )) |>
+  ggplot(aes(x = flipper_length_mm, y = body_mass_g, 
+             color = species, text = info)) +
+  geom_point()
+
+ggplotly(p, tooltip = "text")
+```
+
+```{r ex2-tooltip-solution}
+p <- penguins |>
+  mutate(info = paste0(
+    "Espèce: ", species, "\n",
+    "Sexe: ", sex, "\n",
+    "Masse: ", body_mass_g, " g\n",
+    "Nageoires: ", flipper_length_mm, " mm"
+  )) |>
+  ggplot(aes(x = flipper_length_mm, y = body_mass_g, 
+             color = species, text = info)) +
+  geom_point(size = 2.5, alpha = 0.7) +
+  labs(title = "Masse vs Nageoires (interactif)") +
+  theme_minimal()
+
+ggplotly(p, tooltip = "text")
+```
+
+---
+
+## Section 3 : plotly natif - plot_ly()
+
+### Syntaxe de base
+
+```{r demo-plotly-native, exercise=TRUE}
+plot_ly(data = penguins,
+        x = ~bill_length_mm,
+        y = ~bill_depth_mm,
+        color = ~species,
+        type = "scatter",
+        mode = "markers",
+        marker = list(size = 8, opacity = 0.7)) |>
+  layout(title = "Graphique plotly natif",
+         xaxis = list(title = "Longueur bec (mm)"),
+         yaxis = list(title = "Profondeur bec (mm)"))
+```
+
+### Différents types de graphiques
+
+```{r demo-plotly-types, exercise=TRUE}
+# Histogramme
+plot_ly(data = penguins,
+        x = ~body_mass_g,
+        type = "histogram",
+        nbinsx = 30) |>
+  layout(title = "Distribution de la masse")
+
+# Boxplot
+plot_ly(data = penguins,
+        y = ~body_mass_g,
+        x = ~species,
+        color = ~species,
+        type = "box") |>
+  layout(title = "Masse par espèce")
+```
+
+### Exercice 3 : Graphique en barres interactif
+
+Créez un graphique en barres du nombre de manchots par île :
+
+```{r ex3-plotly-bar, exercise=TRUE}
+comptage <- penguins |> count(island)
+
+plot_ly(data = comptage,
+        x = ~_____,
+        y = ~_____,
+        type = "_____") |>
+  layout(title = "Nombre de manchots par île")
+```
+
+```{r ex3-plotly-bar-solution}
+comptage <- penguins |> count(island)
+
+plot_ly(data = comptage,
+        x = ~island,
+        y = ~n,
+        type = "bar",
+        marker = list(color = c("steelblue", "coral", "lightgreen"))) |>
+  layout(title = "Nombre de manchots par île",
+         xaxis = list(title = "Île"),
+         yaxis = list(title = "Nombre"))
+```
+
+---
+
+## Section 4 : Graphiques multiples
+
+### Superposer des traces
+
+```{r demo-traces, exercise=TRUE}
+# Graphique avec plusieurs espèces
+plot_ly(data = penguins |> filter(species == "Adelie"),
+        x = ~bill_length_mm,
+        y = ~bill_depth_mm,
+        name = "Adelie",
+        type = "scatter",
+        mode = "markers") |>
+  add_trace(data = penguins |> filter(species == "Chinstrap"),
+            name = "Chinstrap") |>
+  add_trace(data = penguins |> filter(species == "Gentoo"),
+            name = "Gentoo") |>
+  layout(title = "Trois espèces")
+```
+
+### Sous-graphiques (subplots)
+
+```{r demo-subplots, exercise=TRUE}
+# Créer deux graphiques
+p1 <- plot_ly(penguins, x = ~bill_length_mm, type = "histogram") |>
+  layout(xaxis = list(title = "Longueur bec"))
+
+p2 <- plot_ly(penguins, x = ~body_mass_g, type = "histogram") |>
+  layout(xaxis = list(title = "Masse"))
+
+# Combiner
+subplot(p1, p2, nrows = 2, shareX = FALSE, titleX = TRUE)
+```
+
+---
+
+## Section 5 : Graphiques 3D
+
+### Nuage de points 3D
+
+```{r demo-3d, exercise=TRUE}
+plot_ly(data = penguins,
+        x = ~bill_length_mm,
+        y = ~bill_depth_mm,
+        z = ~body_mass_g,
+        color = ~species,
+        type = "scatter3d",
+        mode = "markers",
+        marker = list(size = 4)) |>
+  layout(
+    scene = list(
+      xaxis = list(title = "Longueur bec (mm)"),
+      yaxis = list(title = "Profondeur bec (mm)"),
+      zaxis = list(title = "Masse (g)")
+    ),
+    title = "Graphique 3D interactif"
+  )
+```
+
+### Exercice 4 : 3D personnalisé
+
+Créez un graphique 3D avec nageoires, bec et masse :
+
+```{r ex4-3d, exercise=TRUE}
+plot_ly(data = penguins,
+        x = ~_____,
+        y = ~_____,
+        z = ~_____,
+        color = ~species,
+        type = "scatter3d",
+        mode = "markers")
+```
+
+```{r ex4-3d-solution}
+plot_ly(data = penguins,
+        x = ~flipper_length_mm,
+        y = ~bill_length_mm,
+        z = ~body_mass_g,
+        color = ~species,
+        type = "scatter3d",
+        mode = "markers",
+        marker = list(size = 5, opacity = 0.8)) |>
+  layout(
+    scene = list(
+      xaxis = list(title = "Nageoires (mm)"),
+      yaxis = list(title = "Bec (mm)"),
+      zaxis = list(title = "Masse (g)")
+    ),
+    title = "Relations morphométriques 3D"
+  )
+```
+
+---
+
+## Section 6 : Séries temporelles
+
+### Graphique temporel interactif
+
+```{r demo-timeseries, exercise=TRUE}
+# Évolution par année
+evolution <- penguins |>
+  group_by(year, species) |>
+  summarise(masse_moy = mean(body_mass_g, na.rm = TRUE), .groups = "drop")
+
+plot_ly(data = evolution,
+        x = ~year,
+        y = ~masse_moy,
+        color = ~species,
+        type = "scatter",
+        mode = "lines+markers",
+        line = list(width = 3),
+        marker = list(size = 10)) |>
+  layout(
+    title = "Évolution de la masse moyenne",
+    xaxis = list(title = "Année"),
+    yaxis = list(title = "Masse moyenne (g)")
+  )
+```
+
+### Exercice 5 : Série temporelle
+
+Créez un graphique de l'évolution du nombre de manchots par année et espèce :
+
+```{r ex5-timeseries, exercise=TRUE}
+comptage_annuel <- penguins |>
+  count(_____, _____)
+
+plot_ly(data = comptage_annuel,
+        x = ~_____,
+        y = ~_____,
+        color = ~_____,
+        type = "scatter",
+        mode = "lines+markers")
+```
+
+```{r ex5-timeseries-solution}
+comptage_annuel <- penguins |>
+  count(year, species)
+
+plot_ly(data = comptage_annuel,
+        x = ~year,
+        y = ~n,
+        color = ~species,
+        type = "scatter",
+        mode = "lines+markers",
+        line = list(width = 2),
+        marker = list(size = 8)) |>
+  layout(
+    title = "Nombre d'observations par année",
+    xaxis = list(title = "Année"),
+    yaxis = list(title = "Nombre de manchots")
+  )
+```
+
+---
+
+## Section 7 : Heatmaps interactives
+
+### Carte de chaleur
+
+```{r demo-heatmap, exercise=TRUE}
+# Calculer moyenne de masse par espèce et île
+heatmap_data <- penguins |>
+  group_by(species, island) |>
+  summarise(masse_moy = mean(body_mass_g, na.rm = TRUE), .groups = "drop") |>
+  pivot_wider(names_from = island, values_from = masse_moy)
+
+# Convertir en matrice
+mat <- as.matrix(heatmap_data[, -1])
+rownames(mat) <- heatmap_data$species
+
+plot_ly(
+  x = colnames(mat),
+  y = rownames(mat),
+  z = mat,
+  type = "heatmap",
+  colors = "Viridis"
+) |>
+  layout(title = "Masse moyenne par espèce et île",
+         xaxis = list(title = "Île"),
+         yaxis = list(title = "Espèce"))
+```
+
+---
+
+## Défi final
+
+Créez un **dashboard interactif** combinant :
+1. Un nuage de points 3D
+2. Des tooltips informatifs
+3. Des couleurs par groupe
+4. Un titre et des axes bien formatés
+
+```{r defi-final, exercise=TRUE, exercise.lines=15}
+# Préparer les données avec tooltips
+penguins_prep <- penguins |>
+  mutate(
+    tooltip = paste0(
+      _____
+    )
+  )
+
+# Créer le graphique
+plot_ly(data = penguins_prep,
+        _____) |>
+  layout(
+    _____
+  )
+```
+
+```{r defi-final-solution}
+# Préparer les données avec tooltips
+penguins_prep <- penguins |>
+  mutate(
+    tooltip = paste0(
+      "<b>", species, "</b><br>",
+      "Île: ", island, "<br>",
+      "Sexe: ", sex, "<br>",
+      "Année: ", year, "<br>",
+      "<br>",
+      "Bec (L): ", bill_length_mm, " mm<br>",
+      "Bec (P): ", bill_depth_mm, " mm<br>",
+      "Nageoires: ", flipper_length_mm, " mm<br>",
+      "Masse: ", body_mass_g, " g"
+    )
+  )
+
+# Créer le graphique 3D
+plot_ly(data = penguins_prep,
+        x = ~bill_length_mm,
+        y = ~flipper_length_mm,
+        z = ~body_mass_g,
+        color = ~species,
+        colors = "Set1",
+        type = "scatter3d",
+        mode = "markers",
+        text = ~tooltip,
+        hoverinfo = "text",
+        marker = list(
+          size = 5,
+          opacity = 0.8,
+          line = list(color = "white", width = 0.5)
+        )) |>
+  layout(
+    title = list(
+      text = "<b>Analyse morphométrique 3D des manchots</b><br><i>Données Palmer LTER</i>",
+      font = list(size = 16)
+    ),
+    scene = list(
+      xaxis = list(title = "Longueur du bec (mm)", titlefont = list(size = 12)),
+      yaxis = list(title = "Longueur nageoires (mm)", titlefont = list(size = 12)),
+      zaxis = list(title = "Masse corporelle (g)", titlefont = list(size = 12)),
+      camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
+    ),
+    legend = list(title = list(text = "Espèce"))
+  )
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# GGPLOTLY
+p <- ggplot(...) + geom_point()
+ggplotly(p)
+ggplotly(p, tooltip = "text")
+
+# PLOTLY NATIF
+plot_ly(data, x = ~var1, y = ~var2, type = "scatter", mode = "markers")
+plot_ly(data, x = ~var, type = "histogram")
+plot_ly(data, x = ~cat, y = ~val, type = "bar")
+plot_ly(data, x = ~cat, y = ~val, type = "box")
+
+# GRAPHIQUES 3D
+plot_ly(data, x = ~x, y = ~y, z = ~z, type = "scatter3d")
+
+# LAYOUT
+layout(title = "Titre", xaxis = list(title = "X"), yaxis = list(title = "Y"))
+
+# COMBINER
+subplot(p1, p2, nrows = 1)
+add_trace(plot, data = ..., name = "...")
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

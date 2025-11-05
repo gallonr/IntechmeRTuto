@@ -1,0 +1,598 @@
+---
+title: "Manipulation de texte avec stringr"
+subtitle: "Maîtriser les chaînes de caractères"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hints: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Détecter, extraire, remplacer et transformer du texte avec stringr"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Données d'exemple
+produits <- tibble(
+  id = 1:6,
+  nom = c("Ordinateur Portable HP", "Souris Logitech", "Clavier Mécanique",
+          "Écran 24 pouces", "USB 3.0 64GB", "Casque Bluetooth"),
+  prix_txt = c("899.99€", "12.50€", "145.00€", "299.99€", "25.50€", "89.90€"),
+  reference = c("ORD-2024-001", "SOU-2024-045", "CLA-2024-032",
+                "ECR-2024-012", "USB-2024-099", "CAS-2024-055")
+)
+
+clients <- tibble(
+  nom = c("  Dupont  ", "MARTIN", "bernard", "  Dubois  "),
+  email = c("marie.dupont@email.com", "pierre.martin@EMAIL.FR",
+            "sophie.bernard@Email.Com", "luc.dubois@email.fr"),
+  telephone = c("+33 6 12 34 56 78", "06.98.76.54.32",
+                "+33-7-11-22-33-44", "0611223344")
+)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue {data-progressive=TRUE}
+
+### Introduction
+
+Bienvenue dans ce tutoriel sur la **manipulation de texte avec stringr** !
+
+Les données textuelles sont partout : noms, adresses, descriptions de produits, commentaires... Mais elles sont souvent désordonnées, avec des espaces en trop, des majuscules/minuscules incohérentes, ou des formats variés. Le package `stringr` vous donne les outils pour nettoyer et transformer efficacement vos chaînes de caractères.
+
+**Objectifs d'apprentissage :**
+
+- ✅ Détecter des motifs avec `str_detect()` et `str_count()`
+- ✅ Extraire du texte avec `str_extract()` et `str_sub()`
+- ✅ Remplacer du texte avec `str_replace()` et `str_remove()`
+- ✅ Transformer la casse avec `str_to_lower()`, `str_to_upper()`, `str_to_title()`
+- ✅ Nettoyer les espaces avec `str_trim()` et `str_squish()`
+- ✅ Découper et combiner avec `str_split()` et `str_c()`
+
+**Prérequis :**
+
+- Connaître dplyr (tutoriels 03-05)
+- Comprendre les tibbles
+
+**Durée estimée :** 45 minutes
+
+---
+
+## Section 1 : Détecter des motifs
+
+### La fonction str_detect()
+
+`str_detect()` teste si un motif est présent dans une chaîne. Retourne `TRUE` ou `FALSE`.
+
+```{r demo-detect, exercise=TRUE}
+# Vérifier si "Ordinateur" est dans le nom
+produits |>
+  mutate(est_ordinateur = str_detect(nom, "Ordinateur"))
+```
+
+### Utiliser avec filter()
+
+```{r demo-detect-filter, exercise=TRUE}
+# Filtrer les produits contenant "USB" ou "Casque"
+produits |>
+  filter(str_detect(nom, "USB|Casque"))
+```
+
+💡 Le symbole `|` signifie "OU" en expressions régulières.
+
+### Exercice 1 : Détecter un motif
+
+Filtrez les produits dont le nom contient "Logitech" :
+
+```{r ex1-detect, exercise=TRUE}
+produits |>
+  filter(_____)
+```
+
+```{r ex1-detect-hint}
+# Utilisez str_detect(nom, "motif")
+filter(str_detect(nom, "Logitech"))
+```
+
+```{r ex1-detect-solution}
+produits |>
+  filter(str_detect(nom, "Logitech"))
+```
+
+### La fonction str_count()
+
+`str_count()` compte le nombre d'occurrences d'un motif.
+
+```{r demo-count, exercise=TRUE}
+# Compter le nombre de voyelles
+texte <- c("Bonjour", "Hello", "Salut")
+tibble(texte) |>
+  mutate(nb_voyelles = str_count(texte, "[aeiouAEIOU]"))
+```
+
+💡 `[aeiou]` est une **classe de caractères** : correspond à n'importe quelle voyelle.
+
+---
+
+## Section 2 : Extraire du texte
+
+### La fonction str_extract()
+
+`str_extract()` extrait la première occurrence d'un motif.
+
+```{r demo-extract, exercise=TRUE}
+# Extraire les nombres des prix
+produits |>
+  mutate(prix_nombre = str_extract(prix_txt, "[0-9.]+"))
+```
+
+💡 `[0-9.]+` signifie : un ou plusieurs (`+`) chiffres ou points.
+
+### str_extract_all()
+
+```{r demo-extract-all, exercise=TRUE}
+# Extraire tous les nombres d'une chaîne
+texte <- "J'ai 2 chats, 3 chiens et 15 poissons"
+str_extract_all(texte, "[0-9]+")
+```
+
+### Exercice 2 : Extraire des nombres
+
+Extrayez le code numérique de la référence (les 3 derniers chiffres) :
+
+```{r ex2-extract, exercise=TRUE}
+produits |>
+  select(reference) |>
+  mutate(code = str_extract(reference, _____))
+```
+
+```{r ex2-extract-hint}
+# Le pattern pour 3 chiffres à la fin : "[0-9]{3}$"
+# {3} = exactement 3
+# $ = fin de chaîne
+mutate(code = str_extract(reference, "[0-9]{3}$"))
+```
+
+```{r ex2-extract-solution}
+produits |>
+  select(reference) |>
+  mutate(code = str_extract(reference, "[0-9]{3}$"))
+```
+
+### La fonction str_sub()
+
+`str_sub()` extrait par position (début et fin).
+
+```{r demo-sub, exercise=TRUE}
+# Extraire les 3 premiers caractères
+produits |>
+  mutate(categorie = str_sub(reference, 1, 3))
+```
+
+---
+
+## Section 3 : Remplacer et supprimer
+
+### La fonction str_replace()
+
+`str_replace()` remplace la **première** occurrence d'un motif.
+
+```{r demo-replace, exercise=TRUE}
+# Remplacer "€" par " euros"
+produits |>
+  mutate(prix_txt = str_replace(prix_txt, "€", " euros"))
+```
+
+### str_replace_all()
+
+`str_replace_all()` remplace **toutes** les occurrences.
+
+```{r demo-replace-all, exercise=TRUE}
+# Uniformiser les téléphones : retirer tous les séparateurs
+clients |>
+  mutate(tel_propre = str_replace_all(telephone, "[ .+-]", ""))
+```
+
+💡 `[ .+-]` = classe de caractères : espace, point, plus ou tiret.
+
+### Exercice 3 : Remplacer du texte
+
+Remplacez tous les points par des tirets dans les téléphones :
+
+```{r ex3-replace, exercise=TRUE}
+clients |>
+  select(telephone) |>
+  mutate(tel_tirets = str_replace_all(telephone, _____, _____))
+```
+
+```{r ex3-replace-hint}
+# str_replace_all(colonne, "pattern", "remplacement")
+mutate(tel_tirets = str_replace_all(telephone, "\\.", "-"))
+# Note : le point doit être échappé avec \\ car c'est un caractère spécial
+```
+
+```{r ex3-replace-solution}
+clients |>
+  select(telephone) |>
+  mutate(tel_tirets = str_replace_all(telephone, "\\.", "-"))
+```
+
+### La fonction str_remove()
+
+`str_remove()` supprime un motif (équivalent à remplacer par "").
+
+```{r demo-remove, exercise=TRUE}
+# Retirer "€" des prix
+produits |>
+  mutate(prix_nombre = str_remove(prix_txt, "€"))
+```
+
+### str_remove_all()
+
+```{r demo-remove-all, exercise=TRUE}
+# Retirer tous les espaces
+produits |>
+  mutate(nom_sans_espaces = str_remove_all(nom, " "))
+```
+
+---
+
+## Section 4 : Quiz - Détection et remplacement
+
+```{r quiz-string-1}
+quiz(
+  caption = "Testez vos connaissances",
+  
+  question("Quelle fonction teste si un motif est présent dans une chaîne ?",
+    answer("str_detect()", correct = TRUE),
+    answer("str_find()"),
+    answer("str_test()"),
+    answer("str_match()"),
+    allow_retry = TRUE
+  ),
+  
+  question("Quelle est la différence entre str_replace() et str_replace_all() ?",
+    answer("str_replace() remplace seulement la première occurrence", correct = TRUE),
+    answer("str_replace() est plus rapide"),
+    answer("str_replace() ne fonctionne qu'avec des regex"),
+    answer("Aucune différence"),
+    allow_retry = TRUE
+  ),
+  
+  question("Comment extraire tous les nombres d'une chaîne ?",
+    answer('str_extract_all(texte, "[0-9]+")', correct = TRUE),
+    answer('str_extract(texte, "[0-9]+")'),
+    answer('str_detect(texte, "[0-9]+")'),
+    answer('str_count(texte, "[0-9]+")'),
+    allow_retry = TRUE
+  ),
+  
+  question("Que signifie le pattern '[aeiou]' ?",
+    answer("N'importe quelle voyelle minuscule", correct = TRUE),
+    answer("Les lettres 'a', 'e', 'i', 'o', 'u' dans cet ordre"),
+    answer("Toutes les lettres sauf a, e, i, o, u"),
+    answer("Le mot 'aeiou'"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+## Section 5 : Transformer la casse
+
+### Les fonctions de casse
+
+```{r demo-case, exercise=TRUE}
+clients |>
+  mutate(
+    nom_minuscule = str_to_lower(nom),
+    nom_majuscule = str_to_upper(nom),
+    nom_titre = str_to_title(nom)
+  )
+```
+
+- `str_to_lower()` : tout en minuscules
+- `str_to_upper()` : tout en MAJUSCULES
+- `str_to_title()` : Première Lettre En Majuscule
+
+### Exercice 4 : Uniformiser la casse
+
+Mettez tous les emails en minuscules :
+
+```{r ex4-case, exercise=TRUE}
+clients |>
+  mutate(email_propre = _____)
+```
+
+```{r ex4-case-solution}
+clients |>
+  mutate(email_propre = str_to_lower(email))
+```
+
+---
+
+## Section 6 : Nettoyer les espaces
+
+### La fonction str_trim()
+
+`str_trim()` supprime les espaces au **début et à la fin**.
+
+```{r demo-trim, exercise=TRUE}
+clients |>
+  mutate(nom_propre = str_trim(nom))
+```
+
+### La fonction str_squish()
+
+`str_squish()` fait encore mieux :
+- Supprime les espaces au début et à la fin
+- Réduit les espaces multiples à un seul
+
+```{r demo-squish, exercise=TRUE}
+texte <- "  Beaucoup    d'espaces   ici  "
+str_squish(texte)
+```
+
+### Exercice 5 : Nettoyer les noms
+
+Nettoyez les noms des clients : retirez les espaces et mettez en format titre :
+
+```{r ex5-clean, exercise=TRUE}
+clients |>
+  mutate(nom_propre = _____ |> _____)
+```
+
+```{r ex5-clean-hint}
+# Combinez str_squish() et str_to_title()
+# Utilisez le pipe pour enchaîner
+mutate(nom_propre = nom |> str_squish() |> str_to_title())
+```
+
+```{r ex5-clean-solution}
+clients |>
+  mutate(nom_propre = nom |> str_squish() |> str_to_title())
+```
+
+---
+
+## Section 7 : Longueur et découpage
+
+### La fonction str_length()
+
+```{r demo-length, exercise=TRUE}
+produits |>
+  mutate(longueur_nom = str_length(nom))
+```
+
+### La fonction str_split()
+
+`str_split()` découpe une chaîne selon un séparateur.
+
+```{r demo-split, exercise=TRUE}
+# Découper une référence
+str_split("ORD-2024-001", "-")
+
+# Résultat : une liste !
+# Pour obtenir les parties dans des colonnes, 
+# utilisez separate_wider_delim() de tidyr
+```
+
+### La fonction str_c()
+
+`str_c()` combine (concatène) des chaînes.
+
+```{r demo-concat, exercise=TRUE}
+# Combiner plusieurs colonnes
+produits |>
+  mutate(description = str_c(nom, " - Ref: ", reference))
+```
+
+Avec `sep` pour ajouter un séparateur :
+
+```{r demo-concat-sep, exercise=TRUE}
+str_c("Bonjour", "le", "monde", sep = " ")
+```
+
+---
+
+## Section 8 : Expressions régulières courantes
+
+### Patterns utiles
+
+| Pattern | Signification | Exemple |
+|---------|---------------|---------|
+| `^texte` | Début de chaîne | `^ORD` trouve "ORD-2024" |
+| `texte$` | Fin de chaîne | `001$` trouve "ORD-2024-001" |
+| `[abc]` | Un de ces caractères | `[aeiou]` trouve voyelles |
+| `[^abc]` | Tout sauf ces caractères | `[^0-9]` trouve non-chiffres |
+| `.` | N'importe quel caractère | `a.b` trouve "aXb" |
+| `*` | 0 ou plus | `a*` trouve "", "a", "aa"... |
+| `+` | 1 ou plus | `a+` trouve "a", "aa", "aaa"... |
+| `{n}` | Exactement n | `a{3}` trouve "aaa" |
+| `{n,m}` | Entre n et m | `a{2,4}` trouve "aa", "aaa", "aaaa" |
+| `|` | OU | `chat|chien` trouve l'un ou l'autre |
+
+### Exemples pratiques
+
+```{r demo-regex, exercise=TRUE}
+emails <- c("test@email.com", "invalide", "autre@test.fr", "pas_email")
+
+tibble(email = emails) |>
+  mutate(
+    # Emails valides (simplifié)
+    valide = str_detect(email, "@.+\\..+"),
+    # Domaine .com
+    est_com = str_detect(email, "\\.com$"),
+    # Extraire le domaine
+    domaine = str_extract(email, "@(.+)") |> str_remove("@")
+  )
+```
+
+---
+
+## Section 9 : Défi final
+
+### Mission : Nettoyage complet de données clients
+
+Nettoyez la base de données clients :
+
+```{r defi-final, exercise=TRUE, exercise.lines=20}
+clients
+
+# Mission :
+# 1. Nettoyez les noms : trim + format titre
+# 2. Uniformisez les emails : tout en minuscules
+# 3. Vérifiez que les emails contiennent @
+# 4. Uniformisez les téléphones : format sans séparateurs (10 chiffres)
+# 5. Gardez seulement les clients avec email valide
+# 6. Affichez : nom_propre, email_propre, tel_propre
+
+
+
+
+
+
+
+
+
+```
+
+```{r defi-final-hint-1}
+# Commencez par nettoyer les noms
+clients |>
+  mutate(
+    nom_propre = nom |> str_trim() |> str_to_title(),
+    email_propre = str_to_lower(email)
+  )
+```
+
+```{r defi-final-hint-2}
+# Ajoutez la vérification email et nettoyage téléphone
+clients |>
+  mutate(
+    nom_propre = nom |> str_trim() |> str_to_title(),
+    email_propre = str_to_lower(email),
+    email_valide = str_detect(email_propre, "@"),
+    tel_propre = str_replace_all(telephone, "[ .+-]", "")
+  )
+```
+
+```{r defi-final-solution}
+clients |>
+  mutate(
+    # 1. Nettoyage noms
+    nom_propre = nom |> str_trim() |> str_to_title(),
+    # 2. Uniformisation emails
+    email_propre = str_to_lower(email),
+    # 3. Vérification emails
+    email_valide = str_detect(email_propre, "@.+\\..+"),
+    # 4. Uniformisation téléphones
+    tel_propre = str_replace_all(telephone, "[ .+-]", "")
+  ) |>
+  # 5. Filtrer emails valides
+  filter(email_valide) |>
+  # 6. Sélection finale
+  select(nom_propre, email_propre, tel_propre)
+```
+
+---
+
+## Récapitulatif
+
+### Ce que vous avez appris
+
+- ✅ **Détecter** des motifs avec `str_detect()` et `str_count()`
+- ✅ **Extraire** du texte avec `str_extract()`, `str_sub()`
+- ✅ **Remplacer** avec `str_replace()`, `str_remove()`
+- ✅ **Transformer la casse** avec `str_to_lower()`, `str_to_upper()`, `str_to_title()`
+- ✅ **Nettoyer** avec `str_trim()`, `str_squish()`
+- ✅ **Combiner** avec `str_c()`
+- ✅ Utiliser des **expressions régulières** de base
+
+### Pour aller plus loin
+
+**Tutoriel suivant :** "08 - Manipulation de facteurs avec forcats"
+
+**Ressources :**
+
+- [R for Data Science - Strings](https://r4ds.hadley.nz/strings.html)
+- [R for Data Science - Regular Expressions](https://r4ds.hadley.nz/regexps.html)
+- [Documentation stringr](https://stringr.tidyverse.org/)
+- [Regex interactif](https://regex101.com/)
+
+### Aide-mémoire
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# DÉTECTER
+str_detect(texte, "motif")     # TRUE/FALSE
+str_count(texte, "motif")      # Nombre d'occurrences
+
+# EXTRAIRE
+str_extract(texte, "motif")     # Première occurrence
+str_extract_all(texte, "motif") # Toutes les occurrences
+str_sub(texte, debut, fin)      # Par position
+
+# REMPLACER / SUPPRIMER
+str_replace(texte, "motif", "nouveau")     # Première
+str_replace_all(texte, "motif", "nouveau") # Toutes
+str_remove(texte, "motif")                 # Supprimer première
+str_remove_all(texte, "motif")             # Supprimer toutes
+
+# CASSE
+str_to_lower(texte)    # minuscules
+str_to_upper(texte)    # MAJUSCULES
+str_to_title(texte)    # Format Titre
+
+# ESPACES
+str_trim(texte)        # Retirer début/fin
+str_squish(texte)      # Retirer début/fin + réduire multiples
+
+# AUTRES
+str_length(texte)              # Longueur
+str_c(a, b, sep = " ")        # Concaténer
+str_split(texte, "sep")       # Découper
+
+# REGEX COURANTS
+"^debut"        # Commence par
+"fin$"          # Finit par
+"[abc]"         # a ou b ou c
+"[0-9]"         # Un chiffre
+"[0-9]+"        # Un ou plusieurs chiffres
+"."             # N'importe quel caractère
+"a|b"           # a OU b
+```
+
+---
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

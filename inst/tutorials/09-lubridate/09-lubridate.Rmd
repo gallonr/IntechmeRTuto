@@ -1,0 +1,653 @@
+---
+title: "Dates et temps avec lubridate"
+subtitle: "Maîtriser les données temporelles"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hints: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Parser, manipuler et calculer avec des dates et des heures"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(lubridate)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Données d'exemple
+commandes <- tibble(
+  id = 1:10,
+  date_commande = c("2024-01-15", "2024-01-18", "2024-02-03", "2024-02-15",
+                    "2024-03-01", "2024-03-12", "2024-04-05", "2024-04-20",
+                    "2024-05-10", "2024-05-25"),
+  date_livraison = c("2024-01-18", "2024-01-22", "2024-02-07", "2024-02-20",
+                     "2024-03-05", "2024-03-16", "2024-04-09", "2024-04-24",
+                     "2024-05-14", "2024-05-29"),
+  montant = c(150, 200, 180, 220, 190, 210, 175, 230, 195, 205)
+)
+
+evenements <- tibble(
+  nom = c("Réunion", "Formation", "Conférence", "Atelier", "Séminaire"),
+  debut = ymd_hms(c("2024-06-10 09:00:00", "2024-06-11 14:00:00", 
+                    "2024-06-12 10:30:00", "2024-06-13 15:00:00",
+                    "2024-06-14 09:30:00")),
+  fin = ymd_hms(c("2024-06-10 12:00:00", "2024-06-11 17:30:00",
+                  "2024-06-12 16:00:00", "2024-06-13 18:00:00",
+                  "2024-06-14 17:00:00"))
+)
+
+ventes_horaires <- tibble(
+  timestamp = seq(ymd_hm("2024-01-01 08:00"), ymd_hm("2024-01-01 18:00"), by = "2 hours"),
+  ventes = c(45, 120, 180, 250, 200, 95)
+)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue {data-progressive=TRUE}
+
+### Introduction
+
+Bienvenue dans ce tutoriel sur les **dates et temps avec lubridate** !
+
+Travailler avec des dates et des heures en R peut être compliqué : formats différents, fuseaux horaires, calculs de durées... Le package `lubridate` simplifie considérablement ces tâches et rend le code beaucoup plus lisible !
+
+**Objectifs d'apprentissage :**
+
+- ✅ **Parser** des dates avec `ymd()`, `dmy()`, `mdy()`
+- ✅ **Extraire** des composants avec `year()`, `month()`, `day()`, etc.
+- ✅ **Calculer** des durées et des intervalles
+- ✅ **Manipuler** des dates (ajouter/soustraire des périodes)
+- ✅ **Arrondir** des dates avec `floor_date()`, `ceiling_date()`
+- ✅ Travailler avec des **heures** et des **timestamps**
+
+**Prérequis :**
+
+- Connaître dplyr
+- Bases de R
+
+**Durée estimée :** 45 minutes
+
+---
+
+## Section 1 : Parser des dates
+
+### Les dates en R
+
+En R, les dates sont un type spécial stocké comme le nombre de jours depuis le 1er janvier 1970.
+
+```{r demo-date-base, exercise=TRUE}
+# Date R de base
+date_r <- as.Date("2024-01-15")
+date_r
+class(date_r)
+
+# Représentation interne
+as.numeric(date_r)  # Jours depuis 1970-01-01
+```
+
+### Les fonctions ymd(), dmy(), mdy()
+
+`lubridate` fournit des fonctions intuitives pour parser des dates selon leur format :
+
+- `ymd()` : année-mois-jour (format ISO, recommandé)
+- `dmy()` : jour-mois-année (format français/européen)
+- `mdy()` : mois-jour-année (format américain)
+
+```{r demo-parse-dates, exercise=TRUE}
+# Format ISO (recommandé)
+ymd("2024-01-15")
+ymd("20240115")
+
+# Format français
+dmy("15/01/2024")
+dmy("15-01-2024")
+dmy("15 janvier 2024")
+
+# Format américain
+mdy("01/15/2024")
+mdy("January 15, 2024")
+```
+
+💡 Ces fonctions sont **très flexibles** avec les séparateurs !
+
+### Exercice 1 : Parser des dates
+
+Convertissez ces dates textuelles en objets Date :
+
+```{r ex1-parse, exercise=TRUE}
+dates_texte <- c("25/12/2024", "01/01/2025", "14/07/2024")
+
+# Utilisez la bonne fonction lubridate
+dates_propres <- _____(dates_texte)
+dates_propres
+```
+
+```{r ex1-parse-hint}
+# Le format est jour/mois/année → utilisez dmy()
+```
+
+```{r ex1-parse-solution}
+dates_texte <- c("25/12/2024", "01/01/2025", "14/07/2024")
+dates_propres <- dmy(dates_texte)
+dates_propres
+```
+
+### Dates avec heures
+
+Pour inclure les heures, ajoutez `_hms`, `_hm` ou `_h` :
+
+```{r demo-datetime, exercise=TRUE}
+# Date + heure complète
+ymd_hms("2024-01-15 14:30:45")
+
+# Date + heure:minute
+ymd_hm("2024-01-15 14:30")
+
+# Date + heure
+ymd_h("2024-01-15 14")
+```
+
+---
+
+## Section 2 : Extraire des composants
+
+### Les fonctions d'extraction
+
+Une fois qu'on a un objet Date, on peut extraire ses composants :
+
+```{r demo-extract, exercise=TRUE}
+ma_date <- ymd("2024-03-15")
+
+year(ma_date)     # Année
+month(ma_date)    # Mois (numérique)
+day(ma_date)      # Jour
+wday(ma_date)     # Jour de la semaine (1=Dimanche)
+yday(ma_date)     # Jour de l'année
+```
+
+### Extraire avec des labels
+
+```{r demo-extract-label, exercise=TRUE}
+ma_date <- ymd("2024-03-15")
+
+month(ma_date, label = TRUE)              # Abréviation
+month(ma_date, label = TRUE, abbr = FALSE)  # Nom complet
+
+wday(ma_date, label = TRUE)               # Jour de la semaine
+wday(ma_date, label = TRUE, abbr = FALSE)
+```
+
+### Exercice 2 : Analyser des commandes
+
+Extrayez le mois et l'année de chaque commande :
+
+```{r ex2-extract, exercise=TRUE}
+commandes |>
+  mutate(
+    date = ymd(date_commande),
+    mois = _____,
+    annee = _____
+  ) |>
+  select(id, date, mois, annee)
+```
+
+```{r ex2-extract-solution}
+commandes |>
+  mutate(
+    date = ymd(date_commande),
+    mois = month(date, label = TRUE),
+    annee = year(date)
+  ) |>
+  select(id, date, mois, annee)
+```
+
+---
+
+## Section 3 : Calculer avec des dates
+
+### Durées entre dates
+
+La soustraction de dates donne une durée :
+
+```{r demo-duree, exercise=TRUE}
+debut <- ymd("2024-01-01")
+fin <- ymd("2024-01-15")
+
+fin - debut  # Différence en jours
+```
+
+### Exercice 3 : Délai de livraison
+
+Calculez le délai entre la commande et la livraison :
+
+```{r ex3-delai, exercise=TRUE}
+commandes |>
+  mutate(
+    commande = ymd(date_commande),
+    livraison = ymd(date_livraison),
+    delai_jours = _____
+  ) |>
+  select(id, commande, livraison, delai_jours)
+```
+
+```{r ex3-delai-solution}
+commandes |>
+  mutate(
+    commande = ymd(date_commande),
+    livraison = ymd(date_livraison),
+    delai_jours = livraison - commande
+  ) |>
+  select(id, commande, livraison, delai_jours)
+```
+
+---
+
+## Section 4 : Quiz - Parsing et extraction
+
+```{r quiz-dates}
+quiz(
+  caption = "Testez vos connaissances",
+  
+  question("Quelle fonction parse une date au format jour/mois/année ?",
+    answer("dmy()", correct = TRUE),
+    answer("ymd()"),
+    answer("mdy()"),
+    answer("parse_date()"),
+    allow_retry = TRUE
+  ),
+  
+  question("Comment extraire le mois d'une date sous forme de texte (ex: 'Jan', 'Fév') ?",
+    answer("month(date, label = TRUE)", correct = TRUE),
+    answer("month(date)"),
+    answer("get_month(date)"),
+    answer("extract_month(date, format = 'text')"),
+    allow_retry = TRUE
+  ),
+  
+  question("La soustraction de deux dates donne :",
+    answer("Une durée en jours", correct = TRUE),
+    answer("Une durée en heures"),
+    answer("Une erreur"),
+    answer("Un nombre"),
+    allow_retry = TRUE
+  ),
+  
+  question("Quelle fonction parse une date avec heure:minute ?",
+    answer("ymd_hm()", correct = TRUE),
+    answer("ymd_h()"),
+    answer("ymd_hms()"),
+    answer("ymd_time()"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+## Section 5 : Ajouter et soustraire des périodes
+
+### Les fonctions de période
+
+`lubridate` fournit des fonctions pratiques pour manipuler les dates :
+
+```{r demo-periods, exercise=TRUE}
+date_depart <- ymd("2024-01-15")
+
+# Ajouter
+date_depart + days(10)
+date_depart + weeks(2)
+date_depart + months(3)
+date_depart + years(1)
+
+# Soustraire
+date_depart - days(5)
+```
+
+### Combiner plusieurs périodes
+
+```{r demo-periods-combine, exercise=TRUE}
+date_depart <- ymd("2024-01-15")
+
+# Ajouter 2 mois et 15 jours
+date_depart + months(2) + days(15)
+
+# Ou avec une seule expression
+date_depart + period(2, "months") + period(15, "days")
+```
+
+### Exercice 4 : Date d'échéance
+
+Calculez la date d'échéance (30 jours après la commande) :
+
+```{r ex4-echeance, exercise=TRUE}
+commandes |>
+  mutate(
+    commande = ymd(date_commande),
+    echeance = commande + _____
+  ) |>
+  select(id, commande, echeance)
+```
+
+```{r ex4-echeance-solution}
+commandes |>
+  mutate(
+    commande = ymd(date_commande),
+    echeance = commande + days(30)
+  ) |>
+  select(id, commande, echeance)
+```
+
+---
+
+## Section 6 : Arrondir des dates
+
+### floor_date(), ceiling_date(), round_date()
+
+Ces fonctions arrondissent les dates à une unité donnée :
+
+```{r demo-round, exercise=TRUE}
+date_precise <- ymd_hms("2024-03-15 14:35:42")
+
+# Arrondir au début
+floor_date(date_precise, "day")    # Début du jour
+floor_date(date_precise, "month")  # Début du mois
+floor_date(date_precise, "year")   # Début de l'année
+
+# Arrondir à la fin
+ceiling_date(date_precise, "day")
+ceiling_date(date_precise, "month")
+
+# Arrondir au plus proche
+round_date(date_precise, "hour")
+```
+
+### Application : Grouper par mois
+
+```{r demo-group-month, exercise=TRUE}
+commandes |>
+  mutate(
+    date = ymd(date_commande),
+    mois = floor_date(date, "month")
+  ) |>
+  group_by(mois) |>
+  summarise(
+    nb_commandes = n(),
+    montant_total = sum(montant)
+  )
+```
+
+### Exercice 5 : Ventes par semaine
+
+Groupez les commandes par semaine et calculez le total :
+
+```{r ex5-semaine, exercise=TRUE}
+commandes |>
+  mutate(
+    date = ymd(date_commande),
+    semaine = floor_date(date, _____)
+  ) |>
+  group_by(semaine) |>
+  summarise(
+    nb_commandes = n(),
+    montant_total = sum(montant)
+  )
+```
+
+```{r ex5-semaine-solution}
+commandes |>
+  mutate(
+    date = ymd(date_commande),
+    semaine = floor_date(date, "week")
+  ) |>
+  group_by(semaine) |>
+  summarise(
+    nb_commandes = n(),
+    montant_total = sum(montant)
+  )
+```
+
+---
+
+## Section 7 : Travailler avec des heures
+
+### Extraire les composants temporels
+
+```{r demo-time, exercise=TRUE}
+timestamp <- ymd_hms("2024-03-15 14:35:42")
+
+hour(timestamp)    # Heure
+minute(timestamp)  # Minute
+second(timestamp)  # Seconde
+```
+
+### Créer des heures
+
+```{r demo-make-time, exercise=TRUE}
+# Créer une date-heure
+make_datetime(2024, 3, 15, 14, 30, 0)
+
+# Ou combiner date + heure
+ma_date <- ymd("2024-03-15")
+ma_date + hours(14) + minutes(30)
+```
+
+### Exercice 6 : Durée des événements
+
+Calculez la durée de chaque événement en heures :
+
+```{r ex6-duree, exercise=TRUE}
+evenements |>
+  mutate(
+    duree_heures = as.numeric(fin - debut, units = "hours")
+  ) |>
+  select(nom, debut, fin, duree_heures)
+```
+
+```{r ex6-duree-solution}
+evenements |>
+  mutate(
+    duree_heures = as.numeric(fin - debut, units = "hours")
+  ) |>
+  select(nom, debut, fin, duree_heures)
+```
+
+---
+
+## Section 8 : Intervalles
+
+### Créer un intervalle
+
+```{r demo-interval, exercise=TRUE}
+debut <- ymd("2024-01-01")
+fin <- ymd("2024-12-31")
+
+annee_2024 <- interval(debut, fin)
+annee_2024
+
+# Durée de l'intervalle
+time_length(annee_2024, "days")
+time_length(annee_2024, "months")
+```
+
+### Tester si une date est dans un intervalle
+
+```{r demo-within, exercise=TRUE}
+periode_vacances <- interval(ymd("2024-07-01"), ymd("2024-08-31"))
+
+ymd("2024-07-15") %within% periode_vacances  # TRUE
+ymd("2024-09-15") %within% periode_vacances  # FALSE
+```
+
+---
+
+## Section 9 : Défi final
+
+### Analyse complète de commandes
+
+```{r defi-final, exercise=TRUE, exercise.lines=25}
+commandes
+
+# Mission :
+# 1. Convertissez les dates en objets Date
+# 2. Calculez le délai de livraison en jours
+# 3. Extrayez le mois de commande (avec label)
+# 4. Créez une colonne "trimestre" (Q1, Q2, Q3, Q4)
+# 5. Calculez les statistiques par trimestre :
+#    - Nombre de commandes
+#    - Délai moyen
+#    - Montant total
+# 6. Affichez le résultat trié par trimestre
+
+
+
+
+
+
+
+
+
+```
+
+```{r defi-final-hint-1}
+# Astuce pour le trimestre :
+# quarter() extrait le trimestre d'une date
+ma_date <- ymd("2024-03-15")
+quarter(ma_date)
+```
+
+```{r defi-final-hint-2}
+# Étapes 1-4
+commandes |>
+  mutate(
+    commande = ymd(date_commande),
+    livraison = ymd(date_livraison),
+    delai = as.numeric(livraison - commande),
+    mois = month(commande, label = TRUE),
+    trimestre = paste0("Q", quarter(commande))
+  )
+```
+
+```{r defi-final-solution}
+commandes |>
+  # 1-4. Conversions et extractions
+  mutate(
+    commande = ymd(date_commande),
+    livraison = ymd(date_livraison),
+    delai = as.numeric(livraison - commande),
+    mois = month(commande, label = TRUE),
+    trimestre = paste0("Q", quarter(commande))
+  ) |>
+  # 5. Statistiques par trimestre
+  group_by(trimestre) |>
+  summarise(
+    nb_commandes = n(),
+    delai_moyen = round(mean(delai), 1),
+    montant_total = sum(montant)
+  ) |>
+  # 6. Tri
+  arrange(trimestre)
+```
+
+---
+
+## Récapitulatif
+
+### Ce que vous avez appris
+
+- ✅ **Parser** des dates avec `ymd()`, `dmy()`, `mdy()` et variantes
+- ✅ **Extraire** des composants avec `year()`, `month()`, `day()`, `hour()`, etc.
+- ✅ **Calculer** des durées entre dates
+- ✅ **Ajouter/soustraire** des périodes avec `days()`, `months()`, `years()`
+- ✅ **Arrondir** des dates avec `floor_date()`, `ceiling_date()`
+- ✅ Travailler avec des **timestamps** et des **intervalles**
+
+### Pour aller plus loin
+
+**Tutoriel suivant :** "10 - ggplot2 - Introduction"
+
+**Ressources :**
+
+- [R for Data Science - Dates and Times](https://r4ds.hadley.nz/datetimes.html)
+- [Documentation lubridate](https://lubridate.tidyverse.org/)
+- [Cheatsheet lubridate](https://github.com/rstudio/cheatsheets/blob/main/lubridate.pdf)
+
+### Aide-mémoire
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# PARSER DES DATES
+ymd("2024-01-15")          # Année-mois-jour
+dmy("15/01/2024")          # Jour-mois-année
+mdy("01/15/2024")          # Mois-jour-année
+ymd_hms("2024-01-15 14:30:00")  # Avec heure
+
+# EXTRAIRE DES COMPOSANTS
+year(date)                 # Année
+month(date)                # Mois (numérique)
+month(date, label = TRUE)  # Mois (texte)
+day(date)                  # Jour
+wday(date)                 # Jour de la semaine
+yday(date)                 # Jour de l'année
+hour(datetime)             # Heure
+minute(datetime)           # Minute
+second(datetime)           # Seconde
+quarter(date)              # Trimestre
+
+# CALCULER
+date2 - date1              # Différence en jours
+as.numeric(diff, units = "hours")  # Convertir l'unité
+
+# AJOUTER/SOUSTRAIRE
+date + days(10)            # Ajouter 10 jours
+date + weeks(2)            # Ajouter 2 semaines
+date + months(3)           # Ajouter 3 mois
+date + years(1)            # Ajouter 1 an
+
+# ARRONDIR
+floor_date(date, "month")    # Début du mois
+ceiling_date(date, "month")  # Fin du mois
+round_date(date, "day")      # Arrondir au jour
+
+# INTERVALLES
+interval(debut, fin)         # Créer un intervalle
+date %within% intervalle     # Tester appartenance
+time_length(intervalle, "days")  # Durée
+
+# CRÉER DES DATES
+today()                      # Date du jour
+now()                        # Date-heure actuelle
+make_date(2024, 1, 15)      # Créer une date
+make_datetime(2024, 1, 15, 14, 30)  # Créer date-heure
+```
+
+---
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

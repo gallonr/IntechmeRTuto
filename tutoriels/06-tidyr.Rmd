@@ -1,0 +1,769 @@
+---
+title: "Restructuration de données avec tidyr"
+subtitle: "Transformer la forme de vos données"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hints: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Maîtriser pivot_longer(), pivot_wider(), separate() et unite()"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Données au format large
+notes_large <- tibble(
+  etudiant = c("Alice", "Bob", "Charlie"),
+  maths = c(15, 12, 16),
+  physique = c(14, 13, 17),
+  chimie = c(16, 11, 15)
+)
+
+# Données au format long
+notes_long <- tibble(
+  etudiant = rep(c("Alice", "Bob", "Charlie"), each = 3),
+  matiere = rep(c("maths", "physique", "chimie"), 3),
+  note = c(15, 14, 16, 12, 13, 11, 16, 17, 15)
+)
+
+# Données de ventes par trimestre
+ventes_trimestre <- tibble(
+  produit = c("Ordinateur", "Souris", "Clavier"),
+  T1_2024 = c(50, 200, 120),
+  T2_2024 = c(65, 180, 135),
+  T3_2024 = c(70, 210, 140),
+  T4_2024 = c(80, 195, 150)
+)
+
+# Données avec colonnes à séparer
+contacts <- tibble(
+  nom_complet = c("Dupont, Marie", "Martin, Pierre", "Bernard, Sophie"),
+  telephone = c("06-12-34-56-78", "07-98-76-54-32", "06-11-22-33-44"),
+  email = c("m.dupont@email.com", "p.martin@email.com", "s.bernard@email.com")
+)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue {data-progressive=TRUE}
+
+### Introduction
+
+Bienvenue dans ce tutoriel sur la **restructuration de données avec tidyr** !
+
+Les données ne sont pas toujours dans le format idéal pour l'analyse. Parfois elles sont trop "larges", parfois trop "longues", et parfois des informations sont mélangées dans une même colonne. Le package `tidyr` vous aide à résoudre ces problèmes.
+
+**Objectifs d'apprentissage :**
+
+- ✅ Comprendre les formats **long** et **large**
+- ✅ Transformer du large au long avec `pivot_longer()`
+- ✅ Transformer du long au large avec `pivot_wider()`
+- ✅ Séparer des colonnes avec `separate()` et `separate_wider_delim()`
+- ✅ Combiner des colonnes avec `unite()`
+- ✅ Gérer les valeurs manquantes
+
+**Prérequis :**
+
+- Connaître dplyr (tutoriels 03-05)
+- Comprendre les tibbles
+
+**Durée estimée :** 60 minutes
+
+---
+
+## Section 1 : Format long vs format large
+
+### Qu'est-ce qu'un format "tidy" ?
+
+Un jeu de données **tidy** (propre) respecte trois règles :
+
+1. **Chaque variable** a sa propre colonne
+2. **Chaque observation** a sa propre ligne
+3. **Chaque valeur** a sa propre cellule
+
+### Format large (wide)
+
+```{r demo-large, exercise=TRUE}
+# Format large : une colonne par matière
+notes_large
+```
+
+👉 **Usage** : Facile à lire pour les humains, pratique pour la saisie de données
+
+### Format long (long)
+
+```{r demo-long, exercise=TRUE}
+# Format long : une ligne par observation
+notes_long
+```
+
+👉 **Usage** : Idéal pour l'analyse avec tidyverse, les graphiques ggplot2
+
+### Quand utiliser quel format ?
+
+**Format large** :
+- Tableaux de présentation
+- Saisie de données dans Excel
+- Lecture par des humains
+
+**Format long** :
+- Analyses statistiques
+- Visualisations ggplot2
+- Transformations dplyr
+
+---
+
+## Section 2 : pivot_longer() - Large vers Long
+
+### La fonction pivot_longer()
+
+`pivot_longer()` transforme plusieurs colonnes en deux colonnes :
+- Une colonne pour les **noms** (anciens noms de colonnes)
+- Une colonne pour les **valeurs**
+
+**Syntaxe :**
+```r
+pivot_longer(
+  cols = colonnes_à_transformer,
+  names_to = "nom_nouvelle_colonne_noms",
+  values_to = "nom_nouvelle_colonne_valeurs"
+)
+```
+
+```{r demo-pivot-longer, exercise=TRUE}
+# Transformer les notes du format large au format long
+notes_large |>
+  pivot_longer(
+    cols = c(maths, physique, chimie),
+    names_to = "matiere",
+    values_to = "note"
+  )
+```
+
+### Variantes de sélection des colonnes
+
+```{r demo-pivot-longer-select, exercise=TRUE}
+# Toutes les colonnes sauf 'etudiant'
+notes_large |>
+  pivot_longer(
+    cols = -etudiant,
+    names_to = "matiere",
+    values_to = "note"
+  )
+
+# Ou avec starts_with(), ends_with(), etc.
+# (si les noms de colonnes suivent un pattern)
+```
+
+### Exercice 1 : Votre premier pivot_longer
+
+Transformez `ventes_trimestre` du format large au format long :
+
+```{r ex1-pivot-longer, exercise=TRUE}
+ventes_trimestre
+
+# Transformez en format long avec :
+# - colonne 'trimestre' pour T1_2024, T2_2024, etc.
+# - colonne 'quantite' pour les valeurs
+
+
+
+
+```
+
+```{r ex1-pivot-longer-hint-1}
+# Utilisez pivot_longer()
+# Les colonnes à transformer sont toutes sauf 'produit'
+ventes_trimestre |>
+  pivot_longer(
+    cols = -produit,
+    names_to = "trimestre",
+    values_to = "quantite"
+  )
+```
+
+```{r ex1-pivot-longer-hint-2}
+# Ou vous pouvez sélectionner explicitement :
+ventes_trimestre |>
+  pivot_longer(
+    cols = starts_with("T"),
+    names_to = "trimestre",
+    values_to = "quantite"
+  )
+```
+
+```{r ex1-pivot-longer-solution}
+ventes_trimestre |>
+  pivot_longer(
+    cols = -produit,
+    names_to = "trimestre",
+    values_to = "quantite"
+  )
+```
+
+### Nettoyer les noms avec names_prefix
+
+```{r demo-names-prefix, exercise=TRUE}
+# Retirer un préfixe commun des noms
+ventes_trimestre |>
+  pivot_longer(
+    cols = -produit,
+    names_to = "trimestre",
+    values_to = "quantite",
+    names_prefix = "T"  # Retire "T" du début
+  )
+```
+
+---
+
+## Section 3 : pivot_wider() - Long vers Large
+
+### La fonction pivot_wider()
+
+`pivot_wider()` fait l'inverse de `pivot_longer()` : elle transforme des lignes en colonnes.
+
+**Syntaxe :**
+```r
+pivot_wider(
+  names_from = colonne_qui_devient_noms_colonnes,
+  values_from = colonne_qui_contient_valeurs
+)
+```
+
+```{r demo-pivot-wider, exercise=TRUE}
+# Transformer du format long au format large
+notes_long |>
+  pivot_wider(
+    names_from = matiere,
+    values_from = note
+  )
+```
+
+### Exercice 2 : pivot_wider
+
+Créez un tableau large à partir de `notes_long` avec les matières en colonnes :
+
+```{r ex2-pivot-wider, exercise=TRUE}
+notes_long
+
+# Transformez en format large
+
+
+
+
+```
+
+```{r ex2-pivot-wider-hint}
+# names_from = la colonne qui contient les futurs noms de colonnes
+# values_from = la colonne qui contient les valeurs
+notes_long |>
+  pivot_wider(
+    names_from = matiere,
+    values_from = note
+  )
+```
+
+```{r ex2-pivot-wider-solution}
+notes_long |>
+  pivot_wider(
+    names_from = matiere,
+    values_from = note
+  )
+```
+
+### Gérer les valeurs multiples
+
+Parfois, plusieurs valeurs correspondent à une même cellule. Par défaut, `pivot_wider()` crée une liste. Vous pouvez agréger avec `values_fn` :
+
+```{r demo-values-fn, exercise=TRUE}
+# Données avec doublons
+ventes_doublons <- tibble(
+  mois = c("Jan", "Jan", "Fev", "Fev"),
+  produit = c("A", "A", "B", "B"),
+  quantite = c(10, 12, 15, 18)
+)
+
+# Agréger par la somme
+ventes_doublons |>
+  pivot_wider(
+    names_from = mois,
+    values_from = quantite,
+    values_fn = sum  # Fonction d'agrégation
+  )
+```
+
+---
+
+## Section 4 : Quiz - pivot
+
+```{r quiz-pivot}
+quiz(
+  caption = "Testez vos connaissances sur les pivots",
+  
+  question("Quelle fonction transforme des données du format large au format long ?",
+    answer("pivot_longer()", correct = TRUE),
+    answer("pivot_wider()"),
+    answer("spread()"),
+    answer("gather()"),
+    allow_retry = TRUE
+  ),
+  
+  question("Dans pivot_longer(), le paramètre 'names_to' spécifie :",
+    answer("Le nom de la nouvelle colonne qui contiendra les anciens noms de colonnes", correct = TRUE),
+    answer("Le nom de la nouvelle colonne qui contiendra les valeurs"),
+    answer("Les colonnes à transformer"),
+    answer("Le préfixe à retirer des noms"),
+    allow_retry = TRUE
+  ),
+  
+  question("Quelle fonction transforme des données du format long au format large ?",
+    answer("pivot_wider()", correct = TRUE),
+    answer("pivot_longer()"),
+    answer("spread()"),
+    answer("gather()"),
+    allow_retry = TRUE
+  ),
+  
+  question("Dans pivot_wider(), 'names_from' indique :",
+    answer("La colonne dont les valeurs deviendront les noms des nouvelles colonnes", correct = TRUE),
+    answer("La colonne qui contient les valeurs à placer dans les cellules"),
+    answer("Le nom de la nouvelle colonne"),
+    answer("Les colonnes à exclure"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+## Section 5 : separate() - Séparer des colonnes
+
+### Pourquoi séparer ?
+
+Parfois, plusieurs informations sont mélangées dans une même colonne. Il faut les séparer !
+
+```{r demo-contacts, exercise=TRUE}
+# Nos contacts ont nom et prénom mélangés
+contacts
+```
+
+### La fonction separate_wider_delim()
+
+```{r demo-separate, exercise=TRUE}
+# Séparer nom_complet en nom et prénom
+contacts |>
+  separate_wider_delim(
+    cols = nom_complet,
+    delim = ", ",  # Le séparateur
+    names = c("nom", "prenom")  # Les nouveaux noms
+  )
+```
+
+### Exercice 3 : Séparer des colonnes
+
+Séparez la colonne `telephone` en trois colonnes : `zone1`, `zone2`, `zone3` :
+
+```{r ex3-separate, exercise=TRUE}
+contacts
+
+# Séparez telephone avec le délimiteur "-"
+
+
+
+
+```
+
+```{r ex3-separate-hint}
+# Utilisez separate_wider_delim()
+# Le délimiteur est "-"
+# Il y a 5 parties dans le numéro : 06-12-34-56-78
+contacts |>
+  separate_wider_delim(
+    cols = telephone,
+    delim = "-",
+    names = c("zone1", "zone2", "zone3", "zone4", "zone5")
+  )
+```
+
+```{r ex3-separate-solution}
+contacts |>
+  separate_wider_delim(
+    cols = telephone,
+    delim = "-",
+    names = c("zone1", "zone2", "zone3", "zone4", "zone5")
+  )
+```
+
+### Séparer avec une expression régulière
+
+```{r demo-separate-regex, exercise=TRUE}
+# Séparer email en identifiant et domaine
+contacts |>
+  separate_wider_delim(
+    cols = email,
+    delim = "@",
+    names = c("identifiant", "domaine")
+  )
+```
+
+### Trop ou pas assez de morceaux
+
+```{r demo-separate-too-many, exercise=TRUE}
+# Si trop de morceaux : mettre le reste dans la dernière colonne
+donnees <- tibble(
+  texte = c("un-deux-trois-quatre", "a-b")
+)
+
+donnees |>
+  separate_wider_delim(
+    cols = texte,
+    delim = "-",
+    names = c("premier", "reste"),
+    too_many = "merge"  # Fusionner le surplus dans la dernière colonne
+  )
+```
+
+---
+
+## Section 6 : unite() - Combiner des colonnes
+
+### La fonction unite()
+
+`unite()` fait l'inverse de `separate()` : elle combine plusieurs colonnes en une seule.
+
+```{r demo-unite, exercise=TRUE}
+# Recréer nom_complet à partir de nom et prénom
+contacts_separes <- contacts |>
+  separate_wider_delim(
+    cols = nom_complet,
+    delim = ", ",
+    names = c("nom", "prenom")
+  )
+
+contacts_separes |>
+  unite(
+    col = "nom_complet",  # Nom de la nouvelle colonne
+    nom, prenom,          # Colonnes à combiner
+    sep = " "             # Séparateur
+  )
+```
+
+### Exercice 4 : Combiner des colonnes
+
+Créez une colonne `contact_complet` qui combine nom, prenom et email avec " - " :
+
+```{r ex4-unite, exercise=TRUE}
+# D'abord, séparons nom_complet
+contacts_separes <- contacts |>
+  separate_wider_delim(
+    cols = nom_complet,
+    delim = ", ",
+    names = c("nom", "prenom")
+  )
+
+# Maintenant, combinez nom, prenom et email
+
+
+
+
+```
+
+```{r ex4-unite-hint}
+# unite(nom_nouvelle_colonne, col1, col2, col3, sep = "séparateur")
+contacts_separes |>
+  unite(
+    col = "contact_complet",
+    nom, prenom, email,
+    sep = " - "
+  )
+```
+
+```{r ex4-unite-solution}
+contacts_separes <- contacts |>
+  separate_wider_delim(
+    cols = nom_complet,
+    delim = ", ",
+    names = c("nom", "prenom")
+  )
+
+contacts_separes |>
+  unite(
+    col = "contact_complet",
+    nom, prenom, email,
+    sep = " - "
+  )
+```
+
+### Garder les colonnes originales
+
+```{r demo-unite-remove, exercise=TRUE}
+# Par défaut, unite() supprime les colonnes originales
+# Pour les garder : remove = FALSE
+contacts_separes |>
+  unite(
+    col = "nom_complet",
+    nom, prenom,
+    sep = " ",
+    remove = FALSE  # Garder nom et prenom
+  )
+```
+
+---
+
+## Section 7 : Gérer les valeurs manquantes
+
+### Supprimer les lignes avec NA
+
+```{r demo-drop-na, exercise=TRUE}
+# Données avec valeurs manquantes
+donnees_na <- tibble(
+  id = 1:5,
+  nom = c("Alice", "Bob", NA, "David", "Eve"),
+  age = c(25, NA, 30, 28, NA)
+)
+
+donnees_na
+
+# Supprimer toutes les lignes avec au moins un NA
+donnees_na |>
+  drop_na()
+
+# Supprimer seulement si NA dans colonne spécifique
+donnees_na |>
+  drop_na(nom)
+```
+
+### Remplacer les NA
+
+```{r demo-replace-na, exercise=TRUE}
+# Remplacer NA par une valeur
+donnees_na |>
+  replace_na(list(
+    nom = "Inconnu",
+    age = 0
+  ))
+```
+
+### Remplir les NA avec fill()
+
+```{r demo-fill, exercise=TRUE}
+# Données avec valeurs répétées implicitement
+mesures <- tibble(
+  date = c("2024-01-01", NA, NA, "2024-01-02", NA),
+  temperature = c(20, 21, 19, 22, 23)
+)
+
+mesures
+
+# Remplir vers le bas
+mesures |>
+  fill(date, .direction = "down")
+
+# Remplir vers le haut
+mesures |>
+  fill(date, .direction = "up")
+```
+
+---
+
+## Section 8 : Défi final
+
+### Mission complète : Nettoyage de données
+
+Vous recevez des données de ventes par trimestre. Nettoyez-les et analysez-les !
+
+```{r defi-final, exercise=TRUE, exercise.lines=25}
+# Données brutes
+ventes_brutes <- tibble(
+  produit_categorie = c("Laptop-Informatique", "Mouse-Accessoire", "Keyboard-Accessoire"),
+  T1_2024 = c(50, 200, 120),
+  T2_2024 = c(65, 180, 135),
+  T3_2024 = c(70, 210, 140),
+  T4_2024 = c(80, 195, 150)
+)
+
+ventes_brutes
+
+# Mission :
+# 1. Séparez produit_categorie en deux colonnes
+# 2. Transformez en format long (trimestre, quantite)
+# 3. Retirez le préfixe "T" des trimestres
+# 4. Calculez la quantité totale par produit
+# 5. Affichez le résultat trié par total décroissant
+
+
+
+
+
+
+
+
+
+
+
+```
+
+```{r defi-final-hint-1}
+# Étape 1 : Séparer
+ventes_brutes |>
+  separate_wider_delim(
+    cols = produit_categorie,
+    delim = "-",
+    names = c("produit", "categorie")
+  )
+```
+
+```{r defi-final-hint-2}
+# Étapes 1-3 : Séparer + Pivot + Nettoyer
+ventes_brutes |>
+  separate_wider_delim(
+    cols = produit_categorie,
+    delim = "-",
+    names = c("produit", "categorie")
+  ) |>
+  pivot_longer(
+    cols = starts_with("T"),
+    names_to = "trimestre",
+    values_to = "quantite",
+    names_prefix = "T"
+  )
+```
+
+```{r defi-final-solution}
+ventes_brutes |>
+  # 1. Séparer produit et catégorie
+  separate_wider_delim(
+    cols = produit_categorie,
+    delim = "-",
+    names = c("produit", "categorie")
+  ) |>
+  # 2-3. Pivot long et nettoyage
+  pivot_longer(
+    cols = starts_with("T"),
+    names_to = "trimestre",
+    values_to = "quantite",
+    names_prefix = "T"
+  ) |>
+  # 4-5. Calcul et tri
+  group_by(produit) |>
+  summarise(total = sum(quantite)) |>
+  arrange(desc(total))
+```
+
+---
+
+## Récapitulatif
+
+### Ce que vous avez appris
+
+- ✅ **Comprendre** les formats long et large
+- ✅ **Transformer large → long** avec `pivot_longer()`
+- ✅ **Transformer long → large** avec `pivot_wider()`
+- ✅ **Séparer des colonnes** avec `separate_wider_delim()`
+- ✅ **Combiner des colonnes** avec `unite()`
+- ✅ **Gérer les NA** avec `drop_na()`, `replace_na()`, `fill()`
+
+### Les fonctions clés
+
+```{r echo=TRUE, eval=FALSE}
+# FORMAT LONG ↔ LARGE
+pivot_longer(cols, names_to, values_to)
+pivot_wider(names_from, values_from)
+
+# SÉPARER / COMBINER
+separate_wider_delim(cols, delim, names)
+unite(col, ..., sep)
+
+# VALEURS MANQUANTES
+drop_na(colonnes)
+replace_na(list(col = valeur))
+fill(col, .direction = "down")
+```
+
+### Pour aller plus loin
+
+**Tutoriel suivant :** "07 - Manipulation de texte avec stringr"
+
+**Ressources :**
+
+- [R for Data Science - Tidy Data](https://r4ds.hadley.nz/data-tidy.html)
+- [Documentation tidyr](https://tidyr.tidyverse.org/)
+- [Cheatsheet tidyr](https://github.com/rstudio/cheatsheets/blob/main/tidyr.pdf)
+
+### Aide-mémoire complet
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# PIVOT LONGER (large → long)
+donnees |>
+  pivot_longer(
+    cols = c(col1, col2) ou -id ou starts_with("prefix"),
+    names_to = "nom_colonne_noms",
+    values_to = "nom_colonne_valeurs",
+    names_prefix = "prefix_a_retirer"
+  )
+
+# PIVOT WIDER (long → large)
+donnees |>
+  pivot_wider(
+    names_from = colonne_noms,
+    values_from = colonne_valeurs,
+    values_fn = sum  # si doublons
+  )
+
+# SÉPARER
+donnees |>
+  separate_wider_delim(
+    cols = colonne,
+    delim = ",",
+    names = c("partie1", "partie2")
+  )
+
+# COMBINER
+donnees |>
+  unite(
+    col = "nouvelle",
+    col1, col2,
+    sep = "_",
+    remove = FALSE  # garder originales
+  )
+
+# VALEURS MANQUANTES
+drop_na()              # Supprimer lignes avec NA
+drop_na(col)           # Supprimer si NA dans col
+replace_na(list(col = val))  # Remplacer NA
+fill(col)              # Remplir NA par propagation
+```
+
+---
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

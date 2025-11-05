@@ -1,0 +1,269 @@
+---
+title: "Titre du tutoriel"
+subtitle: "Sous-titre optionnel"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hints: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Description du tutoriel pour le catalogue"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(gradethis)  # Pour la correction automatique (optionnel)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Configuration gradethis (si utilisé)
+gradethis::gradethis_setup(
+  pass = "Excellent travail !",
+  fail = "Pas tout à fait. Réessayez !",
+  code_correct = "Code correct !",
+  code_incorrect = "Le code n'est pas tout à fait correct."
+)
+
+# Chargement des données d'exemple (si nécessaire)
+# data <- read_csv("data/exemple.csv")
+```
+
+```{r logo, echo=FALSE, out.width="100%"}
+# Logo ou bannière d'en-tête
+# htmltools::img(src = "images/logo.png", 
+#                alt = "Logo",
+#                style = "max-width: 200px; display: block; margin: 20px auto;")
+```
+
+## Bienvenue {data-progressive=TRUE}
+
+### Introduction
+
+Texte d'introduction au tutoriel.
+
+**Objectifs d'apprentissage :**
+
+- Objectif 1
+- Objectif 2
+- Objectif 3
+
+**Prérequis :**
+
+- Prérequis 1
+- Prérequis 2
+
+**Durée estimée :** XX minutes
+
+---
+
+## Section 1 : Titre de la section
+
+### Concept théorique
+
+Explication du concept avec exemples.
+
+```{r demo-exemple, exercise=TRUE, exercise.lines=5}
+# Code de démonstration
+exemple <- c(1, 2, 3, 4, 5)
+exemple
+```
+
+### Exercice pratique
+
+À vous de jouer ! Complétez le code ci-dessous.
+
+```{r exercice-1, exercise=TRUE, exercise.lines=8}
+# Votre code ici
+
+
+```
+
+```{r exercice-1-hint-1}
+# Indice 1 : Utilisez la fonction appropriée
+```
+
+```{r exercice-1-hint-2}
+# Indice 2 : Plus détaillé
+# Exemple de structure
+```
+
+```{r exercice-1-solution}
+# Solution complète
+resultat <- c(1, 2, 3)
+resultat
+```
+
+```{r exercice-1-check}
+# Vérification automatique avec gradethis (optionnel)
+# grade_this_code()
+```
+
+---
+
+## Section 2 : Quiz
+
+Testez vos connaissances !
+
+```{r quiz-1}
+quiz(
+  caption = "Quiz de compréhension",
+  question("Question à choix unique ?",
+    answer("Réponse incorrecte 1"),
+    answer("Réponse correcte", correct = TRUE, message = "Bravo ! Explication supplémentaire."),
+    answer("Réponse incorrecte 2"),
+    answer("Réponse incorrecte 3"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("Question à choix multiples (sélectionnez toutes les bonnes réponses) ?",
+    answer("Réponse correcte 1", correct = TRUE),
+    answer("Réponse incorrecte"),
+    answer("Réponse correcte 2", correct = TRUE),
+    answer("Réponse incorrecte 2"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question_text(
+    "Question à réponse courte : Quel est le nom de la fonction ?",
+    answer("mean", correct = TRUE),
+    answer("mean()", correct = TRUE),
+    allow_retry = TRUE,
+    trim = TRUE,
+    incorrect = "Pas tout à fait. Pensez à la fonction de calcul de moyenne."
+  )
+)
+```
+
+---
+
+## Section 3 : Exercice guidé
+
+### Étape 1
+
+Instructions pour l'étape 1.
+
+```{r exercice-guide-1, exercise=TRUE, exercise.lines=6}
+# Étape 1
+
+
+```
+
+```{r exercice-guide-1-solution}
+# Solution étape 1
+```
+
+### Étape 2
+
+Instructions pour l'étape 2.
+
+```{r exercice-guide-2, exercise=TRUE, exercise.lines=6, exercise.setup="exercice-guide-1"}
+# Étape 2 (utilise le résultat de l'étape 1)
+
+
+```
+
+```{r exercice-guide-2-solution}
+# Solution étape 2
+```
+
+---
+
+## Défi final
+
+Mettez en pratique tout ce que vous avez appris !
+
+```{r defi-final, exercise=TRUE, exercise.lines=15}
+# Défi : Résolvez le problème complet
+# Consigne détaillée
+
+
+
+
+
+
+
+
+```
+
+```{r defi-final-hint-1}
+# Indice 1
+```
+
+```{r defi-final-hint-2}
+# Indice 2
+```
+
+```{r defi-final-hint-3}
+# Indice 3 (dernier indice avant la solution)
+```
+
+```{r defi-final-solution}
+# Solution complète du défi
+```
+
+---
+
+## Récapitulatif
+
+### Ce que vous avez appris
+
+- ✅ Point clé 1
+- ✅ Point clé 2
+- ✅ Point clé 3
+
+### Pour aller plus loin
+
+Ressources complémentaires :
+
+- [Lien vers documentation](https://url.com)
+- Tutoriel suivant : "Nom du tutoriel"
+
+### Aide-mémoire
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# Résumé des commandes principales
+fonction1()
+fonction2()
+fonction3()
+```
+
+---
+
+## Ressources
+
+### Documentation
+
+- [R for Data Science](https://r4ds.hadley.nz/)
+- [Documentation tidyverse](https://www.tidyverse.org/)
+
+### Crédits
+
+**Auteur :** Votre nom  
+**Date :** `r Sys.Date()`  
+**Version :** 1.0
+
+---
+
+<div class="footer">
+  <p>© 2025 - Intechmer - Statistiques avec R</p>
+</div>

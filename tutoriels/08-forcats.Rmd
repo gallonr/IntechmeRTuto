@@ -1,0 +1,597 @@
+---
+title: "Manipulation de facteurs avec forcats"
+subtitle: "Maîtriser les variables catégorielles"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hints: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Réordonner, recoder et regrouper vos facteurs avec forcats"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Données d'exemple
+enquete <- tibble(
+  id = 1:20,
+  satisfaction = factor(
+    c("Très satisfait", "Satisfait", "Neutre", "Insatisfait", "Très satisfait",
+      "Satisfait", "Très satisfait", "Neutre", "Satisfait", "Très satisfait",
+      "Satisfait", "Neutre", "Insatisfait", "Très satisfait", "Satisfait",
+      "Très satisfait", "Neutre", "Satisfait", "Très insatisfait", "Satisfait"),
+    levels = c("Très insatisfait", "Insatisfait", "Neutre", "Satisfait", "Très satisfait")
+  ),
+  age_groupe = factor(
+    c("18-25", "26-35", "36-45", "46-55", "18-25", "26-35", "36-45", "18-25",
+      "26-35", "18-25", "26-35", "36-45", "46-55", "56+", "18-25", "26-35",
+      "36-45", "18-25", "26-35", "18-25"),
+    levels = c("18-25", "26-35", "36-45", "46-55", "56+")
+  )
+)
+
+ventes <- tibble(
+  mois = factor(
+    c("Jan", "Fev", "Mar", "Avr", "Mai", "Jui", "Jui", "Aou", "Sep", "Oct", "Nov", "Dec"),
+    levels = c("Jan", "Fev", "Mar", "Avr", "Mai", "Jui", "Jui", "Aou", "Sep", "Oct", "Nov", "Dec")
+  ),
+  montant = c(15000, 18000, 22000, 25000, 28000, 30000, 32000, 31000, 29000, 27000, 24000, 35000)
+)
+
+produits_ventes <- tibble(
+  produit = c("Ordinateur", "Souris", "Clavier", "Écran", "USB", 
+              "Casque", "Webcam", "Imprimante", "Scanner", "Tablette",
+              "Cable HDMI", "Adaptateur", "Souris", "Clavier", "Ordinateur"),
+  quantite = c(150, 2000, 800, 300, 1500, 450, 200, 180, 90, 120, 3000, 500, 1800, 750, 140)
+) |>
+  group_by(produit) |>
+  summarise(total = sum(quantite)) |>
+  mutate(produit = factor(produit))
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue {data-progressive=TRUE}
+
+### Introduction
+
+Bienvenue dans ce tutoriel sur la **manipulation de facteurs avec forcats** !
+
+Les **facteurs** sont la façon dont R représente les variables catégorielles (sexe, catégorie professionnelle, niveau d'éducation, etc.). Ils sont essentiels pour les analyses statistiques et les graphiques, mais peuvent être délicats à manipuler. Le package `forcats` (anagramme de "factors") rend ce travail beaucoup plus simple !
+
+**Objectifs d'apprentissage :**
+
+- ✅ Comprendre ce qu'est un **facteur** et pourquoi c'est utile
+- ✅ Réordonner les niveaux avec `fct_relevel()`, `fct_reorder()`, `fct_infreq()`
+- ✅ Recoder les niveaux avec `fct_recode()`
+- ✅ Regrouper les niveaux rares avec `fct_lump()`
+- ✅ Inverser l'ordre avec `fct_rev()`
+- ✅ Combiner et modifier des facteurs
+
+**Prérequis :**
+
+- Connaître dplyr et ggplot2
+- Bases de R
+
+**Durée estimée :** 45 minutes
+
+---
+
+## Section 1 : Qu'est-ce qu'un facteur ?
+
+### Créer un facteur
+
+Un facteur est un vecteur qui ne peut contenir que des valeurs prédéfinies (les **niveaux**).
+
+```{r demo-factor, exercise=TRUE}
+# Créer un facteur simple
+couleurs <- factor(c("rouge", "bleu", "rouge", "vert", "bleu"))
+couleurs
+
+# Voir les niveaux
+levels(couleurs)
+```
+
+### Pourquoi utiliser des facteurs ?
+
+**Avantages :**
+- ✅ Garantit que les valeurs sont valides
+- ✅ Contrôle l'ordre d'affichage (graphiques, tableaux)
+- ✅ Optimise la mémoire
+- ✅ Nécessaire pour certaines analyses statistiques
+
+```{r demo-factor-order, exercise=TRUE}
+# Sans facteur : ordre alphabétique
+satisfaction_char <- c("Satisfait", "Insatisfait", "Neutre", "Très satisfait")
+sort(satisfaction_char)
+
+# Avec facteur : ordre logique
+satisfaction_fact <- factor(
+  satisfaction_char,
+  levels = c("Insatisfait", "Neutre", "Satisfait", "Très satisfait")
+)
+sort(satisfaction_fact)
+```
+
+### Exercice 1 : Créer un facteur
+
+Créez un facteur pour les jours de la semaine dans le bon ordre :
+
+```{r ex1-factor, exercise=TRUE}
+jours_desordre <- c("Mercredi", "Lundi", "Vendredi", "Mardi")
+
+# Créez un facteur avec l'ordre correct
+jours_fact <- factor(
+  jours_desordre,
+  levels = c(_____)
+)
+
+sort(jours_fact)
+```
+
+```{r ex1-factor-hint}
+# L'ordre des jours : Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, Dimanche
+levels = c("Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche")
+```
+
+```{r ex1-factor-solution}
+jours_desordre <- c("Mercredi", "Lundi", "Vendredi", "Mardi")
+
+jours_fact <- factor(
+  jours_desordre,
+  levels = c("Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche")
+)
+
+sort(jours_fact)
+```
+
+---
+
+## Section 2 : Réordonner les niveaux
+
+### fct_relevel() - Ordre manuel
+
+`fct_relevel()` permet de changer l'ordre des niveaux manuellement.
+
+```{r demo-relevel, exercise=TRUE}
+enquete |>
+  count(satisfaction)
+
+# Mettre "Neutre" en premier
+enquete |>
+  mutate(satisfaction = fct_relevel(satisfaction, "Neutre")) |>
+  count(satisfaction)
+```
+
+### fct_infreq() - Ordre par fréquence
+
+`fct_infreq()` ordonne par fréquence décroissante (le plus fréquent en premier).
+
+```{r demo-infreq, exercise=TRUE}
+enquete |>
+  mutate(satisfaction = fct_infreq(satisfaction)) |>
+  count(satisfaction)
+```
+
+💡 Très utile pour les graphiques en barres !
+
+### Exercice 2 : Réordonner par fréquence
+
+Réordonnez les tranches d'âge par fréquence et affichez le compte :
+
+```{r ex2-infreq, exercise=TRUE}
+enquete |>
+  mutate(age_groupe = _____) |>
+  count(age_groupe)
+```
+
+```{r ex2-infreq-solution}
+enquete |>
+  mutate(age_groupe = fct_infreq(age_groupe)) |>
+  count(age_groupe)
+```
+
+### fct_reorder() - Ordre par une autre variable
+
+`fct_reorder()` ordonne les niveaux selon les valeurs d'une autre variable.
+
+```{r demo-reorder, exercise=TRUE}
+# Ordonner les produits par quantité totale
+produits_ventes |>
+  mutate(produit = fct_reorder(produit, total)) |>
+  ggplot(aes(x = total, y = produit)) +
+  geom_col() +
+  labs(title = "Ventes par produit (ordonné)")
+```
+
+💡 Indispensable pour des graphiques clairs !
+
+---
+
+## Section 3 : fct_rev() - Inverser l'ordre
+
+```{r demo-rev, exercise=TRUE}
+enquete |>
+  mutate(satisfaction = fct_rev(satisfaction)) |>
+  count(satisfaction)
+```
+
+### Combiner reorder et rev
+
+```{r demo-reorder-rev, exercise=TRUE}
+# Produits ordonnés par total décroissant
+produits_ventes |>
+  mutate(produit = fct_reorder(produit, total) |> fct_rev()) |>
+  ggplot(aes(x = total, y = produit)) +
+  geom_col()
+```
+
+---
+
+## Section 4 : Quiz - Réordonnancement
+
+```{r quiz-reorder}
+quiz(
+  caption = "Testez vos connaissances",
+  
+  question("Quelle fonction ordonne les niveaux par fréquence ?",
+    answer("fct_infreq()", correct = TRUE),
+    answer("fct_reorder()"),
+    answer("fct_relevel()"),
+    answer("fct_count()"),
+    allow_retry = TRUE
+  ),
+  
+  question("Comment ordonner un facteur selon les valeurs d'une variable numérique ?",
+    answer("fct_reorder(facteur, variable_numerique)", correct = TRUE),
+    answer("fct_infreq(facteur)"),
+    answer("fct_relevel(facteur, variable_numerique)"),
+    answer("arrange(facteur, variable_numerique)"),
+    allow_retry = TRUE
+  ),
+  
+  question("Quelle fonction inverse l'ordre des niveaux ?",
+    answer("fct_rev()", correct = TRUE),
+    answer("fct_reverse()"),
+    answer("fct_invert()"),
+    answer("rev()"),
+    allow_retry = TRUE
+  ),
+  
+  question("Pourquoi utiliser des facteurs plutôt que des chaînes de caractères ?",
+    answer("Pour contrôler l'ordre d'affichage", correct = TRUE),
+    answer("Pour garantir des valeurs valides", correct = TRUE),
+    answer("Pour optimiser la mémoire", correct = TRUE),
+    answer("Parce que c'est obligatoire en R"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Section 5 : Recoder les niveaux
+
+### fct_recode() - Renommer les niveaux
+
+`fct_recode()` permet de renommer des niveaux.
+
+```{r demo-recode, exercise=TRUE}
+enquete |>
+  mutate(
+    satisfaction_fr = fct_recode(satisfaction,
+      "Très insatisfait" = "Très insatisfait",  # Peut rester identique
+      "Pas satisfait" = "Insatisfait",          # Renommer
+      "Neutre" = "Neutre",
+      "Content" = "Satisfait",
+      "Très content" = "Très satisfait"
+    )
+  ) |>
+  count(satisfaction_fr)
+```
+
+### Exercice 3 : Recoder
+
+Simplifiez les niveaux de satisfaction en seulement 3 catégories :
+
+```{r ex3-recode, exercise=TRUE}
+enquete |>
+  mutate(
+    satisfaction_simple = fct_recode(satisfaction,
+      "Négatif" = "Très insatisfait",
+      "Négatif" = "Insatisfait",
+      _____ = _____,
+      _____ = _____,
+      _____ = _____
+    )
+  ) |>
+  count(satisfaction_simple)
+```
+
+```{r ex3-recode-hint}
+# Regroupez "Satisfait" et "Très satisfait" en "Positif"
+# Gardez "Neutre"
+```
+
+```{r ex3-recode-solution}
+enquete |>
+  mutate(
+    satisfaction_simple = fct_recode(satisfaction,
+      "Négatif" = "Très insatisfait",
+      "Négatif" = "Insatisfait",
+      "Neutre" = "Neutre",
+      "Positif" = "Satisfait",
+      "Positif" = "Très satisfait"
+    )
+  ) |>
+  count(satisfaction_simple)
+```
+
+---
+
+## Section 6 : Regrouper les niveaux rares
+
+### fct_lump() - Regrouper en "Other"
+
+`fct_lump()` regroupe les niveaux les moins fréquents dans une catégorie "Other".
+
+```{r demo-lump, exercise=TRUE}
+# Garder les 3 produits les plus vendus
+produits_ventes |>
+  mutate(produit_groupe = fct_lump(produit, n = 3, w = total)) |>
+  count(produit_groupe, wt = total, sort = TRUE)
+```
+
+### fct_lump_min() - Seuil minimum
+
+```{r demo-lump-min, exercise=TRUE}
+# Garder seulement les produits avec > 500 ventes
+produits_ventes |>
+  mutate(produit_groupe = fct_lump_min(produit, min = 500, w = total)) |>
+  count(produit_groupe, wt = total, sort = TRUE)
+```
+
+### Exercice 4 : Regrouper
+
+Gardez les 2 tranches d'âge les plus fréquentes, regroupez les autres en "Autres" :
+
+```{r ex4-lump, exercise=TRUE}
+enquete |>
+  mutate(age_simplifie = fct_lump(age_groupe, n = _____)) |>
+  count(age_simplifie)
+```
+
+```{r ex4-lump-solution}
+enquete |>
+  mutate(age_simplifie = fct_lump(age_groupe, n = 2)) |>
+  count(age_simplifie)
+```
+
+### Renommer "Other"
+
+```{r demo-lump-other, exercise=TRUE}
+produits_ventes |>
+  mutate(
+    produit_groupe = fct_lump(produit, n = 3, w = total),
+    produit_groupe = fct_recode(produit_groupe, "Autres produits" = "Other")
+  ) |>
+  count(produit_groupe, wt = total)
+```
+
+---
+
+## Section 7 : Autres fonctions utiles
+
+### fct_drop() - Supprimer les niveaux non utilisés
+
+```{r demo-drop, exercise=TRUE}
+# Après un filtre, des niveaux peuvent rester vides
+satisfaction_filtre <- enquete |>
+  filter(satisfaction %in% c("Satisfait", "Très satisfait")) |>
+  pull(satisfaction)
+
+levels(satisfaction_filtre)  # Tous les niveaux sont là !
+
+# Supprimer les niveaux non utilisés
+satisfaction_filtre |> fct_drop() |> levels()
+```
+
+### fct_expand() - Ajouter des niveaux
+
+```{r demo-expand, exercise=TRUE}
+# Ajouter un niveau qui n'existe pas encore
+jours <- factor(c("Lundi", "Mardi", "Lundi"))
+jours_etendus <- fct_expand(jours, "Mercredi", "Jeudi", "Vendredi")
+levels(jours_etendus)
+```
+
+### fct_collapse() - Regrouper spécifiquement
+
+```{r demo-collapse, exercise=TRUE}
+enquete |>
+  mutate(
+    sentiment = fct_collapse(satisfaction,
+      Négatif = c("Très insatisfait", "Insatisfait"),
+      Neutre = "Neutre",
+      Positif = c("Satisfait", "Très satisfait")
+    )
+  ) |>
+  count(sentiment)
+```
+
+---
+
+## Section 8 : Défi final
+
+### Analyse complète des données d'enquête
+
+```{r defi-final, exercise=TRUE, exercise.lines=25}
+enquete
+
+# Mission :
+# 1. Simplifiez 'satisfaction' en 3 niveaux : Négatif, Neutre, Positif
+# 2. Regroupez les tranches d'âge : gardez les 2 plus fréquentes
+# 3. Comptez les combinaisons âge x satisfaction
+# 4. Ordonnez le résultat par fréquence décroissante
+# 5. Créez un graphique en barres
+
+
+
+
+
+
+```
+
+```{r defi-final-hint-1}
+# Étape 1 : Recoder satisfaction
+enquete |>
+  mutate(
+    satisfaction = fct_collapse(satisfaction,
+      Négatif = c("Très insatisfait", "Insatisfait"),
+      Neutre = "Neutre",
+      Positif = c("Satisfait", "Très satisfait")
+    )
+  )
+```
+
+```{r defi-final-hint-2}
+# Étapes 1-4
+enquete |>
+  mutate(
+    satisfaction = fct_collapse(satisfaction,
+      Négatif = c("Très insatisfait", "Insatisfait"),
+      Neutre = "Neutre",
+      Positif = c("Satisfait", "Très satisfait")
+    ),
+    age_groupe = fct_lump(age_groupe, n = 2)
+  ) |>
+  count(age_groupe, satisfaction) |>
+  arrange(desc(n))
+```
+
+```{r defi-final-solution}
+enquete_nettoyee <- enquete |>
+  mutate(
+    # 1. Simplifier satisfaction
+    satisfaction = fct_collapse(satisfaction,
+      Négatif = c("Très insatisfait", "Insatisfait"),
+      Neutre = "Neutre",
+      Positif = c("Satisfait", "Très satisfait")
+    ),
+    # 2. Regrouper âges
+    age_groupe = fct_lump(age_groupe, n = 2) |>
+                 fct_recode("Autres" = "Other")
+  )
+
+# 3-4. Compter et trier
+resultats <- enquete_nettoyee |>
+  count(age_groupe, satisfaction) |>
+  arrange(desc(n))
+
+resultats
+
+# 5. Graphique
+enquete_nettoyee |>
+  ggplot(aes(x = age_groupe, fill = satisfaction)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Satisfaction par tranche d'âge",
+    x = "Tranche d'âge",
+    y = "Nombre de répondants",
+    fill = "Satisfaction"
+  ) +
+  theme_minimal()
+```
+
+---
+
+## Récapitulatif
+
+### Ce que vous avez appris
+
+- ✅ **Créer et comprendre** les facteurs
+- ✅ **Réordonner** avec `fct_relevel()`, `fct_reorder()`, `fct_infreq()`, `fct_rev()`
+- ✅ **Recoder** avec `fct_recode()` et `fct_collapse()`
+- ✅ **Regrouper** avec `fct_lump()` et variantes
+- ✅ **Nettoyer** avec `fct_drop()`
+
+### Pour aller plus loin
+
+**Tutoriel suivant :** "09 - Dates et temps avec lubridate"
+
+**Ressources :**
+
+- [R for Data Science - Factors](https://r4ds.hadley.nz/factors.html)
+- [Documentation forcats](https://forcats.tidyverse.org/)
+- [Cheatsheet forcats](https://github.com/rstudio/cheatsheets/blob/main/factors.pdf)
+
+### Aide-mémoire
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# CRÉER UN FACTEUR
+factor(vecteur, levels = c("ordre", "souhaité"))
+
+# RÉORDONNER
+fct_relevel(f, "niveau1", "niveau2")  # Manuel
+fct_infreq(f)                         # Par fréquence
+fct_reorder(f, x)                     # Par autre variable
+fct_rev(f)                            # Inverser
+
+# RECODER
+fct_recode(f,
+  "nouveau1" = "ancien1",
+  "nouveau2" = "ancien2"
+)
+
+fct_collapse(f,
+  "groupe1" = c("a", "b"),
+  "groupe2" = c("c", "d")
+)
+
+# REGROUPER
+fct_lump(f, n = 5)           # Garder top 5
+fct_lump_min(f, min = 100)   # Seuil minimum
+fct_lump_prop(f, prop = 0.1) # Seuil proportionnel
+
+# NETTOYER
+fct_drop(f)                  # Supprimer niveaux non utilisés
+fct_expand(f, "nouveau")     # Ajouter niveau
+
+# COMBINER
+fct_c(f1, f2)               # Combiner facteurs
+fct_unify(list(f1, f2))     # Unifier niveaux
+```
+
+---
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

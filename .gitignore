@@ -1,0 +1,58 @@
+# ============================================================================
+# GITIGNORE - Tutoriels learnr
+# ============================================================================
+
+# Fichiers R et RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Fichiers de cache learnr
+*_cache/
+*_files/
+.tutorial/
+
+# Fichiers HTML générés
+*.html
+!README.html
+
+# Fichiers temporaires
+*.tmp
+*.bak
+*~
+
+# Dossiers de packages
+packrat/
+renv/
+
+# Données sensibles (à adapter selon vos besoins)
+data/private/
+data/confidential/
+
+# Fichiers de configuration personnels
+.Renviron
+.Rprofile
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Fichiers Office temporaires
+~$*.xlsx
+~$*.docx
+~$*.pptx
+
+# Images temporaires (gardez vos logos)
+# images/*.tmp
+
+# Ne pas ignorer ces fichiers importants
+!.gitignore
+!README.md
+!template_tutorial.Rmd
+!css/custom.css

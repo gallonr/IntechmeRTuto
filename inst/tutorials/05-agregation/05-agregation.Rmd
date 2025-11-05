@@ -1,0 +1,202 @@
+---
+title: "Agrégation et statistiques avec dplyr"
+subtitle: "Résumer vos données avec group_by() et summarise()"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "Maîtriser group_by(), summarise() et count() pour analyser vos données"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+ventes <- tibble(
+  mois = rep(c("Janvier", "Février", "Mars"), each = 3),
+  produit = rep(c("Ordinateur", "Souris", "Clavier"), 3),
+  quantite = c(5, 20, 12, 8, 25, 15, 6, 18, 10),
+  prix_unitaire = c(899, 12, 45, 899, 12, 45, 899, 12, 45)
+)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Grouper des données avec `group_by()`
+- ✅ Calculer des statistiques avec `summarise()`
+- ✅ Compter avec `count()` et `n()`
+- ✅ Utiliser `across()` pour des résumés multiples
+
+**Durée :** 60 minutes
+
+---
+
+## Section 1 : group_by()
+
+### Grouper les données
+
+```{r demo-group, exercise=TRUE}
+ventes |>
+  group_by(produit)
+```
+
+---
+
+## Section 2 : summarise()
+
+### Calculer des statistiques
+
+```{r demo-summarise, exercise=TRUE}
+ventes |>
+  group_by(produit) |>
+  summarise(
+    quantite_totale = sum(quantite),
+    quantite_moyenne = mean(quantite)
+  )
+```
+
+### Exercice 1
+
+Calculez le prix moyen et total par mois :
+
+```{r ex1-summarise, exercise=TRUE}
+ventes |>
+  group_by(mois) |>
+  summarise(_____)
+```
+
+```{r ex1-summarise-solution}
+ventes |>
+  group_by(mois) |>
+  summarise(
+    prix_moyen = mean(prix_unitaire),
+    prix_total = sum(prix_unitaire)
+  )
+```
+
+---
+
+## Section 3 : Fonctions statistiques
+
+### Fonctions courantes
+
+```{r demo-fonctions, exercise=TRUE}
+ventes |>
+  group_by(produit) |>
+  summarise(
+    total = sum(quantite),
+    moyenne = mean(quantite),
+    mediane = median(quantite),
+    minimum = min(quantite),
+    maximum = max(quantite),
+    ecart_type = sd(quantite),
+    n_obs = n()
+  )
+```
+
+---
+
+## Section 4 : count()
+
+### Compter les observations
+
+```{r demo-count, exercise=TRUE}
+ventes |>
+  count(produit)
+
+# Équivalent à :
+ventes |>
+  group_by(produit) |>
+  summarise(n = n())
+```
+
+### Exercice 2
+
+Comptez le nombre de ventes par mois :
+
+```{r ex2-count, exercise=TRUE}
+ventes |>
+  count(_____)
+```
+
+```{r ex2-count-solution}
+ventes |>
+  count(mois)
+```
+
+---
+
+## Section 5 : across()
+
+### Résumés multiples
+
+```{r demo-across, exercise=TRUE}
+ventes |>
+  group_by(produit) |>
+  summarise(across(c(quantite, prix_unitaire), 
+                   list(moyenne = mean, total = sum)))
+```
+
+---
+
+## Défi final
+
+Analysez les ventes :
+1. Groupez par produit
+2. Calculez : total vendu, quantité moyenne, nombre de ventes
+3. Triez par total décroissant
+
+```{r defi-final, exercise=TRUE, exercise.lines=10}
+ventes |>
+  # Votre code
+
+
+```
+
+```{r defi-final-solution}
+ventes |>
+  group_by(produit) |>
+  summarise(
+    total_vendu = sum(quantite * prix_unitaire),
+    quantite_moyenne = mean(quantite),
+    nb_ventes = n()
+  ) |>
+  arrange(desc(total_vendu))
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# GROUPER
+group_by(colonne)
+ungroup()
+
+# RÉSUMER
+summarise(
+  moyenne = mean(x),
+  total = sum(x),
+  n = n()
+)
+
+# COMPTER
+count(colonne)
+
+# RÉSUMÉS MULTIPLES
+summarise(across(cols, list(fn1, fn2)))
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

@@ -1,0 +1,583 @@
+---
+title: "Cartographie avec R"
+subtitle: "Visualiser des données spatiales"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "sf, ggplot2 + geom_sf, cartes thématiques et projections"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(sf)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Créer des données spatiales exemple
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Comprendre les **objets spatiaux** avec `sf`
+- ✅ Créer des **cartes simples** avec `geom_sf()`
+- ✅ Gérer les **systèmes de projection**
+- ✅ Créer des **cartes thématiques**
+- ✅ Combiner **données spatiales et non-spatiales**
+
+**Durée :** 60 minutes
+
+---
+
+## Section 1 : Introduction aux données spatiales
+
+### Le package sf (Simple Features)
+
+`sf` permet de manipuler des données géographiques dans R.
+
+```{r demo-sf-intro, exercise=TRUE}
+# Charger sf
+library(sf)
+
+# Créer un objet spatial point
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)  # WGS84
+
+locations_sf
+class(locations_sf)
+```
+
+### Structure d'un objet sf
+
+```{r demo-sf-structure, exercise=TRUE}
+# Voir la géométrie
+st_geometry(locations_sf)
+
+# Voir les coordonnées
+st_coordinates(locations_sf)
+```
+
+### Exercice 1 : Créer un objet sf
+
+Créez un objet sf avec ces villes côtières :
+
+```{r ex1-sf, exercise=TRUE}
+villes <- tibble(
+  nom = c("Cherbourg", "Brest", "Nantes"),
+  lon = c(-1.62, -4.49, -1.55),
+  lat = c(49.64, 48.39, 47.22)
+)
+
+villes_sf <- st_as_sf(villes, 
+                       coords = c(_____, _____),
+                       crs = 4326)
+villes_sf
+```
+
+```{r ex1-sf-solution}
+villes <- tibble(
+  nom = c("Cherbourg", "Brest", "Nantes"),
+  lon = c(-1.62, -4.49, -1.55),
+  lat = c(49.64, 48.39, 47.22)
+)
+
+villes_sf <- st_as_sf(villes, 
+                       coords = c("lon", "lat"),
+                       crs = 4326)
+villes_sf
+st_geometry(villes_sf)
+```
+
+---
+
+## Section 2 : Cartographie de base avec geom_sf()
+
+### Carte simple
+
+```{r demo-geom-sf, exercise=TRUE}
+# Carte des îles Palmer
+ggplot(data = locations_sf) +
+  geom_sf(aes(size = n_penguins), color = "steelblue", alpha = 0.7) +
+  labs(title = "Localisation des colonies de manchots",
+       size = "Nombre") +
+  theme_minimal()
+```
+
+### Ajouter des étiquettes
+
+```{r demo-labels, exercise=TRUE}
+ggplot(data = locations_sf) +
+  geom_sf(aes(size = n_penguins), color = "coral") +
+  geom_sf_text(aes(label = island), nudge_y = 0.05, fontface = "bold") +
+  labs(title = "Îles Palmer - Antarctique") +
+  theme_minimal()
+```
+
+### Exercice 2 : Carte avec symboles
+
+Créez une carte des villes avec taille proportionnelle à une variable :
+
+```{r ex2-map-size, exercise=TRUE}
+villes <- tibble(
+  nom = c("Cherbourg", "Brest", "Nantes"),
+  lon = c(-1.62, -4.49, -1.55),
+  lat = c(49.64, 48.39, 47.22),
+  population = c(80000, 140000, 320000)
+)
+
+villes_sf <- st_as_sf(villes, coords = c("lon", "lat"), crs = 4326)
+
+ggplot(villes_sf) +
+  geom_sf(aes(size = _____), color = "red", alpha = 0.6) +
+  geom_sf_text(aes(label = _____), nudge_y = 0.1)
+```
+
+```{r ex2-map-size-solution}
+villes <- tibble(
+  nom = c("Cherbourg", "Brest", "Nantes"),
+  lon = c(-1.62, -4.49, -1.55),
+  lat = c(49.64, 48.39, 47.22),
+  population = c(80000, 140000, 320000)
+)
+
+villes_sf <- st_as_sf(villes, coords = c("lon", "lat"), crs = 4326)
+
+ggplot(villes_sf) +
+  geom_sf(aes(size = population), color = "darkred", alpha = 0.6) +
+  geom_sf_text(aes(label = nom), nudge_y = 0.15, fontface = "bold") +
+  scale_size_continuous(range = c(3, 10)) +
+  labs(title = "Villes côtières françaises",
+       size = "Population") +
+  theme_minimal()
+```
+
+---
+
+## Section 3 : Projections cartographiques
+
+### CRS (Coordinate Reference System)
+
+```{r demo-crs, exercise=TRUE}
+# Vérifier la projection
+st_crs(locations_sf)
+
+# Transformer en projection polaire (Antarctique)
+locations_polar <- st_transform(locations_sf, crs = 3031)  # Antarctic Polar Stereographic
+st_crs(locations_polar)
+```
+
+### Comparaison de projections
+
+```{r demo-projections, exercise=TRUE}
+# WGS84 (géographique)
+p1 <- ggplot(locations_sf) +
+  geom_sf(size = 4, color = "blue") +
+  labs(title = "WGS84 (EPSG:4326)") +
+  theme_minimal()
+
+# Projection polaire
+locations_polar <- st_transform(locations_sf, 3031)
+p2 <- ggplot(locations_polar) +
+  geom_sf(size = 4, color = "red") +
+  labs(title = "Polaire (EPSG:3031)") +
+  theme_minimal()
+
+p1
+p2
+```
+
+### Exercice 3 : Reprojection
+
+Transformez les villes en projection Lambert-93 (France) :
+
+```{r ex3-projection, exercise=TRUE}
+villes <- tibble(
+  nom = c("Cherbourg", "Brest"),
+  lon = c(-1.62, -4.49),
+  lat = c(49.64, 48.39)
+)
+
+villes_sf <- st_as_sf(villes, coords = c("lon", "lat"), crs = 4326)
+
+# Reprojeter en Lambert-93 (EPSG:2154)
+villes_lambert <- st_transform(villes_sf, crs = _____)
+st_crs(villes_lambert)
+```
+
+```{r ex3-projection-solution}
+villes <- tibble(
+  nom = c("Cherbourg", "Brest"),
+  lon = c(-1.62, -4.49),
+  lat = c(49.64, 48.39)
+)
+
+villes_sf <- st_as_sf(villes, coords = c("lon", "lat"), crs = 4326)
+
+# Reprojeter en Lambert-93 (EPSG:2154)
+villes_lambert <- st_transform(villes_sf, crs = 2154)
+st_crs(villes_lambert)
+st_coordinates(villes_lambert)  # Coordonnées en mètres
+```
+
+---
+
+## Section 4 : Cartes thématiques (choroplèthes)
+
+### Carte avec données attributaires
+
+```{r demo-choropleth, exercise=TRUE}
+# Créer des polygones simples (simulés)
+# En pratique, on importerait des shapefiles avec st_read()
+
+antarctic_zones <- tibble(
+  zone = c("Ouest", "Centre", "Est"),
+  temperature_moy = c(-2.5, -3.8, -1.9),
+  geometry = st_sfc(
+    st_polygon(list(cbind(c(-65, -64, -64, -65, -65), c(-65.5, -65.5, -64.5, -64.5, -65.5)))),
+    st_polygon(list(cbind(c(-64.5, -63.5, -63.5, -64.5, -64.5), c(-65.5, -65.5, -64.5, -64.5, -65.5)))),
+    st_polygon(list(cbind(c(-65.5, -64.5, -64.5, -65.5, -65.5), c(-64.2, -64.2, -63.2, -63.2, -64.2))))
+  )
+) |>
+  st_as_sf(crs = 4326)
+
+ggplot(antarctic_zones) +
+  geom_sf(aes(fill = temperature_moy), color = "white", linewidth = 1) +
+  scale_fill_gradient2(low = "blue", mid = "lightblue", high = "red", 
+                        midpoint = -3) +
+  labs(title = "Températures moyennes en Antarctique",
+       fill = "Temp (°C)") +
+  theme_minimal()
+```
+
+---
+
+## Section 5 : Combiner couches cartographiques
+
+### Superposer plusieurs couches
+
+```{r demo-layers, exercise=TRUE}
+# Base : zones
+antarctic_zones <- tibble(
+  zone = c("Ouest", "Est"),
+  geometry = st_sfc(
+    st_polygon(list(cbind(c(-66, -64, -64, -66, -66), c(-66, -66, -63, -63, -66)))),
+    st_polygon(list(cbind(c(-64, -62, -62, -64, -64), c(-66, -66, -63, -63, -66))))
+  )
+) |> st_as_sf(crs = 4326)
+
+# Points : îles
+iles <- st_as_sf(penguins_locations, coords = c("longitude", "latitude"), crs = 4326)
+
+# Carte combinée
+ggplot() +
+  geom_sf(data = antarctic_zones, fill = "lightgray", alpha = 0.5) +
+  geom_sf(data = iles, aes(size = n_penguins), color = "darkred") +
+  geom_sf_text(data = iles, aes(label = island), nudge_y = 0.3) +
+  labs(title = "Carte combinée : zones + points",
+       size = "Manchots") +
+  theme_minimal()
+```
+
+### Exercice 4 : Carte multi-couches
+
+Créez une carte avec :
+1. Fond de zones (polygones)
+2. Points de villes
+3. Étiquettes
+
+```{r ex4-layers, exercise=TRUE}
+# Zones (exemple simplifié)
+bretagne <- tibble(
+  region = "Bretagne",
+  geometry = st_sfc(st_polygon(list(cbind(
+    c(-5, -1, -1, -5, -5),
+    c(47, 47, 49, 49, 47)
+  ))))
+) |> st_as_sf(crs = 4326)
+
+# Villes
+villes <- tibble(
+  nom = c("Brest", "Rennes"),
+  lon = c(-4.49, -1.68),
+  lat = c(48.39, 48.11)
+) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# Carte
+ggplot() +
+  geom_sf(data = _____, fill = "lightblue", alpha = 0.3) +
+  geom_sf(data = _____, size = 4, color = "red") +
+  geom_sf_text(data = _____, aes(label = _____), nudge_y = 0.1)
+```
+
+```{r ex4-layers-solution}
+# Zones (exemple simplifié)
+bretagne <- tibble(
+  region = "Bretagne",
+  geometry = st_sfc(st_polygon(list(cbind(
+    c(-5, -1, -1, -5, -5),
+    c(47, 47, 49, 49, 47)
+  ))))
+) |> st_as_sf(crs = 4326)
+
+# Villes
+villes <- tibble(
+  nom = c("Brest", "Rennes"),
+  lon = c(-4.49, -1.68),
+  lat = c(48.39, 48.11)
+) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# Carte
+ggplot() +
+  geom_sf(data = bretagne, fill = "lightblue", alpha = 0.3, color = "darkblue", linewidth = 1) +
+  geom_sf(data = villes, size = 5, color = "darkred", alpha = 0.7) +
+  geom_sf_text(data = villes, aes(label = nom), nudge_y = 0.15, fontface = "bold") +
+  labs(title = "Carte de Bretagne avec villes principales") +
+  theme_minimal() +
+  coord_sf(xlim = c(-5.5, -0.5), ylim = c(47, 49.5))
+```
+
+---
+
+## Section 6 : Import de données réelles
+
+### Lire des fichiers géospatiaux
+
+```{r demo-read, exercise=TRUE}
+# LECTURE DE FICHIERS (exemples - à adapter selon vos données)
+
+# Shapefile
+# communes <- st_read("data/communes.shp")
+
+# GeoJSON
+# regions <- st_read("data/regions.geojson")
+
+# GeoPackage
+# pays <- st_read("data/monde.gpkg")
+
+# CSV avec coordonnées
+stations <- read_csv("station,lon,lat,temp
+Station_A,-1.5,48.5,15.2
+Station_B,-2.1,47.8,14.8
+Station_C,-3.2,48.1,13.9", show_col_types = FALSE)
+
+stations_sf <- st_as_sf(stations, coords = c("lon", "lat"), crs = 4326)
+stations_sf
+```
+
+---
+
+## Section 7 : Analyses spatiales de base
+
+### Distances entre points
+
+```{r demo-distance, exercise=TRUE}
+# Distances entre îles (en mètres)
+locations_sf_proj <- st_transform(locations_sf, 3031)  # Projection métrique
+
+# Matrice de distances
+distances <- st_distance(locations_sf_proj)
+distances
+```
+
+### Buffer (zone tampon)
+
+```{r demo-buffer, exercise=TRUE}
+# Créer un buffer de 50 km autour des îles
+locations_proj <- st_transform(locations_sf, 3031)
+buffer_50km <- st_buffer(locations_proj, dist = 50000)  # 50 km en mètres
+
+# Visualiser
+ggplot() +
+  geom_sf(data = buffer_50km, fill = "lightblue", alpha = 0.3) +
+  geom_sf(data = locations_proj, size = 3, color = "red") +
+  labs(title = "Zone de 50 km autour des îles") +
+  theme_minimal()
+```
+
+### Exercice 5 : Analyse spatiale
+
+Créez un buffer de 100 km et calculez les aires :
+
+```{r ex5-buffer, exercise=TRUE}
+locations_proj <- st_transform(locations_sf, 3031)
+
+buffer_100km <- st_buffer(locations_proj, dist = _____)
+
+# Calculer les aires (en km²)
+aires <- st_area(buffer_100km) / 1000000  # Convertir m² en km²
+aires
+```
+
+```{r ex5-buffer-solution}
+locations_proj <- st_transform(locations_sf, 3031)
+
+buffer_100km <- st_buffer(locations_proj, dist = 100000)  # 100 km
+
+# Calculer les aires (en km²)
+aires <- st_area(buffer_100km) / 1000000  # Convertir m² en km²
+round(aires, 0)
+
+# Visualisation
+ggplot() +
+  geom_sf(data = buffer_100km, aes(fill = island), alpha = 0.3) +
+  geom_sf(data = locations_proj, size = 4, color = "darkred") +
+  geom_sf_text(data = locations_proj, aes(label = island), nudge_y = 50000) +
+  labs(title = "Zones de 100 km autour des îles Palmer") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+---
+
+## Défi final
+
+Créez une **carte publication-ready** :
+
+1. Import ou création de données spatiales
+2. Au moins 2 couches (polygones + points)
+3. Choroplèthe (couleur selon variable)
+4. Étiquettes
+5. Projection appropriée
+6. Thème professionnel
+
+```{r defi-final, exercise=TRUE, exercise.lines=25}
+# 1. Créer des zones océaniques
+zones <- tibble(
+  nom = c("Zone A", "Zone B", "Zone C"),
+  temperature = c(12, 15, 18),
+  geometry = st_sfc(
+    st_polygon(list(cbind(c(-6, -4, -4, -6, -6), c(47, 47, 48, 48, 47)))),
+    st_polygon(list(cbind(c(-4, -2, -2, -4, -4), c(47, 47, 48, 48, 47)))),
+    st_polygon(list(cbind(c(-2, 0, 0, -2, -2), c(47, 47, 48, 48, 47))))
+  )
+) |> st_as_sf(crs = 4326)
+
+# 2. Points de stations
+stations <- tibble(
+  station = paste("S", 1:5),
+  lon = c(-5.5, -3.5, -1.5, -4, -2.5),
+  lat = c(47.2, 47.3, 47.5, 47.7, 47.8),
+  mesure = c(150, 200, 180, 220, 190)
+) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# 3. Créer la carte
+ggplot() +
+  _____ +
+  _____ +
+  _____
+```
+
+```{r defi-final-solution}
+# 1. Créer des zones océaniques
+zones <- tibble(
+  nom = c("Zone A", "Zone B", "Zone C"),
+  temperature = c(12, 15, 18),
+  geometry = st_sfc(
+    st_polygon(list(cbind(c(-6, -4, -4, -6, -6), c(47, 47, 48, 48, 47)))),
+    st_polygon(list(cbind(c(-4, -2, -2, -4, -4), c(47, 47, 48, 48, 47)))),
+    st_polygon(list(cbind(c(-2, 0, 0, -2, -2), c(47, 47, 48, 48, 47))))
+  )
+) |> st_as_sf(crs = 4326)
+
+# 2. Points de stations
+stations <- tibble(
+  station = paste("S", 1:5),
+  lon = c(-5.5, -3.5, -1.5, -4, -2.5),
+  lat = c(47.2, 47.3, 47.5, 47.7, 47.8),
+  mesure = c(150, 200, 180, 220, 190)
+) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# 3. Reprojection en Lambert-93
+zones_proj <- st_transform(zones, 2154)
+stations_proj <- st_transform(stations, 2154)
+
+# 4. Carte finale
+ggplot() +
+  # Fond : zones colorées par température
+  geom_sf(data = zones_proj, aes(fill = temperature), 
+          color = "white", linewidth = 1, alpha = 0.7) +
+  scale_fill_gradient2(
+    low = "blue", mid = "yellow", high = "red",
+    midpoint = 15,
+    name = "Température\n(°C)"
+  ) +
+  # Points : stations avec taille selon mesure
+  geom_sf(data = stations_proj, aes(size = mesure), 
+          color = "black", fill = "white", shape = 21, stroke = 1.5) +
+  scale_size_continuous(
+    range = c(3, 8),
+    name = "Mesure\n(unités)"
+  ) +
+  # Étiquettes des stations
+  geom_sf_text(data = stations_proj, aes(label = station),
+               nudge_y = 15000, fontface = "bold", size = 3.5) +
+  # Annotations
+  labs(
+    title = "Cartographie océanographique - Atlantique Est",
+    subtitle = "Températures de surface et stations de mesure",
+    caption = "Source: Données simulées | @ Cnam-Intechmer - 2025"
+  ) +
+  # Thème
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "gray40"),
+    plot.caption = element_text(size = 8, color = "gray50"),
+    legend.position = "right",
+    panel.grid = element_line(color = "gray90", linetype = "dashed"),
+    panel.background = element_rect(fill = "aliceblue")
+  )
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# CRÉER DES OBJETS SF
+st_as_sf(data, coords = c("lon", "lat"), crs = 4326)
+
+# LIRE DES FICHIERS
+st_read("fichier.shp")
+st_read("fichier.geojson")
+
+# PROJECTIONS
+st_crs(objet)                        # Voir CRS
+st_transform(objet, crs = 2154)      # Reprojeter
+
+# CARTOGRAPHIE
+ggplot(data) + geom_sf()
+geom_sf(aes(fill = variable))        # Choroplèthe
+geom_sf_text(aes(label = nom))       # Étiquettes
+
+# ANALYSES SPATIALES
+st_distance(points)                  # Distances
+st_buffer(points, dist = 1000)       # Buffer
+st_area(polygones)                   # Aires
+st_intersection(poly1, poly2)        # Intersection
+
+# CRS COURANTS
+# 4326  : WGS84 (GPS)
+# 2154  : Lambert-93 (France)
+# 3031  : Antarctic Polar Stereographic
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

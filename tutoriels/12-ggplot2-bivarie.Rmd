@@ -1,0 +1,323 @@
+---
+title: "ggplot2 - Graphiques bivariés"
+subtitle: "Visualiser les relations entre deux variables"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "Nuages de points, lignes, et visualisations à deux variables"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+penguins <- palmerpenguins::penguins |> drop_na()
+economics_recent <- economics |> filter(date >= "2010-01-01")
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Créer des **nuages de points** avec `geom_point()`
+- ✅ Tracer des **lignes** avec `geom_line()` et `geom_path()`
+- ✅ Visualiser avec `geom_smooth()` et `geom_area()`
+- ✅ Créer des **violins** et **heatmaps**
+- ✅ Combiner plusieurs geoms
+
+**Durée :** 45 minutes
+
+---
+
+## Section 1 : Nuages de points avancés
+
+### geom_point() avec esthétiques multiples
+
+```{r demo-scatter, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species, shape = sex, size = body_mass_g), 
+             alpha = 0.7) +
+  labs(title = "Dimensions du bec des manchots")
+```
+
+### geom_jitter() - Points avec bruit
+
+Utile pour éviter le chevauchement :
+
+```{r demo-jitter, exercise=TRUE}
+# Sans jitter
+ggplot(penguins, aes(x = species, y = body_mass_g)) +
+  geom_point(alpha = 0.3)
+
+# Avec jitter
+ggplot(penguins, aes(x = species, y = body_mass_g)) +
+  geom_jitter(width = 0.2, alpha = 0.3)
+```
+
+### Exercice 1 : Nuage de points coloré
+
+Créez un nuage de points de la longueur vs profondeur du bec, coloré par île :
+
+```{r ex1-scatter, exercise=TRUE}
+ggplot(penguins, aes(x = _____, y = _____, color = _____)) +
+  geom_point(size = 3, alpha = 0.6) +
+  labs(title = "Dimensions du bec par île")
+```
+
+```{r ex1-scatter-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = island)) +
+  geom_point(size = 3, alpha = 0.6) +
+  labs(title = "Dimensions du bec par île",
+       x = "Longueur du bec (mm)",
+       y = "Profondeur du bec (mm)") +
+  theme_minimal()
+```
+
+---
+
+## Section 2 : Lignes et tendances
+
+### geom_line() - Séries temporelles
+
+```{r demo-line, exercise=TRUE}
+ggplot(economics_recent, aes(x = date, y = unemploy)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  labs(title = "Chômage aux États-Unis",
+       x = "Date", y = "Nombre de chômeurs (milliers)")
+```
+
+### geom_smooth() - Courbe de tendance
+
+```{r demo-smooth, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(title = "Relation masse-nageoires avec régression")
+```
+
+### Exercice 2 : Tendances par groupe
+
+Créez un graphique avec points et tendances, séparé par espèce :
+
+```{r ex2-trends, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = _____, se = FALSE)
+```
+
+```{r ex2-trends-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Relation bec-masse par espèce") +
+  theme_minimal()
+```
+
+---
+
+## Section 3 : Graphiques en aires
+
+### geom_area()
+
+```{r demo-area, exercise=TRUE}
+ggplot(economics_recent, aes(x = date, y = unemploy)) +
+  geom_area(fill = "lightblue", alpha = 0.7) +
+  geom_line(color = "darkblue") +
+  labs(title = "Évolution du chômage", y = "Chômeurs (milliers)")
+```
+
+### geom_ribbon() - Intervalle de confiance
+
+```{r demo-ribbon, exercise=TRUE}
+# Calculer moyenne et écart-type par année
+summary_data <- penguins |>
+  mutate(year_factor = as.factor(year)) |>
+  group_by(year_factor, species) |>
+  summarise(
+    mean_mass = mean(body_mass_g),
+    sd_mass = sd(body_mass_g),
+    .groups = "drop"
+  ) |>
+  mutate(
+    ymin = mean_mass - sd_mass,
+    ymax = mean_mass + sd_mass
+  )
+
+ggplot(summary_data, aes(x = year_factor, y = mean_mass, group = species)) +
+  geom_ribbon(aes(ymin = ymin, ymax = ymax, fill = species), alpha = 0.3) +
+  geom_line(aes(color = species), linewidth = 1) +
+  labs(title = "Masse moyenne ± écart-type")
+```
+
+### Exercice 3 : Graphique en aires
+
+Créez un graphique montrant l'évolution de l'épargne personnelle (`psavert`) dans `economics_recent` :
+
+```{r ex3-area, exercise=TRUE}
+ggplot(economics_recent, aes(x = date, y = _____)) +
+  geom_area(_____)
+```
+
+```{r ex3-area-solution}
+ggplot(economics_recent, aes(x = date, y = psavert)) +
+  geom_area(fill = "coral", alpha = 0.6) +
+  geom_line(color = "darkred") +
+  labs(title = "Taux d'épargne personnelle",
+       x = "Date", y = "Taux d'épargne (%)") +
+  theme_minimal()
+```
+
+---
+
+## Section 4 : Violins et boxplots
+
+### geom_violin()
+
+Le violin plot combine densité et boxplot :
+
+```{r demo-violin, exercise=TRUE}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_violin(alpha = 0.7) +
+  geom_boxplot(width = 0.2, fill = "white") +
+  labs(title = "Distribution de la masse par espèce") +
+  theme(legend.position = "none")
+```
+
+### Exercice 4 : Violin plot
+
+Créez un violin plot de la longueur des nageoires par sexe :
+
+```{r ex4-violin, exercise=TRUE}
+ggplot(penguins, aes(x = _____, y = _____, fill = _____)) +
+  geom_violin()
+```
+
+```{r ex4-violin-solution}
+ggplot(penguins, aes(x = sex, y = flipper_length_mm, fill = sex)) +
+  geom_violin(alpha = 0.7) +
+  geom_boxplot(width = 0.2, fill = "white", alpha = 0.8) +
+  labs(title = "Longueur des nageoires par sexe",
+       x = "Sexe", y = "Longueur (mm)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+---
+
+## Section 5 : Heatmaps
+
+### geom_tile() - Carte de chaleur
+
+```{r demo-heatmap, exercise=TRUE}
+# Compter les observations par espèce et île
+counts <- penguins |>
+  count(species, island)
+
+ggplot(counts, aes(x = species, y = island, fill = n)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = n), color = "white", size = 6) +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Nombre de manchots par espèce et île",
+       fill = "Nombre") +
+  theme_minimal()
+```
+
+### Exercice 5 : Heatmap personnalisée
+
+Créez une heatmap montrant la masse moyenne par espèce et sexe :
+
+```{r ex5-heatmap, exercise=TRUE}
+resume <- penguins |>
+  group_by(species, sex) |>
+  summarise(masse_moy = mean(body_mass_g), .groups = "drop")
+
+ggplot(resume, aes(x = _____, y = _____, fill = _____)) +
+  geom_tile()
+```
+
+```{r ex5-heatmap-solution}
+resume <- penguins |>
+  group_by(species, sex) |>
+  summarise(masse_moy = mean(body_mass_g), .groups = "drop")
+
+ggplot(resume, aes(x = species, y = sex, fill = masse_moy)) +
+  geom_tile(color = "white", linewidth = 1) +
+  geom_text(aes(label = round(masse_moy)), color = "white", fontface = "bold") +
+  scale_fill_viridis_c() +
+  labs(title = "Masse moyenne (g) par espèce et sexe",
+       fill = "Masse (g)") +
+  theme_minimal()
+```
+
+---
+
+## Défi final
+
+Créez un graphique complexe combinant :
+1. Nuage de points : longueur vs profondeur du bec
+2. Courbe de tendance lissée (loess)
+3. Facettes par espèce
+4. Points colorés par sexe
+
+```{r defi-final, exercise=TRUE, exercise.lines=12}
+ggplot(penguins, aes(x = _____, y = _____)) +
+  _____ +
+  _____ +
+  _____ +
+  _____
+```
+
+```{r defi-final-solution}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = sex), size = 2, alpha = 0.6) +
+  geom_smooth(method = "loess", color = "black", se = TRUE, alpha = 0.2) +
+  facet_wrap(~species, scales = "free") +
+  labs(
+    title = "Relation entre longueur et profondeur du bec",
+    subtitle = "Par espèce avec tendance lissée",
+    x = "Longueur du bec (mm)",
+    y = "Profondeur du bec (mm)",
+    color = "Sexe"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# NUAGES DE POINTS
+geom_point(aes(color = var, size = var2))
+geom_jitter(width = 0.2)
+
+# LIGNES
+geom_line()              # Ligne simple
+geom_smooth(method = "lm")  # Tendance linéaire
+geom_smooth(method = "loess")  # Tendance lissée
+
+# AIRES
+geom_area()
+geom_ribbon(aes(ymin = min, ymax = max))
+
+# DISTRIBUTIONS
+geom_violin()            # Densité en miroir
+geom_boxplot()           # Boîte à moustaches
+
+# HEATMAPS
+geom_tile(aes(fill = valeur))
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

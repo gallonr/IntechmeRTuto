@@ -1,0 +1,593 @@
+---
+title: "Importation et exploration de données"
+subtitle: "Lire et découvrir vos données avec R"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hints: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Apprendre à importer des données CSV et Excel, et les explorer"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(readxl)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Création de données d'exemple pour les exercices
+ventes <- tibble(
+  date = c("2024-01-15", "2024-01-16", "2024-01-17"),
+  produit = c("Ordinateur", "Souris", "Clavier"),
+  quantite = c(2, 15, 8),
+  prix_unitaire = c(899.99, 12.50, 45.00)
+)
+
+# Sauvegarder temporairement pour les exercices d'import
+temp_dir <- tempdir()
+write_csv(ventes, file.path(temp_dir, "ventes.csv"))
+```
+
+```{r logo, echo=FALSE, results='asis'}
+# Logo positionné à gauche du titre via CSS
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue {data-progressive=TRUE}
+
+### Introduction
+
+Bienvenue dans ce tutoriel sur l'**importation et l'exploration de données** ! 
+
+Dans la pratique, vos données ne sont presque jamais créées directement dans R. Elles proviennent de fichiers Excel, CSV, de bases de données ou d'API web. Savoir importer et explorer rapidement vos données est donc une compétence fondamentale.
+
+**Objectifs d'apprentissage :**
+
+- ✅ Importer des fichiers **CSV** avec `readr`
+- ✅ Importer des fichiers **Excel** avec `readxl`
+- ✅ Gérer les options d'importation (séparateurs, encodage, etc.)
+- ✅ Explorer la structure des données avec `glimpse()`, `head()`, `summary()`
+- ✅ Comprendre et résoudre les problèmes d'importation courants
+
+**Prérequis :**
+
+- Connaître les bases des tibbles (tutoriel 01)
+- Avoir R et RStudio installés
+
+**Durée estimée :** 60 minutes
+
+---
+
+## Section 1 : Fichiers CSV
+
+### Qu'est-ce qu'un fichier CSV ?
+
+Un fichier **CSV** (Comma-Separated Values) est un format de fichier texte simple où :
+
+- Chaque ligne représente une observation
+- Les colonnes sont séparées par un délimiteur (virgule, point-virgule, tabulation, etc.)
+- La première ligne contient souvent les noms de colonnes
+
+**Exemple de contenu CSV :**
+```
+nom,age,ville
+Alice,25,Paris
+Bob,30,Lyon
+Charlie,28,Marseille
+```
+
+### La fonction `read_csv()`
+
+Le package `readr` (inclus dans le tidyverse) fournit `read_csv()` pour importer des CSV.
+
+```{r demo-read-csv, exercise=TRUE}
+# Exemple simple : création d'un CSV en mémoire
+donnees <- read_csv("nom,age,ville
+Alice,25,Paris
+Bob,30,Lyon
+Charlie,28,Marseille")
+
+donnees
+```
+
+### Exercice 1 : Votre premier import
+
+Créez un tibble en important les données CSV suivantes :
+
+```{r ex1-import-csv, exercise=TRUE}
+# Importez ces données avec read_csv()
+texte_csv <- "produit,prix,stock
+Pomme,2.5,100
+Banane,1.8,150
+Orange,3.2,80"
+
+# Votre code ici :
+
+
+```
+
+```{r ex1-import-csv-hint-1}
+# Utilisez read_csv() avec le texte directement
+fruits <- read_csv(texte_csv)
+```
+
+```{r ex1-import-csv-hint-2}
+# read_csv() détecte automatiquement les types de colonnes
+fruits <- read_csv(texte_csv)
+fruits
+```
+
+```{r ex1-import-csv-solution}
+fruits <- read_csv(texte_csv)
+fruits
+```
+
+---
+
+## Section 2 : Options d'importation
+
+### Gérer les séparateurs
+
+Différents pays utilisent différents séparateurs :
+
+- **Virgule** (`,`) : format anglo-saxon → `read_csv()`
+- **Point-virgule** (`;`) : format français → `read_csv2()`
+- **Tabulation** (`\t`) : format TSV → `read_tsv()`
+- **Personnalisé** : `read_delim(delim = "|")`
+
+```{r demo-separateurs, exercise=TRUE}
+# Format français (point-virgule + virgule décimale)
+donnees_fr <- read_csv2("nom;age;taille
+Alice;25;1,65
+Bob;30;1,78")
+
+donnees_fr
+```
+
+### Exercice 2 : Format français
+
+Importez ces données au format français (séparateur `;` et décimales `,`) :
+
+```{r ex2-csv2, exercise=TRUE}
+texte_fr <- "ville;temperature;humidite
+Paris;15,5;65,2
+Lyon;18,3;58,7
+Marseille;22,1;52,3"
+
+# Utilisez la bonne fonction :
+
+
+```
+
+```{r ex2-csv2-hint}
+# Pour le format français, utilisez read_csv2()
+```
+
+```{r ex2-csv2-solution}
+meteo <- read_csv2(texte_fr)
+meteo
+```
+
+### Ignorer des lignes
+
+Parfois, les fichiers contiennent des métadonnées en début de fichier :
+
+```{r demo-skip, exercise=TRUE}
+# skip = n ignore les n premières lignes
+donnees <- read_csv("Fichier de ventes 2024
+Généré le 01/01/2024
+nom,montant
+Alice,1000
+Bob,1500", skip = 2)
+
+donnees
+```
+
+### Exercice 3 : Sauter des lignes
+
+Importez seulement les données (pas les commentaires) :
+
+```{r ex3-skip, exercise=TRUE}
+fichier_avec_commentaires <- "# Données d'expérience
+# Date: 2024-01-01
+# Responsable: Dr. Martin
+temperature,pression,resultat
+20,101.3,positif
+25,100.8,positif
+30,102.1,negatif"
+
+# Ignorez les 3 premières lignes :
+
+
+```
+
+```{r ex3-skip-hint}
+# Utilisez le paramètre skip = 3
+```
+
+```{r ex3-skip-solution}
+experience <- read_csv(fichier_avec_commentaires, skip = 3)
+experience
+```
+
+---
+
+## Section 3 : Quiz - Import CSV
+
+```{r quiz-csv}
+quiz(
+  caption = "Testez vos connaissances sur l'import CSV",
+  
+  question("Quelle fonction utilise-t-on pour importer un CSV au format anglo-saxon (séparateur virgule) ?",
+    answer("read_csv()", correct = TRUE),
+    answer("read_csv2()"),
+    answer("read_delim()"),
+    answer("read.csv()"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question("Quelle fonction utilise-t-on pour importer un CSV au format français (séparateur point-virgule) ?",
+    answer("read_csv()"),
+    answer("read_csv2()", correct = TRUE),
+    answer("read_tsv()"),
+    answer("read.csv2()"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  
+  question("Comment ignorer les 5 premières lignes d'un fichier CSV ?",
+    answer("read_csv(fichier, skip = 5)", correct = TRUE),
+    answer("read_csv(fichier, ignore = 5)"),
+    answer("read_csv(fichier, remove = 5)"),
+    answer("read_csv(fichier)[6:nrow(.)]"),
+    allow_retry = TRUE
+  ),
+  
+  question("Quels sont les avantages de readr par rapport à read.csv de base R ? (plusieurs réponses)",
+    answer("Plus rapide", correct = TRUE),
+    answer("Crée des tibbles au lieu de data.frames", correct = TRUE),
+    answer("Meilleure gestion des types de colonnes", correct = TRUE),
+    answer("Permet de lire les fichiers Excel"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Section 4 : Fichiers Excel
+
+### Pourquoi Excel ?
+
+Excel est omniprésent dans le monde professionnel. Le package `readxl` permet de lire les fichiers `.xls` et `.xlsx` **sans avoir Excel installé** !
+
+### La fonction `read_excel()`
+
+```{r demo-excel, exercise=TRUE, eval=FALSE}
+# Syntaxe de base (à adapter avec un vrai fichier)
+# donnees <- read_excel("mon_fichier.xlsx")
+
+# Lire une feuille spécifique
+# donnees <- read_excel("fichier.xlsx", sheet = "Ventes")
+# donnees <- read_excel("fichier.xlsx", sheet = 2)  # Par numéro
+
+# Lister toutes les feuilles
+# excel_sheets("fichier.xlsx")
+```
+
+### Exemple avec données intégrées
+
+```{r demo-excel-readxl, exercise=TRUE}
+# readxl inclut un fichier d'exemple
+chemin <- readxl_example("datasets.xlsx")
+
+# Lister les feuilles
+excel_sheets(chemin)
+
+# Lire la première feuille
+iris_data <- read_excel(chemin, sheet = "iris")
+head(iris_data, 3)
+```
+
+### Exercice 4 : Lire une feuille Excel
+
+Utilisez le fichier d'exemple pour lire la feuille "mtcars" :
+
+```{r ex4-excel, exercise=TRUE}
+chemin <- readxl_example("datasets.xlsx")
+
+# Lisez la feuille "mtcars" :
+
+
+```
+
+```{r ex4-excel-hint}
+# Utilisez read_excel() avec le paramètre sheet
+```
+
+```{r ex4-excel-solution}
+chemin <- readxl_example("datasets.xlsx")
+voitures <- read_excel(chemin, sheet = "mtcars")
+voitures
+```
+
+### Plages de cellules
+
+Vous pouvez spécifier une plage précise avec `range` :
+
+```{r demo-range, exercise=TRUE}
+chemin <- readxl_example("datasets.xlsx")
+
+# Lire seulement les cellules A1:C5
+iris_partiel <- read_excel(chemin, 
+                           sheet = "iris",
+                           range = "A1:C5")
+iris_partiel
+```
+
+---
+
+## Section 5 : Exploration de données
+
+### Les fonctions d'exploration
+
+Une fois vos données importées, il faut les explorer !
+
+**Fonctions essentielles :**
+
+| Fonction | Utilité |
+|----------|---------|
+| `glimpse()` | Vue compacte de la structure |
+| `head()` / `tail()` | Premières / dernières lignes |
+| `summary()` | Statistiques descriptives |
+| `nrow()` / `ncol()` | Nombre de lignes / colonnes |
+| `names()` | Noms des colonnes |
+
+### Démonstration
+
+```{r demo-exploration, exercise=TRUE}
+# Créons un jeu de données
+donnees <- tibble(
+  id = 1:100,
+  age = sample(18:65, 100, replace = TRUE),
+  revenu = rnorm(100, mean = 35000, sd = 10000),
+  ville = sample(c("Paris", "Lyon", "Marseille"), 100, replace = TRUE)
+)
+
+# Exploration
+glimpse(donnees)
+```
+
+### Exercice 5 : Explorer les données
+
+Utilisez les fonctions d'exploration sur le jeu de données `mtcars` :
+
+```{r ex5-exploration, exercise=TRUE}
+# 1. Affichez la structure avec glimpse()
+
+
+# 2. Affichez les 5 premières lignes
+
+
+# 3. Combien y a-t-il de lignes et de colonnes ?
+
+
+# 4. Obtenez un résumé statistique
+
+
+```
+
+```{r ex5-exploration-hint-1}
+# glimpse() pour la structure
+glimpse(mtcars)
+```
+
+```{r ex5-exploration-hint-2}
+# head() pour les premières lignes
+# nrow() et ncol() pour les dimensions
+# summary() pour les statistiques
+```
+
+```{r ex5-exploration-solution}
+# 1. Structure
+glimpse(mtcars)
+
+# 2. Premières lignes
+head(mtcars, 5)
+
+# 3. Dimensions
+nrow(mtcars)
+ncol(mtcars)
+
+# 4. Résumé
+summary(mtcars)
+```
+
+---
+
+## Section 6 : Détecter les problèmes
+
+### La fonction `problems()`
+
+Quand `read_csv()` rencontre des problèmes, il affiche un avertissement. Utilisez `problems()` pour voir les détails :
+
+```{r demo-problems, exercise=TRUE}
+# Un CSV avec des problèmes de type
+donnees_problematiques <- read_csv("nom,age,salaire
+Alice,25,35000
+Bob,trente,45000
+Charlie,28,cinquante")
+
+# Voir les problèmes détectés
+problems(donnees_problematiques)
+```
+
+### Spécifier les types manuellement
+
+Vous pouvez forcer les types de colonnes avec `col_types` :
+
+```{r demo-col-types, exercise=TRUE}
+donnees <- read_csv("nom,age,note
+Alice,25,15.5
+Bob,30,12.0",
+col_types = cols(
+  nom = col_character(),
+  age = col_integer(),
+  note = col_double()
+))
+
+glimpse(donnees)
+```
+
+---
+
+## Section 7 : Défi final
+
+### Exercice complet
+
+Vous recevez un fichier de données sur des étudiants. Importez-le et explorez-le !
+
+```{r defi-final, exercise=TRUE, exercise.lines=20}
+# Données d'étudiants (format français)
+fichier_etudiants <- "nom;prenom;age;note_maths;note_physique;mention
+Dupont;Marie;20;15,5;14,2;Bien
+Martin;Pierre;21;12,0;13,5;Assez bien
+Bernard;Sophie;19;16,8;17,5;Très bien
+Dubois;Luc;22;10,5;11,0;Passable
+# Commentaire à ignorer
+Moreau;Julie;20;14,0;15,2;Bien"
+
+# Mission :
+# 1. Importez ces données (attention au format et aux commentaires)
+# 2. Affichez la structure
+# 3. Calculez la note moyenne de chaque étudiant
+# 4. Affichez les 3 premiers étudiants
+
+
+
+
+
+
+```
+
+```{r defi-final-hint-1}
+# 1. Utilisez read_csv2() car c'est du format français
+# 2. Utilisez comment = "#" pour ignorer les lignes de commentaire
+```
+
+```{r defi-final-hint-2}
+# Pour la structure : glimpse()
+# Pour la moyenne : mutate() et la fonction mean() ou rowMeans()
+```
+
+```{r defi-final-hint-3}
+# Structure complète :
+# etudiants <- read_csv2(fichier_etudiants, comment = "#")
+# glimpse(etudiants)
+# etudiants <- etudiants |> mutate(moyenne = ...)
+```
+
+```{r defi-final-solution}
+# 1. Import
+etudiants <- read_csv2(fichier_etudiants, comment = "#")
+
+# 2. Structure
+glimpse(etudiants)
+
+# 3. Calcul de la moyenne
+etudiants <- etudiants |>
+  mutate(moyenne = (note_maths + note_physique) / 2)
+
+# 4. Affichage des 3 premiers
+head(etudiants, 3)
+```
+
+---
+
+## Récapitulatif
+
+### Ce que vous avez appris
+
+- ✅ **Importer des CSV** avec `read_csv()` et `read_csv2()`
+- ✅ **Importer des fichiers Excel** avec `read_excel()`
+- ✅ **Gérer les options d'import** : séparateurs, lignes à ignorer, plages de cellules
+- ✅ **Explorer les données** avec `glimpse()`, `head()`, `summary()`
+- ✅ **Détecter et résoudre les problèmes** d'importation
+
+### Pour aller plus loin
+
+**Autres formats de données :**
+
+- `haven::read_spss()` - Fichiers SPSS
+- `haven::read_stata()` - Fichiers Stata
+- `haven::read_sas()` - Fichiers SAS
+- `jsonlite::read_json()` - Fichiers JSON
+- `DBI::dbConnect()` - Bases de données SQL
+
+**Ressources :**
+
+- [R for Data Science - Chapitre Import](https://r4ds.hadley.nz/data-import.html)
+- [Documentation readr](https://readr.tidyverse.org/)
+- [Documentation readxl](https://readxl.tidyverse.org/)
+
+**Tutoriel suivant :** "03 - Transformation avec dplyr (partie 1)"
+
+### Aide-mémoire
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# Import CSV format anglo-saxon
+donnees <- read_csv("fichier.csv")
+
+# Import CSV format français
+donnees <- read_csv2("fichier.csv")
+
+# Import avec options
+donnees <- read_csv("fichier.csv",
+                   skip = 2,           # Ignorer 2 lignes
+                   n_max = 100,        # Lire 100 lignes max
+                   col_names = FALSE,  # Pas d'en-tête
+                   na = c("", "NA", "NULL"))  # Valeurs manquantes
+
+# Import Excel
+donnees <- read_excel("fichier.xlsx", sheet = "Feuille1")
+feuilles <- excel_sheets("fichier.xlsx")
+
+# Exploration
+glimpse(donnees)
+head(donnees, 10)
+summary(donnees)
+nrow(donnees)
+ncol(donnees)
+names(donnees)
+```
+
+---
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

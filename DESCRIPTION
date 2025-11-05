@@ -1,0 +1,22 @@
+Package: IntechmeRTuto
+Title: Tutoriels Interactifs de Statistiques avec R
+Version: 0.1.0
+Authors@R: 
+    person("Régis", "Gallon", email = "regis.gallon@lecnam.net",
+           role = c("aut", "cre"))
+Description: Collection de tutoriels interactifs learnr pour 
+    l'apprentissage de R et des statistiques destinés aux étudiants 
+    d'Intechmer.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.0.0
+Imports:
+    learnr,
+    tidyverse,
+    gradethis
+Suggests:
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

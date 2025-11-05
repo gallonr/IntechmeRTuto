@@ -1,0 +1,545 @@
+---
+title: "Workflows complets avec le tidyverse"
+subtitle: "Pipelines d'analyse de bout en bout"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "Import, nettoyage, transformation, analyse, visualisation et export"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(readxl)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Données exemple
+penguins <- palmerpenguins::penguins
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Construire des **pipelines complets** d'analyse
+- ✅ Maîtriser les **jointures** de données
+- ✅ Combiner **transformation** et **visualisation**
+- ✅ **Exporter** les résultats
+- ✅ Bonnes pratiques et **reproductibilité**
+
+**Durée :** 60 minutes
+
+---
+
+## Section 1 : Workflow type
+
+### Pipeline complet : Import → Transform → Visualize → Export
+
+```{r demo-workflow, exercise=TRUE}
+# 1. IMPORT (simulation)
+data_brute <- penguins
+
+# 2. NETTOYAGE
+data_clean <- data_brute |>
+  drop_na(sex, body_mass_g) |>
+  filter(year >= 2008)
+
+# 3. TRANSFORMATION
+resume <- data_clean |>
+  group_by(species, sex) |>
+  summarise(
+    n = n(),
+    masse_moy = mean(body_mass_g),
+    masse_sd = sd(body_mass_g),
+    .groups = "drop"
+  )
+
+# 4. VISUALISATION
+ggplot(resume, aes(x = species, y = masse_moy, fill = sex)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = masse_moy - masse_sd, 
+                     ymax = masse_moy + masse_sd),
+                position = position_dodge(0.9), width = 0.2) +
+  labs(title = "Masse moyenne ± SD par espèce et sexe") +
+  theme_minimal()
+
+# 5. EXPORT (simulation)
+# write_csv(resume, "resultats_resume.csv")
+```
+
+### Exercice 1 : Pipeline simple
+
+Créez un pipeline qui :
+1. Garde seulement les manchots de 2009
+2. Calcule la longueur moyenne du bec par île
+3. Affiche les résultats
+
+```{r ex1-pipeline, exercise=TRUE}
+penguins |>
+  filter(year == _____) |>
+  group_by(_____) |>
+  summarise(bec_moyen = mean(_____, na.rm = TRUE))
+```
+
+```{r ex1-pipeline-solution}
+penguins |>
+  filter(year == 2009) |>
+  group_by(island) |>
+  summarise(
+    bec_moyen = mean(bill_length_mm, na.rm = TRUE),
+    n = n()
+  ) |>
+  arrange(desc(bec_moyen))
+```
+
+---
+
+## Section 2 : Jointures (joins)
+
+### Types de jointures
+
+```{r demo-joins-setup, exercise=TRUE}
+# Données espèces
+especes_info <- tibble(
+  species = c("Adelie", "Chinstrap", "Gentoo"),
+  regime = c("Crustacés", "Poissons", "Mixte"),
+  population = c(10000, 8000, 12000)
+)
+
+# Données îles
+iles_info <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  superficie_km2 = c(15, 45, 8),
+  latitude = c(-64.1, -65.4, -64.7)
+)
+
+especes_info
+iles_info
+```
+
+### left_join() - Jointure à gauche
+
+```{r demo-left-join, exercise=TRUE}
+especes_info <- tibble(
+  species = c("Adelie", "Chinstrap", "Gentoo"),
+  regime = c("Crustacés", "Poissons", "Mixte")
+)
+
+# Ajouter info espèce aux manchots
+penguins_enrichi <- penguins |>
+  left_join(especes_info, by = "species") |>
+  select(species, island, regime, body_mass_g)
+
+penguins_enrichi |> head(10)
+```
+
+### inner_join() et full_join()
+
+```{r demo-joins-types, exercise=TRUE}
+df1 <- tibble(id = 1:3, valeur_A = c("a", "b", "c"))
+df2 <- tibble(id = 2:4, valeur_B = c("x", "y", "z"))
+
+# INNER JOIN : seulement les correspondances
+inner_join(df1, df2, by = "id")
+
+# FULL JOIN : tout garder
+full_join(df1, df2, by = "id")
+```
+
+### Exercice 2 : Jointure multiple
+
+Joignez les données de manchots avec les infos des îles :
+
+```{r ex2-join, exercise=TRUE}
+iles_info <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  superficie_km2 = c(15, 45, 8)
+)
+
+penguins |>
+  left_join(_____, by = _____) |>
+  group_by(island) |>
+  summarise(
+    n = n(),
+    superficie = first(superficie_km2),
+    densite = n / superficie
+  )
+```
+
+```{r ex2-join-solution}
+iles_info <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  superficie_km2 = c(15, 45, 8)
+)
+
+penguins |>
+  left_join(iles_info, by = "island") |>
+  group_by(island) |>
+  summarise(
+    n = n(),
+    superficie = first(superficie_km2),
+    densite = n / superficie
+  ) |>
+  arrange(desc(densite))
+```
+
+---
+
+## Section 3 : Analyse exploratoire complète
+
+### Pipeline EDA (Exploratory Data Analysis)
+
+```{r demo-eda, exercise=TRUE}
+# 1. Vue d'ensemble
+apercu <- penguins |>
+  summarise(
+    n_total = n(),
+    n_especes = n_distinct(species),
+    annees = paste(range(year, na.rm = TRUE), collapse = " - "),
+    na_count = sum(is.na(sex))
+  )
+
+apercu
+
+# 2. Statistiques par groupe
+stats_especes <- penguins |>
+  drop_na(body_mass_g) |>
+  group_by(species) |>
+  summarise(
+    n = n(),
+    masse_min = min(body_mass_g),
+    masse_q25 = quantile(body_mass_g, 0.25),
+    masse_med = median(body_mass_g),
+    masse_q75 = quantile(body_mass_g, 0.75),
+    masse_max = max(body_mass_g),
+    masse_moy = mean(body_mass_g),
+    masse_sd = sd(body_mass_g)
+  )
+
+stats_especes
+```
+
+### Exercice 3 : Rapport d'analyse
+
+Créez un résumé complet des nageoires par espèce et sexe :
+
+```{r ex3-eda, exercise=TRUE}
+penguins |>
+  drop_na(flipper_length_mm, sex) |>
+  group_by(_____, _____) |>
+  summarise(
+    n = n(),
+    min = min(_____),
+    mediane = median(_____),
+    max = max(_____),
+    moyenne = mean(_____),
+    .groups = "drop"
+  ) |>
+  arrange(species, sex)
+```
+
+```{r ex3-eda-solution}
+penguins |>
+  drop_na(flipper_length_mm, sex) |>
+  group_by(species, sex) |>
+  summarise(
+    n = n(),
+    min = min(flipper_length_mm),
+    mediane = median(flipper_length_mm),
+    max = max(flipper_length_mm),
+    moyenne = mean(flipper_length_mm),
+    ecart_type = sd(flipper_length_mm),
+    .groups = "drop"
+  ) |>
+  arrange(species, sex) |>
+  mutate(across(where(is.numeric), ~round(.x, 1)))
+```
+
+---
+
+## Section 4 : Transformation → Visualisation
+
+### Pipeline intégré
+
+```{r demo-transform-viz, exercise=TRUE}
+penguins |>
+  drop_na(sex) |>
+  group_by(species, sex, year) |>
+  summarise(masse_moy = mean(body_mass_g, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(x = year, y = masse_moy, color = species, linetype = sex)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  scale_x_continuous(breaks = c(2007, 2008, 2009)) +
+  labs(
+    title = "Évolution de la masse moyenne",
+    subtitle = "Par espèce, sexe et année",
+    x = "Année", y = "Masse moyenne (g)",
+    color = "Espèce", linetype = "Sexe"
+  ) +
+  theme_minimal()
+```
+
+### Exercice 4 : Transformation pour visualisation
+
+Créez un graphique montrant la proportion de chaque espèce par île :
+
+```{r ex4-transform-viz, exercise=TRUE}
+penguins |>
+  count(island, species) |>
+  group_by(_____) |>
+  mutate(proportion = n / sum(n) * 100) |>
+  ggplot(aes(x = _____, y = _____, fill = _____)) +
+  geom_col() +
+  labs(title = "Composition des espèces par île", y = "Proportion (%)")
+```
+
+```{r ex4-transform-viz-solution}
+penguins |>
+  count(island, species) |>
+  group_by(island) |>
+  mutate(proportion = n / sum(n) * 100) |>
+  ggplot(aes(x = island, y = proportion, fill = species)) +
+  geom_col(position = "stack") +
+  geom_text(aes(label = paste0(round(proportion, 1), "%")),
+            position = position_stack(vjust = 0.5),
+            color = "white", fontface = "bold") +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Composition des espèces par île",
+    x = "Île", y = "Proportion (%)",
+    fill = "Espèce"
+  ) +
+  theme_minimal()
+```
+
+---
+
+## Section 5 : Export des données
+
+### write_csv() et write_xlsx()
+
+```{r demo-export, exercise=TRUE}
+# Préparer les données à exporter
+export_data <- penguins |>
+  drop_na(sex) |>
+  group_by(species, island) |>
+  summarise(
+    n = n(),
+    masse_moy = mean(body_mass_g, na.rm = TRUE),
+    bec_moy = mean(bill_length_mm, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(across(where(is.numeric), ~round(.x, 2)))
+
+export_data
+
+# Export CSV
+# write_csv(export_data, "resume_manchots.csv")
+
+# Export Excel (nécessite writexl)
+# writexl::write_xlsx(export_data, "resume_manchots.xlsx")
+```
+
+### Exercice 5 : Préparer l'export
+
+Créez un tableau prêt à exporter avec :
+- Statistiques par espèce
+- Colonnes bien nommées (en français)
+- Valeurs arrondies
+
+```{r ex5-export, exercise=TRUE}
+penguins |>
+  drop_na() |>
+  group_by(species) |>
+  summarise(
+    Effectif = n(),
+    `Masse moyenne (g)` = round(mean(body_mass_g), 0),
+    `Bec longueur (mm)` = round(mean(bill_length_mm), 1),
+    `Nageoire (mm)` = round(mean(flipper_length_mm), 1)
+  )
+```
+
+```{r ex5-export-solution}
+tableau_export <- penguins |>
+  drop_na() |>
+  group_by(species) |>
+  summarise(
+    Effectif = n(),
+    `Masse moyenne (g)` = round(mean(body_mass_g), 0),
+    `Masse écart-type (g)` = round(sd(body_mass_g), 0),
+    `Bec longueur (mm)` = round(mean(bill_length_mm), 1),
+    `Bec profondeur (mm)` = round(mean(bill_depth_mm), 1),
+    `Nageoire (mm)` = round(mean(flipper_length_mm), 1)
+  ) |>
+  rename(Espèce = species)
+
+tableau_export
+
+# Prêt pour export :
+# write_csv(tableau_export, "statistiques_manchots.csv")
+```
+
+---
+
+## Section 6 : Bonnes pratiques
+
+### Script reproductible
+
+```{r demo-best-practices, exercise=TRUE}
+# ==============================================================================
+# ANALYSE DES MANCHOTS - Pipeline complet
+# Auteur: Votre Nom
+# Date: 2025-11-05
+# ==============================================================================
+
+# 1. CHARGEMENT DES PACKAGES ----
+library(tidyverse)
+library(palmerpenguins)
+
+# 2. IMPORT DES DONNÉES ----
+data_raw <- penguins
+
+# 3. NETTOYAGE ----
+data_clean <- data_raw |>
+  drop_na(sex, body_mass_g) |>
+  filter(year >= 2008)
+
+# 4. TRANSFORMATION ----
+stats_summary <- data_clean |>
+  group_by(species, sex) |>
+  summarise(
+    n = n(),
+    masse_moyenne = mean(body_mass_g),
+    .groups = "drop"
+  )
+
+# 5. VISUALISATION ----
+plot_final <- ggplot(stats_summary, aes(x = species, y = masse_moyenne, fill = sex)) +
+  geom_col(position = "dodge") +
+  theme_minimal()
+
+# 6. EXPORT ----
+# ggsave("figures/masse_espece_sexe.png", plot_final, width = 8, height = 6)
+# write_csv(stats_summary, "resultats/stats_resume.csv")
+```
+
+---
+
+## Défi final
+
+Créez un **pipeline complet d'analyse** :
+
+1. Filtrer : manchots de 2008-2009, sans NA
+2. Enrichir : ajouter une colonne `taille_categorie` (petit/moyen/grand selon masse)
+3. Analyser : calculer des statistiques par île et catégorie de taille
+4. Visualiser : graphique de votre choix
+5. Préparer pour export
+
+```{r defi-final, exercise=TRUE, exercise.lines=20}
+# Pipeline complet
+resultat <- penguins |>
+  # 1. Filtrer
+  _____ |>
+  # 2. Catégoriser
+  mutate(taille_categorie = case_when(
+    _____
+  )) |>
+  # 3. Analyser
+  _____ |>
+  # 4. Préparer export
+  _____
+
+# 5. Visualiser
+resultat |>
+  ggplot(aes(_____)) +
+  _____
+```
+
+```{r defi-final-solution}
+# Pipeline complet
+resultat <- penguins |>
+  # 1. Filtrer
+  filter(year %in% c(2008, 2009)) |>
+  drop_na() |>
+  # 2. Catégoriser
+  mutate(taille_categorie = case_when(
+    body_mass_g < 3500 ~ "Petit",
+    body_mass_g < 4500 ~ "Moyen",
+    TRUE ~ "Grand"
+  )) |>
+  # 3. Analyser
+  group_by(island, taille_categorie) |>
+  summarise(
+    n = n(),
+    masse_moy = mean(body_mass_g),
+    bec_moy = mean(bill_length_mm),
+    .groups = "drop"
+  ) |>
+  # 4. Préparer export
+  mutate(across(where(is.numeric), ~round(.x, 1)))
+
+# Afficher résultats
+resultat
+
+# 5. Visualiser
+resultat |>
+  ggplot(aes(x = island, y = n, fill = taille_categorie)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = n), 
+            position = position_dodge(width = 0.9),
+            vjust = -0.5) +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Répartition des manchots par île et catégorie de taille",
+    subtitle = "Données 2008-2009",
+    x = "Île", y = "Nombre de manchots",
+    fill = "Catégorie"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Export (décommenter pour utiliser) :
+# write_csv(resultat, "analyse_manchots_2008-2009.csv")
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# JOINTURES
+left_join(df1, df2, by = "colonne")
+inner_join(df1, df2, by = "colonne")
+full_join(df1, df2, by = "colonne")
+
+# PIPELINE TYPE
+data |>
+  filter(...) |>              # Filtrer
+  mutate(...) |>              # Transformer
+  group_by(...) |>            # Grouper
+  summarise(...) |>           # Agréger
+  ggplot(aes(...)) + ...      # Visualiser
+
+# EXPORT
+write_csv(data, "fichier.csv")
+writexl::write_xlsx(data, "fichier.xlsx")
+ggsave("plot.png", width = 8, height = 6, dpi = 300)
+
+# BONNES PRATIQUES
+# - Commenter le code
+# - Nommer clairement les objets
+# - Utiliser des sections (----) 
+# - Versionner avec Git
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>

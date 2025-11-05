@@ -1,0 +1,492 @@
+---
+title: "ggplot2 - Techniques avancées"
+subtitle: "Annotations, compositions et extensions"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: ../css/custom.css
+runtime: shiny_prerendered
+description: "Annoter, combiner graphiques avec patchwork, extensions ggplot2"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(patchwork)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+penguins <- palmerpenguins::penguins |> drop_na()
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-Intechmer")
+```
+
+## Bienvenue
+
+**Objectifs :**
+
+- ✅ Ajouter des **annotations** avec `annotate()`, `geom_text()`, `geom_label()`
+- ✅ **Combiner plusieurs graphiques** avec `patchwork`
+- ✅ Créer des **graphiques interactifs** avec `plotly`
+- ✅ Utiliser des **extensions** ggplot2 populaires
+- ✅ Optimiser pour la **publication**
+
+**Durée :** 45 minutes
+
+---
+
+## Section 1 : Annotations de texte
+
+### annotate() - Annotation simple
+
+```{r demo-annotate, exercise=TRUE}
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species), alpha = 0.6) +
+  annotate("text", x = 50, y = 21, 
+           label = "Zone Gentoo", 
+           size = 5, fontface = "bold", color = "darkgreen") +
+  annotate("rect", xmin = 45, xmax = 52, ymin = 13, ymax = 17,
+           alpha = 0.2, fill = "green") +
+  labs(title = "Annotations sur le graphique")
+```
+
+### geom_text() - Texte pour chaque point
+
+```{r demo-geom-text, exercise=TRUE}
+# Calculer moyennes par espèce
+moyennes <- penguins |>
+  group_by(species) |>
+  summarise(
+    bill_length = mean(bill_length_mm),
+    bill_depth = mean(bill_depth_mm)
+  )
+
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species), alpha = 0.3) +
+  geom_text(data = moyennes, 
+            aes(x = bill_length, y = bill_depth, label = species),
+            size = 5, fontface = "bold") +
+  labs(title = "Moyennes par espèce")
+```
+
+### Exercice 1 : Annotations
+
+Annotez ce graphique avec une flèche pointant vers la zone des Chinstrap :
+
+```{r ex1-annotate, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.6) +
+  annotate("segment", 
+           x = _____, xend = _____, 
+           y = _____, yend = _____,
+           arrow = arrow(length = unit(0.3, "cm")))
+```
+
+```{r ex1-annotate-solution}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.6) +
+  annotate("segment", 
+           x = 195, xend = 190, 
+           y = 4200, yend = 3700,
+           arrow = arrow(length = unit(0.3, "cm")),
+           linewidth = 1) +
+  annotate("text", x = 196, y = 4250, 
+           label = "Chinstrap", fontface = "bold") +
+  labs(title = "Masse vs Nageoires avec annotation") +
+  theme_minimal()
+```
+
+---
+
+## Section 2 : geom_label() et ggrepel
+
+### geom_label() - Étiquettes encadrées
+
+```{r demo-label, exercise=TRUE}
+# Top 3 manchots les plus lourds
+top_heavy <- penguins |>
+  slice_max(body_mass_g, n = 3) |>
+  mutate(label = paste(species, body_mass_g, "g"))
+
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(alpha = 0.3) +
+  geom_label(data = top_heavy, 
+             aes(label = label),
+             color = "red", fontface = "bold") +
+  labs(title = "Les 3 manchots les plus lourds")
+```
+
+### ggrepel - Éviter le chevauchement
+
+```{r demo-ggrepel, exercise=TRUE}
+# Nécessite: library(ggrepel)
+# Pour ce demo, on simule avec geom_label
+
+extremes <- penguins |>
+  group_by(species) |>
+  slice_max(bill_length_mm, n = 1)
+
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species), alpha = 0.5) +
+  geom_label(data = extremes, 
+             aes(label = species, color = species),
+             nudge_y = 1, fontface = "bold") +
+  labs(title = "Bec le plus long par espèce") +
+  theme_minimal()
+```
+
+---
+
+## Section 3 : patchwork - Combiner graphiques
+
+### Opérateur + : Côte à côte
+
+```{r demo-patchwork-plus, exercise=TRUE}
+p1 <- ggplot(penguins, aes(x = species, fill = species)) +
+  geom_bar() +
+  labs(title = "Graphique A") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p2 <- ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot() +
+  labs(title = "Graphique B") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p1 + p2
+```
+
+### Opérateur / : Empilés verticalement
+
+```{r demo-patchwork-slash, exercise=TRUE}
+p3 <- ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point() +
+  labs(title = "Graphique C") +
+  theme_minimal()
+
+p4 <- ggplot(penguins, aes(x = flipper_length_mm, fill = species)) +
+  geom_histogram(bins = 20, alpha = 0.7) +
+  labs(title = "Graphique D") +
+  theme_minimal()
+
+p3 / p4
+```
+
+### Exercice 2 : Composition complexe
+
+Créez une composition : (p1 + p2) / p3
+
+```{r ex2-patchwork, exercise=TRUE}
+p1 <- ggplot(penguins, aes(x = bill_length_mm)) +
+  geom_histogram(bins = 20, fill = "steelblue") +
+  theme_minimal()
+
+p2 <- ggplot(penguins, aes(x = bill_depth_mm)) +
+  geom_histogram(bins = 20, fill = "coral") +
+  theme_minimal()
+
+p3 <- ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point() +
+  theme_minimal()
+
+# Composez :
+_____ 
+```
+
+```{r ex2-patchwork-solution}
+p1 <- ggplot(penguins, aes(x = bill_length_mm)) +
+  geom_histogram(bins = 20, fill = "steelblue") +
+  labs(title = "Longueur du bec") +
+  theme_minimal()
+
+p2 <- ggplot(penguins, aes(x = bill_depth_mm)) +
+  geom_histogram(bins = 20, fill = "coral") +
+  labs(title = "Profondeur du bec") +
+  theme_minimal()
+
+p3 <- ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Relation longueur-profondeur") +
+  theme_minimal()
+
+(p1 + p2) / p3 +
+  plot_annotation(title = "Analyse du bec des manchots",
+                  theme = theme(plot.title = element_text(size = 16, face = "bold")))
+```
+
+---
+
+## Section 4 : Layouts avec patchwork
+
+### plot_layout() - Contrôle avancé
+
+```{r demo-layout, exercise=TRUE}
+p1 <- ggplot(penguins, aes(x = species, fill = species)) +
+  geom_bar() +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p2 <- ggplot(penguins, aes(x = body_mass_g, y = flipper_length_mm)) +
+  geom_point(aes(color = species)) +
+  theme_minimal()
+
+p3 <- ggplot(penguins, aes(x = island, fill = island)) +
+  geom_bar() +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p1 + p2 + p3 +
+  plot_layout(ncol = 2, heights = c(1, 2))
+```
+
+### Exercice 3 : Layout personnalisé
+
+Créez un layout 2x2 avec 4 graphiques :
+
+```{r ex3-layout, exercise=TRUE}
+g1 <- ggplot(penguins, aes(x = bill_length_mm)) + geom_histogram(bins = 15)
+g2 <- ggplot(penguins, aes(x = bill_depth_mm)) + geom_histogram(bins = 15)
+g3 <- ggplot(penguins, aes(x = flipper_length_mm)) + geom_histogram(bins = 15)
+g4 <- ggplot(penguins, aes(x = body_mass_g)) + geom_histogram(bins = 15)
+
+# Layout 2x2 :
+_____ + plot_layout(ncol = _____)
+```
+
+```{r ex3-layout-solution}
+g1 <- ggplot(penguins, aes(x = bill_length_mm)) + 
+  geom_histogram(bins = 15, fill = "steelblue") +
+  labs(title = "Longueur bec") + theme_minimal()
+
+g2 <- ggplot(penguins, aes(x = bill_depth_mm)) + 
+  geom_histogram(bins = 15, fill = "coral") +
+  labs(title = "Profondeur bec") + theme_minimal()
+
+g3 <- ggplot(penguins, aes(x = flipper_length_mm)) + 
+  geom_histogram(bins = 15, fill = "lightgreen") +
+  labs(title = "Longueur nageoire") + theme_minimal()
+
+g4 <- ggplot(penguins, aes(x = body_mass_g)) + 
+  geom_histogram(bins = 15, fill = "plum") +
+  labs(title = "Masse corporelle") + theme_minimal()
+
+(g1 + g2) / (g3 + g4) +
+  plot_annotation(title = "Distribution des variables morphométriques",
+                  theme = theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5)))
+```
+
+---
+
+## Section 5 : Graphiques interactifs (aperçu)
+
+### plotly::ggplotly()
+
+Convertir un ggplot en graphique interactif :
+
+```{r demo-plotly, exercise=TRUE}
+# Note: Dans un environnement interactif, ce graphique serait zoomable et afficherait
+# des infobulles au survol
+
+p <- ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, 
+                           color = species, text = paste("Espèce:", species))) +
+  geom_point(size = 2) +
+  labs(title = "Graphique interactif (simulation)") +
+  theme_minimal()
+
+p
+# Dans un vrai environnement: plotly::ggplotly(p, tooltip = "text")
+```
+
+---
+
+## Section 6 : Extensions utiles
+
+### Exemples d'extensions populaires
+
+```{r demo-extensions, exercise=TRUE}
+# ggridges - Graphiques en crêtes
+# library(ggridges)
+
+# gganimate - Animations
+# library(gganimate)
+
+# ggforce - Formes avancées
+# library(ggforce)
+
+# ggcorrplot - Matrices de corrélation
+# library(ggcorrplot)
+
+# Exemple simple de graphique stylisé
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_violin(alpha = 0.5) +
+  geom_jitter(width = 0.2, alpha = 0.3, size = 1) +
+  scale_fill_viridis_d() +
+  labs(title = "Distribution avec violin + jitter") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+---
+
+## Section 7 : Optimisation pour publication
+
+### Sauvegarder en haute résolution
+
+```{r demo-ggsave, exercise=TRUE}
+p_publication <- ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, 
+                                       color = species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  scale_color_viridis_d() +
+  labs(
+    title = "Dimensions du bec des manchots",
+    subtitle = "Palmer Archipelago, Antarctique",
+    x = "Longueur du bec (mm)",
+    y = "Profondeur du bec (mm)",
+    color = "Espèce",
+    caption = "Source: palmerpenguins"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5, color = "gray50"),
+    legend.position = "bottom"
+  )
+
+p_publication
+
+# Pour sauvegarder :
+# ggsave("mon_graphique.png", p_publication, width = 8, height = 6, dpi = 300)
+```
+
+### Exercice 4 : Graphique publication
+
+Créez un graphique prêt pour publication avec tous les éléments :
+
+```{r ex4-publication, exercise=TRUE}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(_____, alpha = _____) +
+  geom_smooth(_____, se = _____) +
+  scale_color_viridis_d() +
+  labs(
+    title = _____,
+    subtitle = _____,
+    x = _____,
+    y = _____
+  ) +
+  theme_minimal()
+```
+
+```{r ex4-publication-solution}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(size = 2.5, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1.2) +
+  scale_color_viridis_d(option = "plasma") +
+  labs(
+    title = "Relation entre longueur des nageoires et masse corporelle",
+    subtitle = "Trois espèces de manchots de l'archipel Palmer",
+    x = "Longueur des nageoires (mm)",
+    y = "Masse corporelle (g)",
+    color = "Espèce",
+    caption = "Source: Palmer Station LTER | Analyse: 2025"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "gray40"),
+    plot.caption = element_text(size = 8, color = "gray50"),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    axis.title = element_text(size = 11, face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+---
+
+## Défi final
+
+Créez une **figure composite publication-ready** :
+- 3 graphiques combinés (patchwork)
+- Annotations sur au moins un graphique
+- Palette de couleurs cohérente (viridis)
+- Thème unifié et professionnel
+- Titre général avec `plot_annotation()`
+
+```{r defi-final, exercise=TRUE, exercise.lines=20}
+# À vous de jouer !
+```
+
+```{r defi-final-solution}
+# Graphique 1: Distribution
+p1 <- ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_violin(alpha = 0.7) +
+  geom_boxplot(width = 0.2, fill = "white", alpha = 0.8) +
+  scale_fill_viridis_d() +
+  labs(title = "A. Distribution de la masse", y = "Masse (g)") +
+  theme_minimal() +
+  theme(legend.position = "none", axis.title.x = element_blank())
+
+# Graphique 2: Corrélation avec annotation
+p2 <- ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  annotate("text", x = 220, y = 3000, 
+           label = "Corrélation positive", 
+           fontface = "italic", size = 4) +
+  scale_color_viridis_d() +
+  labs(title = "B. Relation nageoires-masse",
+       x = "Nageoires (mm)", y = "Masse (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Graphique 3: Comparaison
+p3 <- penguins |>
+  count(species, island) |>
+  ggplot(aes(x = species, y = n, fill = island)) +
+  geom_col(position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  labs(title = "C. Répartition par île", y = "Nombre", fill = "Île") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank())
+
+# Composition finale
+(p1 + p2) / p3 +
+  plot_annotation(
+    title = "Analyse morphométrique des manchots de l'Antarctique",
+    subtitle = "Données collectées à Palmer Station, 2007-2009",
+    caption = "Source: palmerpenguins | @ Cnam-Intechmer - 2025",
+    theme = theme(
+      plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40")
+    )
+  )
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# ANNOTATIONS
+annotate("text", x = 10, y = 20, label = "Texte")
+annotate("rect", xmin = 5, xmax = 15, ymin = 10, ymax = 25)
+geom_text(aes(label = var))
+geom_label(aes(label = var))
+
+# PATCHWORK
+p1 + p2              # Côte à côte
+p1 / p2              # Empilés
+(p1 + p2) / p3       # Composition
+plot_layout(ncol = 2, heights = c(1, 2))
+
+# SAUVEGARDE
+ggsave("fig.png", plot = p, width = 8, height = 6, dpi = 300)
+```
+
+<div class="footer">
+  <p>@ Cnam-Intechmer - 2025</p>
+</div>
