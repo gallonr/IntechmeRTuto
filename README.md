@@ -132,27 +132,6 @@ afficher_tutoriels(niveau = "Débutant")
 
 ---
 
-
-## 🤝 Contribution
-
-### Pour les enseignants
-
-Vous souhaitez contribuer ou adapter ces tutoriels ?
-
-1. Fork ce projet
-2. Créez vos tutoriels à partir du template
-3. Testez-les localement
-4. Partagez vos améliorations
-
-### Pour les étudiants
-
-Vous avez trouvé une erreur ou avez une suggestion ?
-
-- Contactez votre enseignant
-- Ou ouvrez une issue sur le dépôt Git (si applicable)
-
----
-
 ## 📖 Ressources
 
 ### Documentation officielle
@@ -165,11 +144,6 @@ Vous avez trouvé une erreur ou avez une suggestion ?
 ### Cheatsheets
 
 - [Cheatsheets RStudio](https://posit.co/resources/cheatsheets/)
-
-### Communauté
-
-- [RStudio Community](https://community.rstudio.com/)
-- [Stack Overflow - Tag R](https://stackoverflow.com/questions/tagged/r)
 
 ---
 
