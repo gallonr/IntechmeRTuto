@@ -15,8 +15,6 @@
 ^testLearnR\.R$
 ^template_tutorial\.Rmd$
 ^01-vecteurs-tibbles\.Rmd$
-^setup_resources\.R$
-^update_paths\.R$
 ^tutoriels$
 ^\.git$
 ^\.github$
