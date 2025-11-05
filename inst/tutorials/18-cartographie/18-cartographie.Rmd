@@ -15,6 +15,8 @@ description: "sf, ggplot2 + geom_sf, cartes thématiques et projections"
 library(learnr)
 library(tidyverse)
 library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 # Créer des données spatiales exemple
@@ -24,6 +26,11 @@ penguins_locations <- tibble(
   latitude = c(-64.77, -65.50, -64.23),
   n_penguins = c(52, 168, 124)
 )
+
+# Charger les fonds de cartes
+france <- ne_states(country = "france", returnclass = "sf")
+europe <- ne_countries(scale = "medium", continent = "europe", returnclass = "sf")
+monde <- ne_countries(scale = "medium", returnclass = "sf")
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -111,6 +118,18 @@ st_geometry(villes_sf)
 ### Carte simple
 
 ```{r demo-geom-sf, exercise=TRUE}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
 # Carte des îles Palmer
 ggplot(data = locations_sf) +
   geom_sf(aes(size = n_penguins), color = "steelblue", alpha = 0.7) +
@@ -122,6 +141,19 @@ ggplot(data = locations_sf) +
 ### Ajouter des étiquettes
 
 ```{r demo-labels, exercise=TRUE}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
+# Carte avec étiquettes
 ggplot(data = locations_sf) +
   geom_sf(aes(size = n_penguins), color = "coral") +
   geom_sf_text(aes(label = island), nudge_y = 0.05, fontface = "bold") +
@@ -174,6 +206,18 @@ ggplot(villes_sf) +
 ### CRS (Coordinate Reference System)
 
 ```{r demo-crs, exercise=TRUE}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
 # Vérifier la projection
 st_crs(locations_sf)
 
@@ -185,6 +229,18 @@ st_crs(locations_polar)
 ### Comparaison de projections
 
 ```{r demo-projections, exercise=TRUE}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
 # WGS84 (géographique)
 p1 <- ggplot(locations_sf) +
   geom_sf(size = 4, color = "blue") +
@@ -272,6 +328,14 @@ ggplot(antarctic_zones) +
 ### Superposer plusieurs couches
 
 ```{r demo-layers, exercise=TRUE}
+# Créer les données des manchots
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
 # Base : zones
 antarctic_zones <- tibble(
   zone = c("Ouest", "Est"),
@@ -294,69 +358,106 @@ ggplot() +
   theme_minimal()
 ```
 
-### Exercice 4 : Carte multi-couches
+### Exercice 4 : Carte multi-couches avec fond réel
 
 Créez une carte avec :
-1. Fond de zones (polygones)
+1. Fond de la France (vrai fond de carte)
 2. Points de villes
 3. Étiquettes
 
 ```{r ex4-layers, exercise=TRUE}
-# Zones (exemple simplifié)
-bretagne <- tibble(
-  region = "Bretagne",
-  geometry = st_sfc(st_polygon(list(cbind(
-    c(-5, -1, -1, -5, -5),
-    c(47, 47, 49, 49, 47)
-  ))))
-) |> st_as_sf(crs = 4326)
+# Charger le fond de carte France
+france <- ne_countries(country = "france", scale = "medium", returnclass = "sf")
 
-# Villes
+# Villes côtières
 villes <- tibble(
-  nom = c("Brest", "Rennes"),
-  lon = c(-4.49, -1.68),
-  lat = c(48.39, 48.11)
+  nom = c("Brest", "Nantes", "Bordeaux", "Marseille"),
+  lon = c(-4.49, -1.55, -0.57, 5.37),
+  lat = c(48.39, 47.22, 44.84, 43.30),
+  population = c(140000, 320000, 260000, 870000)
 ) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
 # Carte
 ggplot() +
-  geom_sf(data = _____, fill = "lightblue", alpha = 0.3) +
-  geom_sf(data = _____, size = 4, color = "red") +
-  geom_sf_text(data = _____, aes(label = _____), nudge_y = 0.1)
+  geom_sf(data = _____, fill = "lightgreen", alpha = 0.3) +
+  geom_sf(data = _____, aes(size = _____), color = "darkred", alpha = 0.7) +
+  geom_sf_text(data = _____, aes(label = _____), nudge_y = 0.3, fontface = "bold")
 ```
 
 ```{r ex4-layers-solution}
-# Zones (exemple simplifié)
-bretagne <- tibble(
-  region = "Bretagne",
-  geometry = st_sfc(st_polygon(list(cbind(
-    c(-5, -1, -1, -5, -5),
-    c(47, 47, 49, 49, 47)
-  ))))
-) |> st_as_sf(crs = 4326)
+# Charger le fond de carte France
+france <- ne_countries(country = "france", scale = "medium", returnclass = "sf")
 
-# Villes
+# Villes côtières
 villes <- tibble(
-  nom = c("Brest", "Rennes"),
-  lon = c(-4.49, -1.68),
-  lat = c(48.39, 48.11)
+  nom = c("Brest", "Nantes", "Bordeaux", "Marseille"),
+  lon = c(-4.49, -1.55, -0.57, 5.37),
+  lat = c(48.39, 47.22, 44.84, 43.30),
+  population = c(140000, 320000, 260000, 870000)
 ) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
-# Carte
+# Carte complète
 ggplot() +
-  geom_sf(data = bretagne, fill = "lightblue", alpha = 0.3, color = "darkblue", linewidth = 1) +
-  geom_sf(data = villes, size = 5, color = "darkred", alpha = 0.7) +
-  geom_sf_text(data = villes, aes(label = nom), nudge_y = 0.15, fontface = "bold") +
-  labs(title = "Carte de Bretagne avec villes principales") +
+  geom_sf(data = france, fill = "lightgreen", alpha = 0.3, color = "darkgreen", linewidth = 0.5) +
+  geom_sf(data = villes, aes(size = population), color = "darkred", alpha = 0.7) +
+  geom_sf_text(data = villes, aes(label = nom), nudge_y = 0.5, fontface = "bold", size = 3.5) +
+  scale_size_continuous(range = c(3, 10), name = "Population") +
+  labs(title = "Principales villes côtières de France") +
   theme_minimal() +
-  coord_sf(xlim = c(-5.5, -0.5), ylim = c(47, 49.5))
+  coord_sf(xlim = c(-5, 8), ylim = c(42, 51))
 ```
 
 ---
 
-## Section 6 : Import de données réelles
+## Section 6 : Fonds de cartes avec rnaturalearth
 
-### Lire des fichiers géospatiaux
+### Charger des fonds de cartes mondiaux
+
+```{r demo-naturalearth, exercise=TRUE}
+# Charger rnaturalearth
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Carte du monde
+monde <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Carte d'Europe
+europe <- ne_countries(scale = "medium", continent = "europe", returnclass = "sf")
+
+# Visualiser l'Europe
+ggplot(europe) +
+  geom_sf(fill = "lightblue", color = "white") +
+  labs(title = "Carte d'Europe") +
+  theme_minimal()
+```
+
+### Carte de France avec données
+
+```{r demo-france-map, exercise=TRUE}
+# Fond de carte France
+france <- ne_countries(country = "france", scale = "medium", returnclass = "sf")
+
+# Stations marines
+stations <- tibble(
+  nom = c("Roscoff", "Concarneau", "La Rochelle", "Sète"),
+  lon = c(-3.98, -3.92, -1.15, 3.70),
+  lat = c(48.73, 47.87, 46.16, 43.40),
+  temperature = c(12.5, 13.2, 14.8, 16.5)
+) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# Carte combinée
+ggplot() +
+  geom_sf(data = france, fill = "wheat", color = "gray40") +
+  geom_sf(data = stations, aes(color = temperature), size = 5) +
+  scale_color_gradient(low = "blue", high = "red", name = "Temp (°C)") +
+  geom_sf_text(data = stations, aes(label = nom), 
+               nudge_y = 0.4, fontface = "bold", size = 3) +
+  labs(title = "Stations marines en France") +
+  theme_minimal() +
+  coord_sf(xlim = c(-5, 8), ylim = c(42, 51))
+```
+
+### Import de fichiers externes
 
 ```{r demo-read, exercise=TRUE}
 # LECTURE DE FICHIERS (exemples - à adapter selon vos données)
@@ -387,6 +488,18 @@ stations_sf
 ### Distances entre points
 
 ```{r demo-distance, exercise=TRUE}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
 # Distances entre îles (en mètres)
 locations_sf_proj <- st_transform(locations_sf, 3031)  # Projection métrique
 
@@ -398,6 +511,18 @@ distances
 ### Buffer (zone tampon)
 
 ```{r demo-buffer, exercise=TRUE}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
 # Créer un buffer de 50 km autour des îles
 locations_proj <- st_transform(locations_sf, 3031)
 buffer_50km <- st_buffer(locations_proj, dist = 50000)  # 50 km en mètres
@@ -415,6 +540,18 @@ ggplot() +
 Créez un buffer de 100 km et calculez les aires :
 
 ```{r ex5-buffer, exercise=TRUE}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
 locations_proj <- st_transform(locations_sf, 3031)
 
 buffer_100km <- st_buffer(locations_proj, dist = _____)
@@ -425,6 +562,18 @@ aires
 ```
 
 ```{r ex5-buffer-solution}
+# Créer les données
+penguins_locations <- tibble(
+  island = c("Torgersen", "Biscoe", "Dream"),
+  longitude = c(-64.08, -65.43, -64.73),
+  latitude = c(-64.77, -65.50, -64.23),
+  n_penguins = c(52, 168, 124)
+)
+
+locations_sf <- st_as_sf(penguins_locations, 
+                          coords = c("longitude", "latitude"),
+                          crs = 4326)
+
 locations_proj <- st_transform(locations_sf, 3031)
 
 buffer_100km <- st_buffer(locations_proj, dist = 100000)  # 100 km
@@ -456,92 +605,107 @@ Créez une **carte publication-ready** :
 5. Projection appropriée
 6. Thème professionnel
 
-```{r defi-final, exercise=TRUE, exercise.lines=25}
-# 1. Créer des zones océaniques
-zones <- tibble(
-  nom = c("Zone A", "Zone B", "Zone C"),
-  temperature = c(12, 15, 18),
-  geometry = st_sfc(
-    st_polygon(list(cbind(c(-6, -4, -4, -6, -6), c(47, 47, 48, 48, 47)))),
-    st_polygon(list(cbind(c(-4, -2, -2, -4, -4), c(47, 47, 48, 48, 47)))),
-    st_polygon(list(cbind(c(-2, 0, 0, -2, -2), c(47, 47, 48, 48, 47))))
-  )
+```{r defi-final, exercise=TRUE, exercise.lines=30}
+# 1. Fond de carte Europe de l'Ouest
+europe <- ne_countries(scale = "medium", continent = "europe", returnclass = "sf")
+
+# 2. Zones économiques exclusives (ZEE) simulées
+zee_france <- tibble(
+  pays = "France",
+  zone = "Atlantique",
+  richesse_halieutique = 85,
+  geometry = st_sfc(st_polygon(list(cbind(
+    c(-6, -1, -1, -6, -6),
+    c(43, 43, 49, 49, 43)
+  ))))
 ) |> st_as_sf(crs = 4326)
 
-# 2. Points de stations
-stations <- tibble(
-  station = paste("S", 1:5),
-  lon = c(-5.5, -3.5, -1.5, -4, -2.5),
-  lat = c(47.2, 47.3, 47.5, 47.7, 47.8),
-  mesure = c(150, 200, 180, 220, 190)
+# 3. Ports de pêche
+ports <- tibble(
+  nom = c("Boulogne", "Concarneau", "Lorient", "La Rochelle", "Hendaye"),
+  lon = c(1.61, -3.92, -3.37, -1.15, -1.77),
+  lat = c(50.73, 47.87, 47.75, 46.16, 43.36),
+  tonnage = c(35000, 28000, 22000, 18000, 12000)
 ) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
-# 3. Créer la carte
+# 4. Créer la carte complète avec fond réel
 ggplot() +
-  _____ +
-  _____ +
-  _____
+  geom_sf(data = _____, fill = _____, alpha = _____) +
+  geom_sf(data = _____, aes(fill = _____), alpha = _____) +
+  geom_sf(data = _____, aes(size = _____), color = _____) +
+  _____  # Ajoutez échelles, labels, thème
 ```
 
 ```{r defi-final-solution}
-# 1. Créer des zones océaniques
-zones <- tibble(
-  nom = c("Zone A", "Zone B", "Zone C"),
-  temperature = c(12, 15, 18),
-  geometry = st_sfc(
-    st_polygon(list(cbind(c(-6, -4, -4, -6, -6), c(47, 47, 48, 48, 47)))),
-    st_polygon(list(cbind(c(-4, -2, -2, -4, -4), c(47, 47, 48, 48, 47)))),
-    st_polygon(list(cbind(c(-2, 0, 0, -2, -2), c(47, 47, 48, 48, 47))))
-  )
+# 1. Fond de carte Europe de l'Ouest
+europe <- ne_countries(scale = "medium", continent = "europe", returnclass = "sf")
+
+# 2. Zones économiques exclusives (ZEE) simulées
+zee_france <- tibble(
+  pays = "France",
+  zone = "Atlantique",
+  richesse_halieutique = 85,
+  geometry = st_sfc(st_polygon(list(cbind(
+    c(-6, -1, -1, -6, -6),
+    c(43, 43, 49, 49, 43)
+  ))))
 ) |> st_as_sf(crs = 4326)
 
-# 2. Points de stations
-stations <- tibble(
-  station = paste("S", 1:5),
-  lon = c(-5.5, -3.5, -1.5, -4, -2.5),
-  lat = c(47.2, 47.3, 47.5, 47.7, 47.8),
-  mesure = c(150, 200, 180, 220, 190)
+# 3. Ports de pêche
+ports <- tibble(
+  nom = c("Boulogne", "Concarneau", "Lorient", "La Rochelle", "Hendaye"),
+  lon = c(1.61, -3.92, -3.37, -1.15, -1.77),
+  lat = c(50.73, 47.87, 47.75, 46.16, 43.36),
+  tonnage = c(35000, 28000, 22000, 18000, 12000)
 ) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
-# 3. Reprojection en Lambert-93
-zones_proj <- st_transform(zones, 2154)
-stations_proj <- st_transform(stations, 2154)
+# 4. Reprojection en Lambert-93 pour la France
+europe_proj <- st_transform(europe, 2154)
+zee_proj <- st_transform(zee_france, 2154)
+ports_proj <- st_transform(ports, 2154)
 
-# 4. Carte finale
+# 5. Carte finale publication-ready
 ggplot() +
-  # Fond : zones colorées par température
-  geom_sf(data = zones_proj, aes(fill = temperature), 
-          color = "white", linewidth = 1, alpha = 0.7) +
-  scale_fill_gradient2(
-    low = "blue", mid = "yellow", high = "red",
-    midpoint = 15,
-    name = "Température\n(°C)"
+  # Fond : pays européens
+  geom_sf(data = europe_proj, fill = "gray95", color = "gray60", linewidth = 0.3) +
+  # ZEE française colorée
+  geom_sf(data = zee_proj, aes(fill = richesse_halieutique), 
+          alpha = 0.4, color = "steelblue", linewidth = 1, linetype = "dashed") +
+  scale_fill_gradient(
+    low = "lightyellow", high = "darkgreen",
+    name = "Richesse\nhalieutique"
   ) +
-  # Points : stations avec taille selon mesure
-  geom_sf(data = stations_proj, aes(size = mesure), 
-          color = "black", fill = "white", shape = 21, stroke = 1.5) +
+  # Ports avec taille proportionnelle au tonnage
+  geom_sf(data = ports_proj, aes(size = tonnage), 
+          color = "darkred", fill = "orange", shape = 21, stroke = 1.5, alpha = 0.8) +
   scale_size_continuous(
-    range = c(3, 8),
-    name = "Mesure\n(unités)"
+    range = c(4, 12),
+    name = "Tonnage\n(tonnes/an)",
+    labels = scales::comma
   ) +
-  # Étiquettes des stations
-  geom_sf_text(data = stations_proj, aes(label = station),
-               nudge_y = 15000, fontface = "bold", size = 3.5) +
-  # Annotations
+  # Étiquettes des ports
+  geom_sf_text(data = ports_proj, aes(label = nom),
+               nudge_x = 80000, nudge_y = 30000, 
+               fontface = "bold", size = 3, color = "gray20") +
+  # Titre et annotations
   labs(
-    title = "Cartographie océanographique - Atlantique Est",
-    subtitle = "Températures de surface et stations de mesure",
-    caption = "Source: Données simulées | @ Cnam-Intechmer - 2025"
+    title = "Cartographie halieutique - Façade Atlantique française",
+    subtitle = "Principaux ports de pêche et zones d'exploitation",
+    caption = "Source: Données simulées | @ Cnam-Intechmer - 2025 | Projection: Lambert-93 (EPSG:2154)"
   ) +
-  # Thème
+  # Limites géographiques (France Atlantique)
+  coord_sf(xlim = c(-400000, 1200000), ylim = c(6100000, 7200000)) +
+  # Thème professionnel
   theme_minimal() +
   theme(
-    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "gray40"),
-    plot.caption = element_text(size = 8, color = "gray50"),
+    plot.title = element_text(size = 15, face = "bold", hjust = 0.5, color = "gray10"),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "gray40", margin = margin(b = 10)),
+    plot.caption = element_text(size = 8, color = "gray50", hjust = 1),
     legend.position = "right",
-    panel.grid = element_line(color = "gray90", linetype = "dashed"),
-    panel.background = element_rect(fill = "aliceblue")
+    legend.background = element_rect(fill = "white", color = "gray80"),
+    panel.grid = element_line(color = "gray90", linetype = "dotted", linewidth = 0.3),
+    panel.background = element_rect(fill = "aliceblue"),
+    plot.background = element_rect(fill = "white", color = NA)
   )
 ```
 
@@ -553,9 +717,16 @@ ggplot() +
 # CRÉER DES OBJETS SF
 st_as_sf(data, coords = c("lon", "lat"), crs = 4326)
 
+# FONDS DE CARTES (rnaturalearth)
+ne_countries(scale = "medium", returnclass = "sf")           # Monde
+ne_countries(country = "france", returnclass = "sf")         # Un pays
+ne_countries(continent = "europe", returnclass = "sf")       # Un continent
+ne_states(country = "france", returnclass = "sf")            # Régions/États
+
 # LIRE DES FICHIERS
-st_read("fichier.shp")
-st_read("fichier.geojson")
+st_read("fichier.shp")               # Shapefile
+st_read("fichier.geojson")           # GeoJSON
+st_read("fichier.gpkg")              # GeoPackage
 
 # PROJECTIONS
 st_crs(objet)                        # Voir CRS
@@ -565,6 +736,7 @@ st_transform(objet, crs = 2154)      # Reprojeter
 ggplot(data) + geom_sf()
 geom_sf(aes(fill = variable))        # Choroplèthe
 geom_sf_text(aes(label = nom))       # Étiquettes
+coord_sf(xlim = c(-5, 10), ylim = c(40, 52))  # Limites
 
 # ANALYSES SPATIALES
 st_distance(points)                  # Distances
@@ -573,9 +745,10 @@ st_area(polygones)                   # Aires
 st_intersection(poly1, poly2)        # Intersection
 
 # CRS COURANTS
-# 4326  : WGS84 (GPS)
-# 2154  : Lambert-93 (France)
+# 4326  : WGS84 (GPS, lat/lon)
+# 2154  : Lambert-93 (France métropolitaine)
 # 3031  : Antarctic Polar Stereographic
+# 3857  : Web Mercator (cartes web)
 ```
 
 <div class="footer">
