@@ -54,17 +54,7 @@ remotes::install_github("gallonr/IntechmeRTuto")
 
 ## 🚀 Utilisation
 
-### Installation rapide
-
-```r
-# 1. Installer le package remotes
-install.packages("remotes")
-
-# 2. Installer IntechmeR_Tuto depuis GitHub
-remotes::install_github("gallonr/IntechmeR_Tuto")
-```
-
-### Utilisation de base
+### Voir les tutoriels disponibles
 
 ```r
 # Charger le package
