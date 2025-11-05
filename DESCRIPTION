@@ -15,7 +15,10 @@ RoxygenNote: 7.0.0
 Imports:
     learnr,
     tidyverse,
-    gradethis
+    gradethis,
+    sf,
+    rnaturalearth,
+    rnaturalearthdata
 Suggests:
     rmarkdown,
     knitr
