@@ -30,6 +30,7 @@ renv/
 # Données sensibles (à adapter selon vos besoins)
 data/private/
 data/confidential/
+data/
 
 # Fichiers de configuration personnels
 .Renviron
@@ -48,11 +49,22 @@ desktop.ini
 ~$*.docx
 ~$*.pptx
 
+template_tutorial.Rmd
+
+CATALOGUE_TUTORIELS.md
+DEMARRAGE_RAPIDE.md
+INSTALLATION_GITHUB.md
+PROGRAMME_EXERCICES.md
+QUICK_START.md
+README_TEMPLATE.md
+RECAPITULATIF.md
+STRUCTURE.md
+
 # Images temporaires (gardez vos logos)
 # images/*.tmp
 
 # Ne pas ignorer ces fichiers importants
 !.gitignore
 !README.md
-!template_tutorial.Rmd
+
 !css/custom.css
