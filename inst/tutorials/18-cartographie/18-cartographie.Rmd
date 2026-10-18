@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "sf, ggplot2 + geom_sf, cartes thématiques et projections"
 ---
@@ -22,13 +35,15 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 # Créer des données spatiales exemple
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
+locations_sf <- st_as_sf(penguins_locations,
+                         coords = c("longitude", "latitude"), crs = 4326)
 
 # Charger les fonds de cartes
-france <- ne_states(country = "france", returnclass = "sf")
+france <- ne_countries(country = "france", scale = "medium", returnclass = "sf")
 europe <- ne_countries(scale = "medium", continent = "europe", returnclass = "sf")
 monde <- ne_countries(scale = "medium", returnclass = "sf")
 ```
@@ -39,6 +54,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 
 ## Bienvenue
 
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Analyses spatiales et cartographie avec R »](https://gallonr.github.io/intechmer_statistique_cours/12-Init_analyseSpat.html) du livre de cours.
+</div>
+
 **Objectifs :**
 
 - ✅ Comprendre les **objets spatiaux** avec `sf`
@@ -47,7 +66,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Créer des **cartes thématiques**
 - ✅ Combiner **données spatiales et non-spatiales**
 
-**Durée :** 60 minutes
 
 ---
 
@@ -121,8 +139,8 @@ st_geometry(villes_sf)
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -144,8 +162,8 @@ ggplot(data = locations_sf) +
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -209,8 +227,8 @@ ggplot(villes_sf) +
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -232,8 +250,8 @@ st_crs(locations_polar)
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -309,14 +327,14 @@ antarctic_zones <- tibble(
     st_polygon(list(cbind(c(-64.5, -63.5, -63.5, -64.5, -64.5), c(-65.5, -65.5, -64.5, -64.5, -65.5)))),
     st_polygon(list(cbind(c(-65.5, -64.5, -64.5, -65.5, -65.5), c(-64.2, -64.2, -63.2, -63.2, -64.2))))
   )
-) |>
+) %>%
   st_as_sf(crs = 4326)
 
 ggplot(antarctic_zones) +
   geom_sf(aes(fill = temperature_moy), color = "white", linewidth = 1) +
   scale_fill_gradient2(low = "blue", mid = "lightblue", high = "red", 
                         midpoint = -3) +
-  labs(title = "Températures moyennes en Antarctique",
+  labs(title = "Températures moyennes (données simulées)",
        fill = "Temp (°C)") +
   theme_minimal()
 ```
@@ -331,8 +349,8 @@ ggplot(antarctic_zones) +
 # Créer les données des manchots
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -343,7 +361,7 @@ antarctic_zones <- tibble(
     st_polygon(list(cbind(c(-66, -64, -64, -66, -66), c(-66, -66, -63, -63, -66)))),
     st_polygon(list(cbind(c(-64, -62, -62, -64, -64), c(-66, -66, -63, -63, -66))))
   )
-) |> st_as_sf(crs = 4326)
+) %>% st_as_sf(crs = 4326)
 
 # Points : îles
 iles <- st_as_sf(penguins_locations, coords = c("longitude", "latitude"), crs = 4326)
@@ -361,6 +379,7 @@ ggplot() +
 ### Exercice 4 : Carte multi-couches avec fond réel
 
 Créez une carte avec :
+
 1. Fond de la France (vrai fond de carte)
 2. Points de villes
 3. Étiquettes
@@ -375,7 +394,7 @@ villes <- tibble(
   lon = c(-4.49, -1.55, -0.57, 5.37),
   lat = c(48.39, 47.22, 44.84, 43.30),
   population = c(140000, 320000, 260000, 870000)
-) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+) %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
 # Carte
 ggplot() +
@@ -394,7 +413,7 @@ villes <- tibble(
   lon = c(-4.49, -1.55, -0.57, 5.37),
   lat = c(48.39, 47.22, 44.84, 43.30),
   population = c(140000, 320000, 260000, 870000)
-) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+) %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
 # Carte complète
 ggplot() +
@@ -443,7 +462,7 @@ stations <- tibble(
   lon = c(-3.98, -3.92, -1.15, 3.70),
   lat = c(48.73, 47.87, 46.16, 43.40),
   temperature = c(12.5, 13.2, 14.8, 16.5)
-) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+) %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
 # Carte combinée
 ggplot() +
@@ -491,8 +510,8 @@ stations_sf
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -514,8 +533,8 @@ distances
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -543,8 +562,8 @@ Créez un buffer de 100 km et calculez les aires :
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -565,8 +584,8 @@ aires
 # Créer les données
 penguins_locations <- tibble(
   island = c("Torgersen", "Biscoe", "Dream"),
-  longitude = c(-64.08, -65.43, -64.73),
-  latitude = c(-64.77, -65.50, -64.23),
+  longitude = c(-64.08, -63.78, -64.23),
+  latitude = c(-64.77, -64.82, -64.73),
   n_penguins = c(52, 168, 124)
 )
 
@@ -618,7 +637,7 @@ zee_france <- tibble(
     c(-6, -1, -1, -6, -6),
     c(43, 43, 49, 49, 43)
   ))))
-) |> st_as_sf(crs = 4326)
+) %>% st_as_sf(crs = 4326)
 
 # 3. Ports de pêche
 ports <- tibble(
@@ -626,7 +645,7 @@ ports <- tibble(
   lon = c(1.61, -3.92, -3.37, -1.15, -1.77),
   lat = c(50.73, 47.87, 47.75, 46.16, 43.36),
   tonnage = c(35000, 28000, 22000, 18000, 12000)
-) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+) %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
 # 4. Créer la carte complète avec fond réel
 ggplot() +
@@ -649,7 +668,7 @@ zee_france <- tibble(
     c(-6, -1, -1, -6, -6),
     c(43, 43, 49, 49, 43)
   ))))
-) |> st_as_sf(crs = 4326)
+) %>% st_as_sf(crs = 4326)
 
 # 3. Ports de pêche
 ports <- tibble(
@@ -657,7 +676,7 @@ ports <- tibble(
   lon = c(1.61, -3.92, -3.37, -1.15, -1.77),
   lat = c(50.73, 47.87, 47.75, 46.16, 43.36),
   tonnage = c(35000, 28000, 22000, 18000, 12000)
-) |> st_as_sf(coords = c("lon", "lat"), crs = 4326)
+) %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
 # 4. Reprojection en Lambert-93 pour la France
 europe_proj <- st_transform(europe, 2154)
@@ -721,7 +740,7 @@ st_as_sf(data, coords = c("lon", "lat"), crs = 4326)
 ne_countries(scale = "medium", returnclass = "sf")           # Monde
 ne_countries(country = "france", returnclass = "sf")         # Un pays
 ne_countries(continent = "europe", returnclass = "sf")       # Un continent
-ne_states(country = "france", returnclass = "sf")            # Régions/États
+ne_states(country = "france", returnclass = "sf")            # Régions (package rnaturalearthhires)
 
 # LIRE DES FICHIERS
 st_read("fichier.shp")               # Shapefile
@@ -752,5 +771,5 @@ st_intersection(poly1, poly2)        # Intersection
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

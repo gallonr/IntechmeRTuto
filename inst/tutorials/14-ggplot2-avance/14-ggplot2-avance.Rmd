@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "Annoter, combiner graphiques avec patchwork, extensions ggplot2"
 ---
@@ -17,7 +30,7 @@ library(tidyverse)
 library(patchwork)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-penguins <- palmerpenguins::penguins |> drop_na()
+penguins <- palmerpenguins::penguins %>% drop_na()
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -25,6 +38,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ```
 
 ## Bienvenue
+
+<div class="info-box">
+📖 Tutoriel facultatif, pour aller plus loin que le chapitre [« Utilisation de ggplot2 »](https://gallonr.github.io/intechmer_statistique_cours/04b-R_ggplot2.html) du livre de cours.
+</div>
 
 **Objectifs :**
 
@@ -34,7 +51,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Utiliser des **extensions** ggplot2 populaires
 - ✅ Optimiser pour la **publication**
 
-**Durée :** 45 minutes
 
 ---
 
@@ -45,7 +61,7 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ```{r demo-annotate, exercise=TRUE}
 ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
   geom_point(aes(color = species), alpha = 0.6) +
-  annotate("text", x = 50, y = 21, 
+  annotate("text", x = 48.5, y = 12.5, 
            label = "Zone Gentoo", 
            size = 5, fontface = "bold", color = "darkgreen") +
   annotate("rect", xmin = 45, xmax = 52, ymin = 13, ymax = 17,
@@ -57,8 +73,8 @@ ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
 
 ```{r demo-geom-text, exercise=TRUE}
 # Calculer moyennes par espèce
-moyennes <- penguins |>
-  group_by(species) |>
+moyennes <- penguins %>%
+  group_by(species) %>%
   summarise(
     bill_length = mean(bill_length_mm),
     bill_depth = mean(bill_depth_mm)
@@ -107,8 +123,8 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
 
 ```{r demo-label, exercise=TRUE}
 # Top 3 manchots les plus lourds
-top_heavy <- penguins |>
-  slice_max(body_mass_g, n = 3) |>
+top_heavy <- penguins %>%
+  slice_max(body_mass_g, n = 3) %>%
   mutate(label = paste(species, body_mass_g, "g"))
 
 ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
@@ -125,8 +141,8 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
 # Nécessite: library(ggrepel)
 # Pour ce demo, on simule avec geom_label
 
-extremes <- penguins |>
-  group_by(species) |>
+extremes <- penguins %>%
+  group_by(species) %>%
   slice_max(bill_length_mm, n = 1)
 
 ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
@@ -274,7 +290,8 @@ g4 <- ggplot(penguins, aes(x = body_mass_g)) +
   geom_histogram(bins = 15, fill = "plum") +
   labs(title = "Masse corporelle") + theme_minimal()
 
-(g1 + g2) / (g3 + g4) +
+# g1 + g2 + g3 + g4 + plot_layout(ncol = 2) ; équivalent : (g1 + g2) / (g3 + g4)
+g1 + g2 + g3 + g4 + plot_layout(ncol = 2) +
   plot_annotation(title = "Distribution des variables morphométriques",
                   theme = theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5)))
 ```
@@ -410,6 +427,7 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
 ## Défi final
 
 Créez une **figure composite publication-ready** :
+
 - 3 graphiques combinés (patchwork)
 - Annotations sur au moins un graphique
 - Palette de couleurs cohérente (viridis)
@@ -444,8 +462,8 @@ p2 <- ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = speci
   theme(legend.position = "none")
 
 # Graphique 3: Comparaison
-p3 <- penguins |>
-  count(species, island) |>
+p3 <- penguins %>%
+  count(species, island) %>%
   ggplot(aes(x = species, y = n, fill = island)) +
   geom_col(position = "dodge") +
   scale_fill_viridis_d(option = "plasma") +
@@ -488,5 +506,5 @@ ggsave("fig.png", plot = p, width = 8, height = 6, dpi = 300)
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

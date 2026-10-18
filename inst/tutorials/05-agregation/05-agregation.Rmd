@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "Maîtriser group_by(), summarise() et count() pour analyser vos données"
 ---
@@ -30,6 +43,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 
 ## Bienvenue
 
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
+
 **Objectifs :**
 
 - ✅ Grouper des données avec `group_by()`
@@ -37,7 +54,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Compter avec `count()` et `n()`
 - ✅ Utiliser `across()` pour des résumés multiples
 
-**Durée :** 60 minutes
 
 ---
 
@@ -46,7 +62,7 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ### Grouper les données
 
 ```{r demo-group, exercise=TRUE}
-ventes |>
+ventes %>%
   group_by(produit)
 ```
 
@@ -57,8 +73,8 @@ ventes |>
 ### Calculer des statistiques
 
 ```{r demo-summarise, exercise=TRUE}
-ventes |>
-  group_by(produit) |>
+ventes %>%
+  group_by(produit) %>%
   summarise(
     quantite_totale = sum(quantite),
     quantite_moyenne = mean(quantite)
@@ -67,20 +83,20 @@ ventes |>
 
 ### Exercice 1
 
-Calculez le prix moyen et total par mois :
+Calculez, pour chaque mois, la quantité totale vendue et le prix unitaire moyen :
 
 ```{r ex1-summarise, exercise=TRUE}
-ventes |>
-  group_by(mois) |>
+ventes %>%
+  group_by(mois) %>%
   summarise(_____)
 ```
 
 ```{r ex1-summarise-solution}
-ventes |>
-  group_by(mois) |>
+ventes %>%
+  group_by(mois) %>%
   summarise(
-    prix_moyen = mean(prix_unitaire),
-    prix_total = sum(prix_unitaire)
+    quantite_totale = sum(quantite),
+    prix_moyen = mean(prix_unitaire)
   )
 ```
 
@@ -91,8 +107,8 @@ ventes |>
 ### Fonctions courantes
 
 ```{r demo-fonctions, exercise=TRUE}
-ventes |>
-  group_by(produit) |>
+ventes %>%
+  group_by(produit) %>%
   summarise(
     total = sum(quantite),
     moyenne = mean(quantite),
@@ -111,12 +127,12 @@ ventes |>
 ### Compter les observations
 
 ```{r demo-count, exercise=TRUE}
-ventes |>
+ventes %>%
   count(produit)
 
 # Équivalent à :
-ventes |>
-  group_by(produit) |>
+ventes %>%
+  group_by(produit) %>%
   summarise(n = n())
 ```
 
@@ -125,12 +141,12 @@ ventes |>
 Comptez le nombre de ventes par mois :
 
 ```{r ex2-count, exercise=TRUE}
-ventes |>
+ventes %>%
   count(_____)
 ```
 
 ```{r ex2-count-solution}
-ventes |>
+ventes %>%
   count(mois)
 ```
 
@@ -141,8 +157,8 @@ ventes |>
 ### Résumés multiples
 
 ```{r demo-across, exercise=TRUE}
-ventes |>
-  group_by(produit) |>
+ventes %>%
+  group_by(produit) %>%
   summarise(across(c(quantite, prix_unitaire), 
                    list(moyenne = mean, total = sum)))
 ```
@@ -152,25 +168,26 @@ ventes |>
 ## Défi final
 
 Analysez les ventes :
+
 1. Groupez par produit
-2. Calculez : total vendu, quantité moyenne, nombre de ventes
+2. Calculez : le chiffre d'affaires total (quantité × prix unitaire), la quantité moyenne et le nombre de ventes
 3. Triez par total décroissant
 
 ```{r defi-final, exercise=TRUE, exercise.lines=10}
-ventes |>
+ventes %>%
   # Votre code
 
 
 ```
 
 ```{r defi-final-solution}
-ventes |>
-  group_by(produit) |>
+ventes %>%
+  group_by(produit) %>%
   summarise(
     total_vendu = sum(quantite * prix_unitaire),
     quantite_moyenne = mean(quantite),
     nb_ventes = n()
-  ) |>
+  ) %>%
   arrange(desc(total_vendu))
 ```
 
@@ -198,5 +215,5 @@ summarise(across(cols, list(fn1, fn2)))
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "ggplotly(), plotly natif, tooltips et interactions"
 ---
@@ -17,7 +30,7 @@ library(tidyverse)
 library(plotly)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-penguins <- palmerpenguins::penguins |> drop_na()
+penguins <- palmerpenguins::penguins %>% drop_na()
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -25,6 +38,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ```
 
 ## Bienvenue
+
+<div class="info-box">
+📖 Tutoriel facultatif, pour aller plus loin que le chapitre [« Utilisation de ggplot2 »](https://gallonr.github.io/intechmer_statistique_cours/04b-R_ggplot2.html) du livre de cours.
+</div>
 
 **Objectifs :**
 
@@ -34,7 +51,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Utiliser les **interactions** : zoom, pan, hover
 - ✅ Créer des **graphiques 3D**
 
-**Durée :** 45 minutes
 
 ---
 
@@ -95,12 +111,12 @@ ggplotly(p)
 
 ```{r demo-tooltip, exercise=TRUE}
 # Ajouter des infos dans aes(text = ...)
-p <- penguins |>
+p <- penguins %>%
   mutate(info = paste0(
     "Espèce: ", species, "\n",
     "Île: ", island, "\n",
     "Masse: ", body_mass_g, " g"
-  )) |>
+  )) %>%
   ggplot(aes(x = bill_length_mm, y = bill_depth_mm, 
              color = species, text = info)) +
   geom_point(size = 2) +
@@ -114,12 +130,12 @@ ggplotly(p, tooltip = "text")
 Créez des tooltips affichant espèce, sexe et masse :
 
 ```{r ex2-tooltip, exercise=TRUE}
-p <- penguins |>
+p <- penguins %>%
   mutate(info = paste0(
     _____,
     _____,
     _____
-  )) |>
+  )) %>%
   ggplot(aes(x = flipper_length_mm, y = body_mass_g, 
              color = species, text = info)) +
   geom_point()
@@ -128,13 +144,13 @@ ggplotly(p, tooltip = "text")
 ```
 
 ```{r ex2-tooltip-solution}
-p <- penguins |>
+p <- penguins %>%
   mutate(info = paste0(
     "Espèce: ", species, "\n",
     "Sexe: ", sex, "\n",
     "Masse: ", body_mass_g, " g\n",
     "Nageoires: ", flipper_length_mm, " mm"
-  )) |>
+  )) %>%
   ggplot(aes(x = flipper_length_mm, y = body_mass_g, 
              color = species, text = info)) +
   geom_point(size = 2.5, alpha = 0.7) +
@@ -157,7 +173,7 @@ plot_ly(data = penguins,
         color = ~species,
         type = "scatter",
         mode = "markers",
-        marker = list(size = 8, opacity = 0.7)) |>
+        marker = list(size = 8, opacity = 0.7)) %>%
   layout(title = "Graphique plotly natif",
          xaxis = list(title = "Longueur bec (mm)"),
          yaxis = list(title = "Profondeur bec (mm)"))
@@ -170,7 +186,7 @@ plot_ly(data = penguins,
 plot_ly(data = penguins,
         x = ~body_mass_g,
         type = "histogram",
-        nbinsx = 30) |>
+        nbinsx = 30) %>%
   layout(title = "Distribution de la masse")
 
 # Boxplot
@@ -178,7 +194,7 @@ plot_ly(data = penguins,
         y = ~body_mass_g,
         x = ~species,
         color = ~species,
-        type = "box") |>
+        type = "box") %>%
   layout(title = "Masse par espèce")
 ```
 
@@ -187,23 +203,23 @@ plot_ly(data = penguins,
 Créez un graphique en barres du nombre de manchots par île :
 
 ```{r ex3-plotly-bar, exercise=TRUE}
-comptage <- penguins |> count(island)
+comptage <- penguins %>% count(island)
 
 plot_ly(data = comptage,
         x = ~_____,
         y = ~_____,
-        type = "_____") |>
+        type = "_____") %>%
   layout(title = "Nombre de manchots par île")
 ```
 
 ```{r ex3-plotly-bar-solution}
-comptage <- penguins |> count(island)
+comptage <- penguins %>% count(island)
 
 plot_ly(data = comptage,
         x = ~island,
         y = ~n,
         type = "bar",
-        marker = list(color = c("steelblue", "coral", "lightgreen"))) |>
+        marker = list(color = c("steelblue", "coral", "lightgreen"))) %>%
   layout(title = "Nombre de manchots par île",
          xaxis = list(title = "Île"),
          yaxis = list(title = "Nombre"))
@@ -217,16 +233,16 @@ plot_ly(data = comptage,
 
 ```{r demo-traces, exercise=TRUE}
 # Graphique avec plusieurs espèces
-plot_ly(data = penguins |> filter(species == "Adelie"),
+plot_ly(data = penguins %>% filter(species == "Adelie"),
         x = ~bill_length_mm,
         y = ~bill_depth_mm,
         name = "Adelie",
         type = "scatter",
-        mode = "markers") |>
-  add_trace(data = penguins |> filter(species == "Chinstrap"),
-            name = "Chinstrap") |>
-  add_trace(data = penguins |> filter(species == "Gentoo"),
-            name = "Gentoo") |>
+        mode = "markers") %>%
+  add_trace(data = penguins %>% filter(species == "Chinstrap"),
+            name = "Chinstrap") %>%
+  add_trace(data = penguins %>% filter(species == "Gentoo"),
+            name = "Gentoo") %>%
   layout(title = "Trois espèces")
 ```
 
@@ -234,10 +250,10 @@ plot_ly(data = penguins |> filter(species == "Adelie"),
 
 ```{r demo-subplots, exercise=TRUE}
 # Créer deux graphiques
-p1 <- plot_ly(penguins, x = ~bill_length_mm, type = "histogram") |>
+p1 <- plot_ly(penguins, x = ~bill_length_mm, type = "histogram") %>%
   layout(xaxis = list(title = "Longueur bec"))
 
-p2 <- plot_ly(penguins, x = ~body_mass_g, type = "histogram") |>
+p2 <- plot_ly(penguins, x = ~body_mass_g, type = "histogram") %>%
   layout(xaxis = list(title = "Masse"))
 
 # Combiner
@@ -258,7 +274,7 @@ plot_ly(data = penguins,
         color = ~species,
         type = "scatter3d",
         mode = "markers",
-        marker = list(size = 4)) |>
+        marker = list(size = 4)) %>%
   layout(
     scene = list(
       xaxis = list(title = "Longueur bec (mm)"),
@@ -291,7 +307,7 @@ plot_ly(data = penguins,
         color = ~species,
         type = "scatter3d",
         mode = "markers",
-        marker = list(size = 5, opacity = 0.8)) |>
+        marker = list(size = 5, opacity = 0.8)) %>%
   layout(
     scene = list(
       xaxis = list(title = "Nageoires (mm)"),
@@ -310,8 +326,8 @@ plot_ly(data = penguins,
 
 ```{r demo-timeseries, exercise=TRUE}
 # Évolution par année
-evolution <- penguins |>
-  group_by(year, species) |>
+evolution <- penguins %>%
+  group_by(year, species) %>%
   summarise(masse_moy = mean(body_mass_g, na.rm = TRUE), .groups = "drop")
 
 plot_ly(data = evolution,
@@ -321,7 +337,7 @@ plot_ly(data = evolution,
         type = "scatter",
         mode = "lines+markers",
         line = list(width = 3),
-        marker = list(size = 10)) |>
+        marker = list(size = 10)) %>%
   layout(
     title = "Évolution de la masse moyenne",
     xaxis = list(title = "Année"),
@@ -334,7 +350,7 @@ plot_ly(data = evolution,
 Créez un graphique de l'évolution du nombre de manchots par année et espèce :
 
 ```{r ex5-timeseries, exercise=TRUE}
-comptage_annuel <- penguins |>
+comptage_annuel <- penguins %>%
   count(_____, _____)
 
 plot_ly(data = comptage_annuel,
@@ -346,7 +362,7 @@ plot_ly(data = comptage_annuel,
 ```
 
 ```{r ex5-timeseries-solution}
-comptage_annuel <- penguins |>
+comptage_annuel <- penguins %>%
   count(year, species)
 
 plot_ly(data = comptage_annuel,
@@ -356,7 +372,7 @@ plot_ly(data = comptage_annuel,
         type = "scatter",
         mode = "lines+markers",
         line = list(width = 2),
-        marker = list(size = 8)) |>
+        marker = list(size = 8)) %>%
   layout(
     title = "Nombre d'observations par année",
     xaxis = list(title = "Année"),
@@ -372,9 +388,9 @@ plot_ly(data = comptage_annuel,
 
 ```{r demo-heatmap, exercise=TRUE}
 # Calculer moyenne de masse par espèce et île
-heatmap_data <- penguins |>
-  group_by(species, island) |>
-  summarise(masse_moy = mean(body_mass_g, na.rm = TRUE), .groups = "drop") |>
+heatmap_data <- penguins %>%
+  group_by(species, island) %>%
+  summarise(masse_moy = mean(body_mass_g, na.rm = TRUE), .groups = "drop") %>%
   pivot_wider(names_from = island, values_from = masse_moy)
 
 # Convertir en matrice
@@ -386,8 +402,8 @@ plot_ly(
   y = rownames(mat),
   z = mat,
   type = "heatmap",
-  colors = "Viridis"
-) |>
+  colors = "viridis"
+) %>%
   layout(title = "Masse moyenne par espèce et île",
          xaxis = list(title = "Île"),
          yaxis = list(title = "Espèce"))
@@ -398,6 +414,7 @@ plot_ly(
 ## Défi final
 
 Créez un **dashboard interactif** combinant :
+
 1. Un nuage de points 3D
 2. Des tooltips informatifs
 3. Des couleurs par groupe
@@ -405,7 +422,7 @@ Créez un **dashboard interactif** combinant :
 
 ```{r defi-final, exercise=TRUE, exercise.lines=15}
 # Préparer les données avec tooltips
-penguins_prep <- penguins |>
+penguins_prep <- penguins %>%
   mutate(
     tooltip = paste0(
       _____
@@ -414,7 +431,7 @@ penguins_prep <- penguins |>
 
 # Créer le graphique
 plot_ly(data = penguins_prep,
-        _____) |>
+        _____) %>%
   layout(
     _____
   )
@@ -422,7 +439,7 @@ plot_ly(data = penguins_prep,
 
 ```{r defi-final-solution}
 # Préparer les données avec tooltips
-penguins_prep <- penguins |>
+penguins_prep <- penguins %>%
   mutate(
     tooltip = paste0(
       "<b>", species, "</b><br>",
@@ -452,16 +469,16 @@ plot_ly(data = penguins_prep,
           size = 5,
           opacity = 0.8,
           line = list(color = "white", width = 0.5)
-        )) |>
+        )) %>%
   layout(
     title = list(
       text = "<b>Analyse morphométrique 3D des manchots</b><br><i>Données Palmer LTER</i>",
       font = list(size = 16)
     ),
     scene = list(
-      xaxis = list(title = "Longueur du bec (mm)", titlefont = list(size = 12)),
-      yaxis = list(title = "Longueur nageoires (mm)", titlefont = list(size = 12)),
-      zaxis = list(title = "Masse corporelle (g)", titlefont = list(size = 12)),
+      xaxis = list(title = list(text = "Longueur du bec (mm)", font = list(size = 12))),
+      yaxis = list(title = list(text = "Longueur nageoires (mm)", font = list(size = 12))),
+      zaxis = list(title = list(text = "Masse corporelle (g)", font = list(size = 12))),
       camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
     ),
     legend = list(title = list(text = "Espèce"))
@@ -496,5 +513,5 @@ add_trace(plot, data = ..., name = "...")
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

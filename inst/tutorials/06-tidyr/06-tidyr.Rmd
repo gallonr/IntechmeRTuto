@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
           continue: "Continuer"
           submitanswer: "Soumettre"
@@ -75,6 +75,10 @@ htmltools::img(src = "images/logo.png",
 
 ## Bienvenue {data-progressive=TRUE}
 
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
+
 ### Introduction
 
 Bienvenue dans ce tutoriel sur la **restructuration de données avec tidyr** !
@@ -86,7 +90,7 @@ Les données ne sont pas toujours dans le format idéal pour l'analyse. Parfois 
 - ✅ Comprendre les formats **long** et **large**
 - ✅ Transformer du large au long avec `pivot_longer()`
 - ✅ Transformer du long au large avec `pivot_wider()`
-- ✅ Séparer des colonnes avec `separate()` et `separate_wider_delim()`
+- ✅ Séparer des colonnes avec `separate_wider_delim()`
 - ✅ Combiner des colonnes avec `unite()`
 - ✅ Gérer les valeurs manquantes
 
@@ -95,7 +99,6 @@ Les données ne sont pas toujours dans le format idéal pour l'analyse. Parfois 
 - Connaître dplyr (tutoriels 03-05)
 - Comprendre les tibbles
 
-**Durée estimée :** 60 minutes
 
 ---
 
@@ -130,11 +133,13 @@ notes_long
 ### Quand utiliser quel format ?
 
 **Format large** :
+
 - Tableaux de présentation
 - Saisie de données dans Excel
 - Lecture par des humains
 
 **Format long** :
+
 - Analyses statistiques
 - Visualisations ggplot2
 - Transformations dplyr
@@ -146,6 +151,7 @@ notes_long
 ### La fonction pivot_longer()
 
 `pivot_longer()` transforme plusieurs colonnes en deux colonnes :
+
 - Une colonne pour les **noms** (anciens noms de colonnes)
 - Une colonne pour les **valeurs**
 
@@ -160,7 +166,7 @@ pivot_longer(
 
 ```{r demo-pivot-longer, exercise=TRUE}
 # Transformer les notes du format large au format long
-notes_large |>
+notes_large %>%
   pivot_longer(
     cols = c(maths, physique, chimie),
     names_to = "matiere",
@@ -172,7 +178,7 @@ notes_large |>
 
 ```{r demo-pivot-longer-select, exercise=TRUE}
 # Toutes les colonnes sauf 'etudiant'
-notes_large |>
+notes_large %>%
   pivot_longer(
     cols = -etudiant,
     names_to = "matiere",
@@ -202,7 +208,7 @@ ventes_trimestre
 ```{r ex1-pivot-longer-hint-1}
 # Utilisez pivot_longer()
 # Les colonnes à transformer sont toutes sauf 'produit'
-ventes_trimestre |>
+ventes_trimestre %>%
   pivot_longer(
     cols = -produit,
     names_to = "trimestre",
@@ -212,7 +218,7 @@ ventes_trimestre |>
 
 ```{r ex1-pivot-longer-hint-2}
 # Ou vous pouvez sélectionner explicitement :
-ventes_trimestre |>
+ventes_trimestre %>%
   pivot_longer(
     cols = starts_with("T"),
     names_to = "trimestre",
@@ -221,7 +227,7 @@ ventes_trimestre |>
 ```
 
 ```{r ex1-pivot-longer-solution}
-ventes_trimestre |>
+ventes_trimestre %>%
   pivot_longer(
     cols = -produit,
     names_to = "trimestre",
@@ -233,7 +239,7 @@ ventes_trimestre |>
 
 ```{r demo-names-prefix, exercise=TRUE}
 # Retirer un préfixe commun des noms
-ventes_trimestre |>
+ventes_trimestre %>%
   pivot_longer(
     cols = -produit,
     names_to = "trimestre",
@@ -260,7 +266,7 @@ pivot_wider(
 
 ```{r demo-pivot-wider, exercise=TRUE}
 # Transformer du format long au format large
-notes_long |>
+notes_long %>%
   pivot_wider(
     names_from = matiere,
     values_from = note
@@ -284,7 +290,7 @@ notes_long
 ```{r ex2-pivot-wider-hint}
 # names_from = la colonne qui contient les futurs noms de colonnes
 # values_from = la colonne qui contient les valeurs
-notes_long |>
+notes_long %>%
   pivot_wider(
     names_from = matiere,
     values_from = note
@@ -292,7 +298,7 @@ notes_long |>
 ```
 
 ```{r ex2-pivot-wider-solution}
-notes_long |>
+notes_long %>%
   pivot_wider(
     names_from = matiere,
     values_from = note
@@ -312,7 +318,7 @@ ventes_doublons <- tibble(
 )
 
 # Agréger par la somme
-ventes_doublons |>
+ventes_doublons %>%
   pivot_wider(
     names_from = mois,
     values_from = quantite,
@@ -364,7 +370,7 @@ quiz(
 
 ---
 
-## Section 5 : separate() - Séparer des colonnes
+## Section 5 : separate_wider_delim() - Séparer des colonnes
 
 ### Pourquoi séparer ?
 
@@ -379,7 +385,7 @@ contacts
 
 ```{r demo-separate, exercise=TRUE}
 # Séparer nom_complet en nom et prénom
-contacts |>
+contacts %>%
   separate_wider_delim(
     cols = nom_complet,
     delim = ", ",  # Le séparateur
@@ -389,7 +395,7 @@ contacts |>
 
 ### Exercice 3 : Séparer des colonnes
 
-Séparez la colonne `telephone` en trois colonnes : `zone1`, `zone2`, `zone3` :
+Séparez la colonne `telephone` en cinq colonnes, de `zone1` à `zone5` :
 
 ```{r ex3-separate, exercise=TRUE}
 contacts
@@ -405,7 +411,7 @@ contacts
 # Utilisez separate_wider_delim()
 # Le délimiteur est "-"
 # Il y a 5 parties dans le numéro : 06-12-34-56-78
-contacts |>
+contacts %>%
   separate_wider_delim(
     cols = telephone,
     delim = "-",
@@ -414,7 +420,7 @@ contacts |>
 ```
 
 ```{r ex3-separate-solution}
-contacts |>
+contacts %>%
   separate_wider_delim(
     cols = telephone,
     delim = "-",
@@ -422,11 +428,11 @@ contacts |>
   )
 ```
 
-### Séparer avec une expression régulière
+### Séparer une adresse e-mail
 
 ```{r demo-separate-regex, exercise=TRUE}
 # Séparer email en identifiant et domaine
-contacts |>
+contacts %>%
   separate_wider_delim(
     cols = email,
     delim = "@",
@@ -442,7 +448,7 @@ donnees <- tibble(
   texte = c("un-deux-trois-quatre", "a-b")
 )
 
-donnees |>
+donnees %>%
   separate_wider_delim(
     cols = texte,
     delim = "-",
@@ -457,18 +463,18 @@ donnees |>
 
 ### La fonction unite()
 
-`unite()` fait l'inverse de `separate()` : elle combine plusieurs colonnes en une seule.
+`unite()` fait l'inverse de `separate_wider_delim()` : elle combine plusieurs colonnes en une seule.
 
 ```{r demo-unite, exercise=TRUE}
 # Recréer nom_complet à partir de nom et prénom
-contacts_separes <- contacts |>
+contacts_separes <- contacts %>%
   separate_wider_delim(
     cols = nom_complet,
     delim = ", ",
     names = c("nom", "prenom")
   )
 
-contacts_separes |>
+contacts_separes %>%
   unite(
     col = "nom_complet",  # Nom de la nouvelle colonne
     nom, prenom,          # Colonnes à combiner
@@ -482,7 +488,7 @@ Créez une colonne `contact_complet` qui combine nom, prenom et email avec " - "
 
 ```{r ex4-unite, exercise=TRUE}
 # D'abord, séparons nom_complet
-contacts_separes <- contacts |>
+contacts_separes <- contacts %>%
   separate_wider_delim(
     cols = nom_complet,
     delim = ", ",
@@ -498,7 +504,7 @@ contacts_separes <- contacts |>
 
 ```{r ex4-unite-hint}
 # unite(nom_nouvelle_colonne, col1, col2, col3, sep = "séparateur")
-contacts_separes |>
+contacts_separes %>%
   unite(
     col = "contact_complet",
     nom, prenom, email,
@@ -507,14 +513,14 @@ contacts_separes |>
 ```
 
 ```{r ex4-unite-solution}
-contacts_separes <- contacts |>
+contacts_separes <- contacts %>%
   separate_wider_delim(
     cols = nom_complet,
     delim = ", ",
     names = c("nom", "prenom")
   )
 
-contacts_separes |>
+contacts_separes %>%
   unite(
     col = "contact_complet",
     nom, prenom, email,
@@ -525,9 +531,12 @@ contacts_separes |>
 ### Garder les colonnes originales
 
 ```{r demo-unite-remove, exercise=TRUE}
+contacts_separes <- contacts %>%
+  separate_wider_delim(cols = nom_complet, delim = ", ", names = c("nom", "prenom"))
+
 # Par défaut, unite() supprime les colonnes originales
 # Pour les garder : remove = FALSE
-contacts_separes |>
+contacts_separes %>%
   unite(
     col = "nom_complet",
     nom, prenom,
@@ -553,19 +562,25 @@ donnees_na <- tibble(
 donnees_na
 
 # Supprimer toutes les lignes avec au moins un NA
-donnees_na |>
+donnees_na %>%
   drop_na()
 
 # Supprimer seulement si NA dans colonne spécifique
-donnees_na |>
+donnees_na %>%
   drop_na(nom)
 ```
 
 ### Remplacer les NA
 
 ```{r demo-replace-na, exercise=TRUE}
+donnees_na <- tibble(
+  id = 1:5,
+  nom = c("Alice", "Bob", NA, "David", "Eve"),
+  age = c(25, NA, 30, 28, NA)
+)
+
 # Remplacer NA par une valeur
-donnees_na |>
+donnees_na %>%
   replace_na(list(
     nom = "Inconnu",
     age = 0
@@ -584,11 +599,11 @@ mesures <- tibble(
 mesures
 
 # Remplir vers le bas
-mesures |>
+mesures %>%
   fill(date, .direction = "down")
 
 # Remplir vers le haut
-mesures |>
+mesures %>%
   fill(date, .direction = "up")
 ```
 
@@ -633,7 +648,7 @@ ventes_brutes
 
 ```{r defi-final-hint-1}
 # Étape 1 : Séparer
-ventes_brutes |>
+ventes_brutes %>%
   separate_wider_delim(
     cols = produit_categorie,
     delim = "-",
@@ -643,12 +658,12 @@ ventes_brutes |>
 
 ```{r defi-final-hint-2}
 # Étapes 1-3 : Séparer + Pivot + Nettoyer
-ventes_brutes |>
+ventes_brutes %>%
   separate_wider_delim(
     cols = produit_categorie,
     delim = "-",
     names = c("produit", "categorie")
-  ) |>
+  ) %>%
   pivot_longer(
     cols = starts_with("T"),
     names_to = "trimestre",
@@ -658,23 +673,32 @@ ventes_brutes |>
 ```
 
 ```{r defi-final-solution}
-ventes_brutes |>
+# Données brutes
+ventes_brutes <- tibble(
+  produit_categorie = c("Laptop-Informatique", "Mouse-Accessoire", "Keyboard-Accessoire"),
+  T1_2024 = c(50, 200, 120),
+  T2_2024 = c(65, 180, 135),
+  T3_2024 = c(70, 210, 140),
+  T4_2024 = c(80, 195, 150)
+)
+
+ventes_brutes %>%
   # 1. Séparer produit et catégorie
   separate_wider_delim(
     cols = produit_categorie,
     delim = "-",
     names = c("produit", "categorie")
-  ) |>
+  ) %>%
   # 2-3. Pivot long et nettoyage
   pivot_longer(
     cols = starts_with("T"),
     names_to = "trimestre",
     values_to = "quantite",
     names_prefix = "T"
-  ) |>
+  ) %>%
   # 4-5. Calcul et tri
-  group_by(produit) |>
-  summarise(total = sum(quantite)) |>
+  group_by(produit) %>%
+  summarise(total = sum(quantite)) %>%
   arrange(desc(total))
 ```
 
@@ -710,7 +734,7 @@ fill(col, .direction = "down")
 
 ### Pour aller plus loin
 
-**Tutoriel suivant :** "07 - Manipulation de texte avec stringr"
+**Tutoriel suivant :** `22-lois-probabilite` (échantillonnage et lois de probabilité). Facultatif : `07-stringr` (manipuler du texte)
 
 **Ressources :**
 
@@ -722,7 +746,7 @@ fill(col, .direction = "down")
 
 ```{r cheatsheet, echo=TRUE, eval=FALSE}
 # PIVOT LONGER (large → long)
-donnees |>
+donnees %>%
   pivot_longer(
     cols = c(col1, col2) ou -id ou starts_with("prefix"),
     names_to = "nom_colonne_noms",
@@ -731,7 +755,7 @@ donnees |>
   )
 
 # PIVOT WIDER (long → large)
-donnees |>
+donnees %>%
   pivot_wider(
     names_from = colonne_noms,
     values_from = colonne_valeurs,
@@ -739,7 +763,7 @@ donnees |>
   )
 
 # SÉPARER
-donnees |>
+donnees %>%
   separate_wider_delim(
     cols = colonne,
     delim = ",",
@@ -747,7 +771,7 @@ donnees |>
   )
 
 # COMBINER
-donnees |>
+donnees %>%
   unite(
     col = "nouvelle",
     col1, col2,
@@ -765,5 +789,5 @@ fill(col)              # Remplir NA par propagation
 ---
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

@@ -1,162 +1,121 @@
-# 🎓 IntechmeR_Tuto
+# 🎓 IntechmeRTuto
 
-> Formation interactive au tidyverse pour l'analyse de données avec R
+> Tutoriels interactifs pour apprendre R et les statistiques en biologie marine
 
 [![R Version](https://img.shields.io/badge/R-%E2%89%A5%204.1-blue.svg)](https://www.r-project.org/)
-[![Tidyverse](https://img.shields.io/badge/tidyverse-2.0-orange.svg)](https://www.tidyverse.org/)
 [![learnr](https://img.shields.io/badge/learnr-interactive-green.svg)](https://rstudio.github.io/learnr/)
 
 ---
 
 ## 🎯 À propos
 
-Ce package propose une série de **18 tutoriels interactifs** pour apprendre le tidyverse en R, du niveau débutant à avancé. Les tutoriels sont créés avec le package `learnr` et permettent d'exécuter du code R directement dans le navigateur.
+Ce package propose **25 tutoriels interactifs** créés avec `learnr`. Ils accompagnent le livre de cours [*L'analyse de données en biologie marine*](https://gallonr.github.io/intechmer_statistique_cours/) (Cnam-Intechmer) : chaque chapitre du livre renvoie vers les tutoriels correspondants.
 
-### Caractéristiques principales
-
-- ✅ **Interactif** : Exécutez du code dans votre navigateur
-- 📝 **Progressif** : Du niveau débutant à avancé
-- 🎨 **Personnalisé** : Design moderne avec CSS customisé
-- 🧪 **Pratique** : Exercices avec indices et solutions
-- 📊 **Quiz** : Vérification des connaissances
-- 🌐 **Français** : Interface entièrement en français
-
-### Public cible
-
-- Étudiants en statistiques / data science
-- Professionnels souhaitant apprendre R
-- Enseignants cherchant du matériel pédagogique
-- Autodidactes motivés
+- ✅ **Interactif** : le code s'exécute directement dans le navigateur
+- 🧪 **Pratique** : exercices avec indices et solutions
+- 📊 **Quiz** : vérification des connaissances
+- 🌐 **Français** : interface entièrement en français
 
 ---
 
 ## 💾 Installation
 
-### Prérequis
-
-- R >= 4.1 (recommandé)
-- RStudio ou Positron (optionnel mais recommandé)
-
-### Installation depuis GitHub
+Prérequis : R ≥ 4.1 et RStudio (ou Positron).
 
 ```r
-# Installer le package remotes si nécessaire
 install.packages("remotes")
-
-# Installer gradethis depuis GitHub
-remotes::install_github("rstudio/gradethis")
-
-# Installer IntechmeR_Tuto depuis GitHub
 remotes::install_github("gallonr/IntechmeRTuto")
-
 ```
+
+Les packages nécessaires aux tutoriels (tidyverse, vegan, sf, FactoMineR…) sont installés automatiquement.
+
 ---
 
 ## 🚀 Utilisation
 
-### Voir les tutoriels disponibles
-
 ```r
-# Charger le package
 library(IntechmeRTuto)
 
 # Voir tous les tutoriels disponibles
 list_tutorials()
+
+# Lancer un tutoriel
+run_tutorial("01-objets-base")
 ```
 
-Vous verrez une liste comme celle-ci :
-```
-                 name
-1      01-objets-base
-2   02-import-donnees
-3       03-dplyr-base
-4     04-dplyr-mutate
-5       05-agregation
-...
-```
+Le tutoriel s'ouvre dans le navigateur (ou dans l'onglet *Tutorial* de RStudio). La progression est sauvegardée automatiquement.
 
-### Lancer un tutoriel
+Pour obtenir la dernière version des tutoriels :
 
 ```r
-# Lancer le premier tutoriel
-run_tutorial("01-objets-base")
-
-# Lancer le tutoriel sur ggplot2
-run_tutorial("10-ggplot2-intro")
+remotes::install_github("gallonr/IntechmeRTuto", force = TRUE)
 ```
 
-Le tutoriel s'ouvrira dans votre navigateur web. Vous pourrez :
-- Lire les explications
-- Exécuter du code R directement
-- Faire les exercices
-- Consulter les indices et solutions
-- Répondre aux quiz
+---
 
+## 📚 Les tutoriels, dans l'ordre du cours
 
-## 📚 Liste des tutoriels
+### Prise en main de R
 
-### Niveau Débutant (1-4)
+| Tutoriel | Contenu | Chapitre du livre |
+|---|---|---|
+| `01-objets-base` | Vecteurs, tibbles et listes | Initiation à R |
+| `02-import-donnees` | Importer et explorer des données | Initiation à R |
+| `21-algorithmique` | Conditions, boucles, fonctions, vectorisation | Programmer : les bases de l'algorithmique |
 
-| # | Titre | Durée | Statut |
-|---|-------|-------|--------|
-| 1 | Objets de base et tibbles | 45 min | 📝 |
-| 2 | Import et exploration | 60 min | 📝 |
-| 3 | dplyr - Base | 60 min | 📝 |
-| 4 | dplyr - Mutate | 45 min | 📝 |
+### Visualiser et manipuler les données
 
-### Niveau Intermédiaire (5-8)
+| Tutoriel | Contenu | Chapitre du livre |
+|---|---|---|
+| `10-ggplot2-intro` | La grammaire des graphiques | Présentation des données |
+| `11-ggplot2-univarie` | Histogrammes, densités, boîtes à moustaches | Présentation des données |
+| `12-ggplot2-bivarie` | Nuages de points, tendances | ggplot2 |
+| `13-ggplot2-custom` | Facettes, échelles, thèmes | ggplot2 |
+| `03-dplyr-base` | `select()`, `filter()`, `arrange()`, le pipe `%>%` | Tidyverse |
+| `04-dplyr-mutate` | `mutate()`, `if_else()`, `case_when()` | Tidyverse |
+| `05-agregation` | `group_by()`, `summarise()`, `count()` | Tidyverse |
+| `06-tidyr` | Formats long et large, valeurs manquantes | Tidyverse |
 
-| # | Titre | Durée | Statut |
-|---|-------|-------|--------|
-| 5 | Agrégation | 60 min | 📝 |
-| 6 | Restructuration tidyr | 60 min | 📝 |
-| 7 | Chaînes stringr | 45 min | 📝 |
-| 8 | Facteurs forcats | 45 min | 📝 |
-| 9 | Dates lubridate | 45 min | 📝 |
-| 10 | ggplot2 - Introduction | 60 min | 📝 |
-| 11 | ggplot2 - Univarié | 45 min | 📝 |
-| 12 | ggplot2 - Bivarié | 45 min | 📝 |
+### Statistiques
 
-### Niveau Avancé (9-12)
+| Tutoriel | Contenu | Chapitre du livre |
+|---|---|---|
+| `22-lois-probabilite` | Échantillonnage, lois binomiale, de Poisson, normale, exponentielle | Définitions ; Lois de distribution |
+| `23-intervalles-confiance` | Moyennes, variance, IC de Student, bootstrap, taille d'échantillon | Moyennes, variance et IC |
+| `24-inference-puissance` | Hypothèses, p-value, risques α et β, puissance | Statistiques inférentielles |
+| `20-tests-statistiques` | χ², Fisher, Student, Wilcoxon, ANOVA, Kruskal-Wallis | Quelques tests statistiques |
 
-| # | Titre | Durée | Statut |
-|---|-------|-------|--------|
-| 13 | ggplot2 - Personnalisation | 60 min | 📝 |
-| 14 | ggplot2 - Avancé | 45 min | 📝 |
-| 15 | Workflows complets | 60 min | 📝 |
-| 16 | purrr | 75 min | 📝 |
+### Écologie numérique et analyses spatiales
 
-### Bonus
+| Tutoriel | Contenu | Chapitre du livre |
+|---|---|---|
+| `25-analyses-multivariees` | ACP, nMDS, classification hiérarchique | Analyses multivariées |
+| `19-analyses-ecologie` | Diversités α et β, communautés benthiques | Écologie numérique |
+| `18-cartographie` | Cartes avec `sf` et `ggplot2` | Analyses spatiales |
 
-| # | Titre | Durée | Statut |
-|---|-------|-------|--------|
-| 17 | Visualisation interactive | 45 min | 📝 |
-| 18 | Cartographie | 60 min | 📝 |
+### Pour aller plus loin (facultatifs)
+
+| Tutoriel | Contenu |
+|---|---|
+| `07-stringr` | Manipuler du texte |
+| `08-forcats` | Manipuler des facteurs |
+| `09-lubridate` | Dates et heures |
+| `14-ggplot2-avance` | Annotations, combinaison de graphiques (patchwork) |
+| `15-workflows` | Jointures et analyse complète |
+| `16-purrr` | Programmation fonctionnelle |
+| `17-plotly` | Graphiques interactifs |
 
 ---
 
 ## 📖 Ressources
 
-### Documentation officielle
-
+- [Livre de cours](https://gallonr.github.io/intechmer_statistique_cours/)
 - [R for Data Science (2e édition)](https://r4ds.hadley.nz/)
-- [Documentation tidyverse](https://www.tidyverse.org/)
 - [Documentation learnr](https://rstudio.github.io/learnr/)
-- [ggplot2 book](https://ggplot2-book.org/)
-
-### Cheatsheets
-
-- [Cheatsheets RStudio](https://posit.co/resources/cheatsheets/)
+- [Aide-mémoires Posit](https://posit.co/resources/cheatsheets/)
 
 ---
 
-## 📝 Licence et crédits
+## 📝 Licence
 
-**Auteur :** R. Gallon  
-**Institution :** Intechmer  
-**Date :** Novembre 2025  
-**Version :** 1.0
-
----
-
-© 2025 Intechmer. Tous droits réservés.
+**Auteur :** Régis Gallon (Cnam-Intechmer). Distribué sous licence MIT (voir le fichier `LICENSE`).

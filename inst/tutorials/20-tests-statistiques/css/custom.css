@@ -1,0 +1,573 @@
+/* ============================================
+   TUTORIEL LEARNR - STYLE PERSONNALISÉ
+   ============================================ */
+
+/* Variables de couleurs */
+:root {
+  --primary-color: #667ae9ff;
+  --secondary-color: #000000ff;
+  --accent-color: #ff6600;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+  --light-bg: #f8f9fa;
+  --dark-text: #2c3e50;
+  --code-bg: #f5f5f5;
+}
+
+/* ============================================
+   EN-TÊTE ET LOGO
+   ============================================ */
+
+/* Logo positionné à gauche du titre */
+#tutorial-logo {
+  float: right;
+  max-width: 150px;
+  max-height: 80px;
+  margin-right: 20px;
+  margin-bottom: 10px;
+  object-fit: contain;
+}
+
+/* Clearfix pour éviter que le contenu suivant ne chevauche */
+.tutorial-title-page::after,
+#section-bienvenue::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.topicsContainer {
+  background: #ffffff;
+  border-radius: 0;
+}
+
+.topicsList {
+  background-color: transparent;
+}
+
+.topicsList .topic {
+  border-left: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.topicsList .topic:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--accent-color);
+}
+
+.topicsList .topic.current {
+  background-color: rgba(255, 255, 255, 0.4);
+  border-left-color: var(--accent-color);
+  font-weight: bold;
+}
+
+/* Titre principal */
+h1.title {
+  color: #000000;
+  font-weight: 900;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 3px solid var(--accent-color);
+}
+
+.subtitle {
+  color: rgba(0, 0, 0, 1);
+  font-size: 1.2em;
+  font-weight: 400;
+  margin-bottom: 30px;
+}
+
+/* ============================================
+   SECTIONS ET TITRES
+   ============================================ */
+
+h2 {
+  color: rgba(0, 0, 0, 1);
+  font-weight: 600;
+  margin-top: 30px;
+  margin-bottom: 20px;
+  padding-left: 15px;
+  border-left: 5px solid var(--accent-color);
+}
+
+h3 {
+  color: var(--secondary-color);
+  font-weight: 600;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+h4 {
+  color: var(--dark-text);
+  font-weight: 500;
+  margin-top: 20px;
+}
+
+/* ============================================
+   BLOCS DE CODE ET EXERCICES
+   ============================================ */
+
+/* Zone d'exercice */
+.tutorial-exercise {
+  background-color: white;
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Éditeur de code */
+.ace_editor {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Boutons d'action */
+.tutorial-exercise-submit {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.tutorial-exercise-submit:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tutorial-exercise-hint {
+  background-color: var(--warning-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  margin-left: 10px;
+  transition: all 0.3s ease;
+}
+
+.tutorial-exercise-hint:hover {
+  background-color: #e0a800;
+}
+
+.tutorial-exercise-solution {
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  margin-left: 10px;
+  transition: all 0.3s ease;
+}
+
+.tutorial-exercise-solution:hover {
+  background-color: #007a3d;
+}
+
+/* ============================================
+   QUIZ
+   ============================================ */
+
+.quiz-container {
+  background-color: var(--light-bg);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border-left: 5px solid var(--primary-color);
+}
+
+.quiz-container h3 {
+  color: var(--primary-color);
+  margin-top: 0;
+}
+
+/* Questions */
+.tutorial-question {
+  background-color: white;
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 15px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.tutorial-question-title {
+  color: var(--dark-text);
+  font-weight: 600;
+  font-size: 1.1em;
+  margin-bottom: 15px;
+}
+
+/* Réponses */
+.tutorial-question label {
+  display: block;
+  padding: 12px 15px;
+  margin: 8px 0;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.tutorial-question label:hover {
+  background-color: #e9ecef;
+  border-color: var(--primary-color);
+  transform: translateX(5px);
+}
+
+.tutorial-question input[type="radio"]:checked + label,
+.tutorial-question input[type="checkbox"]:checked + label {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Feedback correct/incorrect */
+.tutorial-question-correct {
+  background-color: #d4edda;
+  border-color: var(--success-color);
+  color: #155724;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 15px;
+  border-left: 5px solid var(--success-color);
+}
+
+.tutorial-question-incorrect {
+  background-color: #f8d7da;
+  border-color: var(--danger-color);
+  color: #721c24;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 15px;
+  border-left: 5px solid var(--danger-color);
+}
+
+/* ============================================
+   MESSAGES ET ALERTES
+   ============================================ */
+
+/* Bloc d'information */
+.info-box {
+  background-color: #d1ecf1;
+  border-left: 5px solid #0c5460;
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 5px;
+}
+
+/* Bloc d'avertissement */
+.warning-box {
+  background-color: #fff3cd;
+  border-left: 5px solid var(--warning-color);
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 5px;
+}
+
+/* Bloc de succès */
+.success-box {
+  background-color: #d4edda;
+  border-left: 5px solid var(--success-color);
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 5px;
+}
+
+/* Bloc de danger/erreur */
+.danger-box {
+  background-color: #f8d7da;
+  border-left: 5px solid var(--danger-color);
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 5px;
+}
+
+/* ============================================
+   ÉLÉMENTS DE CONTENU
+   ============================================ */
+
+/* Code inline */
+code {
+  background-color: var(--code-bg);
+  color: #c7254e;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Source Code Pro', 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+/* Blocs de code */
+pre {
+  background-color: var(--code-bg);
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  overflow-x: auto;
+}
+
+pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+/* Listes */
+ul, ol {
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+li {
+  margin-bottom: 8px;
+}
+
+/* Liens */
+a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+a:hover {
+  color: var(--secondary-color);
+  text-decoration: underline;
+}
+
+/* Tableaux */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+th {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+  background-color: var(--light-bg);
+}
+
+/* ============================================
+   NAVIGATION ET BOUTONS
+   ============================================ */
+
+/* Boutons de navigation */
+.tutorial-navigation button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  margin: 5px;
+  transition: all 0.3s ease;
+}
+
+.tutorial-navigation button:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tutorial-navigation button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   PIED DE PAGE
+   ============================================ */
+
+.footer {
+  background-color: var(--dark-text);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  margin-top: 50px;
+  border-radius: 8px;
+  font-size: 0.95em;
+}
+
+.footer p {
+  margin: 0;
+}
+
+/* ============================================
+   ICÔNES ET BADGES
+   ============================================ */
+
+.badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  margin: 0 5px;
+}
+
+.badge-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.badge-success {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.badge-warning {
+  background-color: var(--warning-color);
+  color: var(--dark-text);
+}
+
+.badge-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Sur mobile, le logo passe au-dessus du titre */
+  #tutorial-logo {
+    float: none;
+    display: block;
+    margin: 0 auto 15px auto;
+    max-width: 120px;
+  }
+  
+  h1.title {
+    font-size: 1.5em;
+  }
+  
+  h2 {
+    font-size: 1.3em;
+  }
+  
+  .tutorial-exercise-submit,
+  .tutorial-exercise-hint,
+  .tutorial-exercise-solution {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
+  }
+  
+  table {
+    font-size: 0.9em;
+  }
+  
+  th, td {
+    padding: 8px;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tutorial-question,
+.tutorial-exercise {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* ============================================
+   BARRE DE PROGRESSION
+   ============================================ */
+
+.tutorial-progress {
+  background-color: var(--light-bg);
+  height: 8px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.tutorial-progress-bar {
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+/* ============================================
+   PERSONNALISATIONS SUPPLÉMENTAIRES
+   ============================================ */
+
+/* Bloc "À retenir" */
+.key-concept {
+  background-color: #fff9e6;
+  border-left: 5px solid var(--accent-color);
+  padding: 20px;
+  margin: 25px 0;
+  border-radius: 5px;
+  font-weight: 500;
+}
+
+.key-concept::before {
+  content: "💡 À retenir : ";
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+/* Bloc "Conseil" */
+.tip {
+  background-color: #e7f3ff;
+  border-left: 5px solid var(--primary-color);
+  padding: 20px;
+  margin: 25px 0;
+  border-radius: 5px;
+}
+
+.tip::before {
+  content: "💁 Conseil : ";
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+/* Bloc "Attention" */
+.attention {
+  background-color: #fff3cd;
+  border-left: 5px solid var(--warning-color);
+  padding: 20px;
+  margin: 25px 0;
+  border-radius: 5px;
+}
+
+.attention::before {
+  content: "⚠️ Attention : ";
+  font-weight: 700;
+  color: #856404;
+}

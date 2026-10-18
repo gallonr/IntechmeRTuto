@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
           continue: "Continuer"
           submitanswer: "Soumettre"
@@ -67,6 +67,10 @@ htmltools::img(src = "images/logo.png",
 
 ## Bienvenue {data-progressive=TRUE}
 
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
+
 ### Introduction
 
 Bienvenue dans ce tutoriel sur la **transformation de données avec dplyr** ! 
@@ -78,7 +82,7 @@ Le package `dplyr` est le couteau suisse de la manipulation de données en R. Il
 - ✅ Sélectionner des colonnes avec `select()`
 - ✅ Filtrer des lignes avec `filter()`
 - ✅ Trier des données avec `arrange()`
-- ✅ Utiliser le pipe `|>` pour enchaîner les opérations
+- ✅ Utiliser le pipe `%>%` pour enchaîner les opérations
 - ✅ Combiner plusieurs transformations
 
 **Prérequis :**
@@ -86,7 +90,6 @@ Le package `dplyr` est le couteau suisse de la manipulation de données en R. Il
 - Connaître les tibbles (tutoriel 01)
 - Savoir importer des données (tutoriel 02)
 
-**Durée estimée :** 60 minutes
 
 ---
 
@@ -98,12 +101,12 @@ Le package `dplyr` est le couteau suisse de la manipulation de données en R. Il
 
 **Syntaxe de base :**
 ```r
-donnees |> select(colonne1, colonne2, ...)
+donnees %>% select(colonne1, colonne2, ...)
 ```
 
 ```{r demo-select, exercise=TRUE}
-# Sélectionner seulement le nom et l'âge
-etudiants |>
+# Sélectionner seulement le nom, le prénom et l'âge
+etudiants %>%
   select(nom, prenom, age)
 ```
 
@@ -113,7 +116,7 @@ Vous pouvez aussi utiliser des positions :
 
 ```{r demo-select-position, exercise=TRUE}
 # Sélectionner les 3 premières colonnes
-etudiants |>
+etudiants %>%
   select(1:3)
 ```
 
@@ -122,7 +125,7 @@ etudiants |>
 Sélectionnez uniquement les colonnes `nom`, `note_maths` et `note_physique` :
 
 ```{r ex1-select, exercise=TRUE}
-etudiants |>
+etudiants %>%
   select(_____)
 ```
 
@@ -132,7 +135,7 @@ select(nom, note_maths, note_physique)
 ```
 
 ```{r ex1-select-solution}
-etudiants |>
+etudiants %>%
   select(nom, note_maths, note_physique)
 ```
 
@@ -142,7 +145,7 @@ Utilisez `-` pour exclure des colonnes :
 
 ```{r demo-select-exclude, exercise=TRUE}
 # Tout sauf l'id
-etudiants |>
+etudiants %>%
   select(-id)
 ```
 
@@ -151,7 +154,7 @@ etudiants |>
 Sélectionnez toutes les colonnes SAUF `id` et `mention` :
 
 ```{r ex2-select-exclude, exercise=TRUE}
-etudiants |>
+etudiants %>%
   select(_____)
 ```
 
@@ -161,7 +164,7 @@ select(-id, -mention)
 ```
 
 ```{r ex2-select-exclude-solution}
-etudiants |>
+etudiants %>%
   select(-id, -mention)
 ```
 
@@ -183,7 +186,7 @@ dplyr propose des fonctions pratiques pour sélectionner par motif :
 
 ```{r demo-helpers, exercise=TRUE}
 # Toutes les colonnes de notes
-etudiants |>
+etudiants %>%
   select(starts_with("note"))
 ```
 
@@ -192,7 +195,7 @@ etudiants |>
 Sélectionnez toutes les colonnes qui commencent par "note" dans le tableau des étudiants :
 
 ```{r ex3-helpers, exercise=TRUE}
-etudiants |>
+etudiants %>%
   select(_____)
 ```
 
@@ -201,7 +204,7 @@ etudiants |>
 ```
 
 ```{r ex3-helpers-solution}
-etudiants |>
+etudiants %>%
   select(starts_with("note"))
 ```
 
@@ -209,7 +212,7 @@ etudiants |>
 
 ```{r demo-where, exercise=TRUE}
 # Toutes les colonnes numériques
-etudiants |>
+etudiants %>%
   select(where(is.numeric))
 ```
 
@@ -223,7 +226,7 @@ etudiants |>
 
 ```{r demo-filter, exercise=TRUE}
 # Étudiants de plus de 20 ans
-etudiants |>
+etudiants %>%
   filter(age > 20)
 ```
 
@@ -240,7 +243,7 @@ etudiants |>
 
 ```{r demo-filter-operators, exercise=TRUE}
 # Notes de maths supérieures ou égales à 15
-etudiants |>
+etudiants %>%
   filter(note_maths >= 15)
 ```
 
@@ -249,7 +252,7 @@ etudiants |>
 Filtrez les étudiants qui ont eu plus de 16 en physique :
 
 ```{r ex4-filter, exercise=TRUE}
-etudiants |>
+etudiants %>%
   filter(_____)
 ```
 
@@ -258,7 +261,7 @@ etudiants |>
 ```
 
 ```{r ex4-filter-solution}
-etudiants |>
+etudiants %>%
   filter(note_physique > 16)
 ```
 
@@ -268,22 +271,23 @@ Utilisez `&` (ET) et `|` (OU) :
 
 ```{r demo-filter-multiple, exercise=TRUE}
 # Étudiants de 20 ans ET note de maths > 14
-etudiants |>
+etudiants %>%
   filter(age == 20 & note_maths > 14)
 
 # Étudiants avec mention Bien OU Très bien
-etudiants |>
+etudiants %>%
   filter(mention == "Bien" | mention == "Très bien")
 ```
 
 ### Exercice 5 : Conditions multiples
 
 Filtrez les étudiants qui ont :
+
 - Plus de 15 en maths ET
 - Plus de 15 en physique
 
 ```{r ex5-filter-multiple, exercise=TRUE}
-etudiants |>
+etudiants %>%
   filter(_____)
 ```
 
@@ -293,7 +297,7 @@ filter(note_maths > 15 & note_physique > 15)
 ```
 
 ```{r ex5-filter-multiple-solution}
-etudiants |>
+etudiants %>%
   filter(note_maths > 15 & note_physique > 15)
 ```
 
@@ -303,7 +307,7 @@ Pour tester l'appartenance à un ensemble :
 
 ```{r demo-in, exercise=TRUE}
 # Étudiants avec mention Bien ou Très bien
-etudiants |>
+etudiants %>%
   filter(mention %in% c("Bien", "Très bien"))
 ```
 
@@ -319,13 +323,13 @@ quiz(
     answer("select()", correct = TRUE),
     answer("filter()"),
     answer("choose()"),
-    answer("pick()"),
+    answer("columns()"),
     allow_retry = TRUE
   ),
   
   question("Comment exclure la colonne 'id' d'un tibble ?",
     answer("select(-id)", correct = TRUE),
-    answer("select(!id)"),
+    answer("drop(id)"),
     answer("filter(-id)"),
     answer("remove(id)"),
     allow_retry = TRUE
@@ -368,7 +372,7 @@ quiz(
 
 ```{r demo-arrange, exercise=TRUE}
 # Trier par âge croissant
-etudiants |>
+etudiants %>%
   arrange(age)
 ```
 
@@ -378,7 +382,7 @@ Utilisez `desc()` pour l'ordre décroissant :
 
 ```{r demo-arrange-desc, exercise=TRUE}
 # Trier par note de maths décroissante
-etudiants |>
+etudiants %>%
   arrange(desc(note_maths))
 ```
 
@@ -387,7 +391,7 @@ etudiants |>
 Triez les étudiants par note de physique décroissante :
 
 ```{r ex6-arrange, exercise=TRUE}
-etudiants |>
+etudiants %>%
   arrange(_____)
 ```
 
@@ -396,7 +400,7 @@ etudiants |>
 ```
 
 ```{r ex6-arrange-solution}
-etudiants |>
+etudiants %>%
   arrange(desc(note_physique))
 ```
 
@@ -404,7 +408,7 @@ etudiants |>
 
 ```{r demo-arrange-multiple, exercise=TRUE}
 # Trier par âge puis par nom
-etudiants |>
+etudiants %>%
   arrange(age, nom)
 ```
 
@@ -412,55 +416,60 @@ etudiants |>
 
 ## Section 6 : Combiner les opérations
 
-### Le pipe `|>`
+### Le pipe `%>%`
 
-Le pipe permet d'enchaîner les opérations de manière lisible :
+Le pipe `%>%` (« et ensuite ») transmet le résultat d'une étape à la suivante, ce qui permet d'enchaîner les opérations de manière lisible :
 
 ```{r demo-pipe, exercise=TRUE}
 # Sans pipe (difficile à lire)
 arrange(filter(select(etudiants, nom, age, note_maths), note_maths >= 14), desc(note_maths))
 
 # Avec pipe (clair et lisible)
-etudiants |>
-  select(nom, age, note_maths) |>
-  filter(note_maths >= 14) |>
+etudiants %>%
+  select(nom, age, note_maths) %>%
+  filter(note_maths >= 14) %>%
   arrange(desc(note_maths))
 ```
+
+<div class="tip">
+💡 Vous rencontrerez aussi le pipe **natif** `|>`, disponible depuis R 4.1. Dans les cas simples, il fonctionne exactement comme `%>%`. Ce cours utilise `%>%`.
+</div>
 
 ### Exercice 7 : Pipeline complet
 
 Créez un pipeline qui :
+
 1. Sélectionne nom, prenom, note_maths
 2. Filtre les étudiants avec note_maths > 13
 3. Trie par note décroissante
 
 ```{r ex7-pipeline, exercise=TRUE}
-etudiants |>
-  _____ |>
-  _____ |>
+etudiants %>%
+  _____ %>%
+  _____ %>%
   _____
 ```
 
 ```{r ex7-pipeline-hint-1}
 # Commencez par select()
-etudiants |>
-  select(nom, prenom, note_maths) |>
-  _____ |>
+etudiants %>%
+  select(nom, prenom, note_maths) %>%
+  _____ %>%
   _____
 ```
 
 ```{r ex7-pipeline-hint-2}
 # Ensuite filter(), puis arrange()
-etudiants |>
-  select(nom, prenom, note_maths) |>
-  filter(note_maths > 13) |>
+etudiants %>%
+  select(nom, prenom, note_maths) %>%
+  filter(note_maths > 13) %>%
   arrange(desc(note_maths))
 ```
 
 ```{r ex7-pipeline-solution}
-etudiants |>
-  select(nom, prenom, note_maths) |>
-  filter(note_maths > 13) |>
+etudiants %>%
+  select(nom, prenom, note_maths) %>%
+  filter(note_maths > 13) %>%
   arrange(desc(note_maths))
 ```
 
@@ -490,24 +499,24 @@ ventes
 ```
 
 ```{r defi-final-hint-1}
-# Utilisez le pipe |> pour enchaîner
-ventes |>
-  select(___) |>
-  filter(___) |>
+# Utilisez le pipe %>% pour enchaîner
+ventes %>%
+  select(___) %>%
+  filter(___) %>%
   arrange(___)
 ```
 
 ```{r defi-final-hint-2}
-ventes |>
-  select(produit, quantite, prix_unitaire) |>
-  filter(quantite >= 5) |>
+ventes %>%
+  select(produit, quantite, prix_unitaire) %>%
+  filter(quantite >= 5) %>%
   arrange(desc(prix_unitaire))
 ```
 
 ```{r defi-final-solution}
-ventes |>
-  select(produit, quantite, prix_unitaire) |>
-  filter(quantite >= 5) |>
+ventes %>%
+  select(produit, quantite, prix_unitaire) %>%
+  filter(quantite >= 5) %>%
   arrange(desc(prix_unitaire))
 ```
 
@@ -516,15 +525,15 @@ ventes |>
 Maintenant, trouvez les produits de la catégorie "Accessoire" avec une quantité supérieure à 10 :
 
 ```{r defi-avance, exercise=TRUE}
-ventes |>
+ventes %>%
   # Votre code ici
 
 
 ```
 
 ```{r defi-avance-solution}
-ventes |>
-  filter(categorie == "Accessoire" & quantite > 10) |>
+ventes %>%
+  filter(categorie == "Accessoire" & quantite > 10) %>%
   select(produit, quantite, prix_unitaire)
 ```
 
@@ -537,26 +546,26 @@ ventes |>
 - ✅ **Sélectionner des colonnes** avec `select()` et ses fonctions auxiliaires
 - ✅ **Filtrer des lignes** avec `filter()` et les opérateurs de comparaison
 - ✅ **Trier des données** avec `arrange()` et `desc()`
-- ✅ **Enchaîner des opérations** avec le pipe `|>`
+- ✅ **Enchaîner des opérations** avec le pipe `%>%`
 - ✅ **Combiner plusieurs transformations** en pipelines lisibles
 
 ### Les 3 verbes fondamentaux
 
 ```{r echo=TRUE, eval=FALSE}
 # SELECT : choisir les colonnes
-donnees |> select(col1, col2)
+donnees %>% select(col1, col2)
 
 # FILTER : choisir les lignes
-donnees |> filter(condition)
+donnees %>% filter(condition)
 
 # ARRANGE : trier
-donnees |> arrange(colonne)
-donnees |> arrange(desc(colonne))
+donnees %>% arrange(colonne)
+donnees %>% arrange(desc(colonne))
 ```
 
 ### Pour aller plus loin
 
-**Tutoriel suivant :** "04 - Transformation avec dplyr (partie 2)" - `mutate()` et `rename()`
+**Tutoriel suivant :** `04-dplyr-mutate` (`mutate()` et `rename()`)
 
 **Ressources :**
 
@@ -589,14 +598,14 @@ arrange(desc(col))                # Décroissant
 arrange(col1, col2)               # Multi-colonnes
 
 # PIPELINE
-donnees |>
-  select(cols) |>
-  filter(condition) |>
+donnees %>%
+  select(cols) %>%
+  filter(condition) %>%
   arrange(desc(col))
 ```
 
 ---
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

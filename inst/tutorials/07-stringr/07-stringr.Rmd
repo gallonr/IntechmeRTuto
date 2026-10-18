@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
           continue: "Continuer"
           submitanswer: "Soumettre"
@@ -62,6 +62,10 @@ htmltools::img(src = "images/logo.png",
 
 ## Bienvenue {data-progressive=TRUE}
 
+<div class="info-box">
+📖 Tutoriel facultatif, pour aller plus loin que le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
+
 ### Introduction
 
 Bienvenue dans ce tutoriel sur la **manipulation de texte avec stringr** !
@@ -82,7 +86,6 @@ Les données textuelles sont partout : noms, adresses, descriptions de produits,
 - Connaître dplyr (tutoriels 03-05)
 - Comprendre les tibbles
 
-**Durée estimée :** 45 minutes
 
 ---
 
@@ -94,7 +97,7 @@ Les données textuelles sont partout : noms, adresses, descriptions de produits,
 
 ```{r demo-detect, exercise=TRUE}
 # Vérifier si "Ordinateur" est dans le nom
-produits |>
+produits %>%
   mutate(est_ordinateur = str_detect(nom, "Ordinateur"))
 ```
 
@@ -102,7 +105,7 @@ produits |>
 
 ```{r demo-detect-filter, exercise=TRUE}
 # Filtrer les produits contenant "USB" ou "Casque"
-produits |>
+produits %>%
   filter(str_detect(nom, "USB|Casque"))
 ```
 
@@ -113,7 +116,7 @@ produits |>
 Filtrez les produits dont le nom contient "Logitech" :
 
 ```{r ex1-detect, exercise=TRUE}
-produits |>
+produits %>%
   filter(_____)
 ```
 
@@ -123,7 +126,7 @@ filter(str_detect(nom, "Logitech"))
 ```
 
 ```{r ex1-detect-solution}
-produits |>
+produits %>%
   filter(str_detect(nom, "Logitech"))
 ```
 
@@ -134,7 +137,7 @@ produits |>
 ```{r demo-count, exercise=TRUE}
 # Compter le nombre de voyelles
 texte <- c("Bonjour", "Hello", "Salut")
-tibble(texte) |>
+tibble(texte) %>%
   mutate(nb_voyelles = str_count(texte, "[aeiouAEIOU]"))
 ```
 
@@ -150,7 +153,7 @@ tibble(texte) |>
 
 ```{r demo-extract, exercise=TRUE}
 # Extraire les nombres des prix
-produits |>
+produits %>%
   mutate(prix_nombre = str_extract(prix_txt, "[0-9.]+"))
 ```
 
@@ -169,8 +172,8 @@ str_extract_all(texte, "[0-9]+")
 Extrayez le code numérique de la référence (les 3 derniers chiffres) :
 
 ```{r ex2-extract, exercise=TRUE}
-produits |>
-  select(reference) |>
+produits %>%
+  select(reference) %>%
   mutate(code = str_extract(reference, _____))
 ```
 
@@ -182,8 +185,8 @@ mutate(code = str_extract(reference, "[0-9]{3}$"))
 ```
 
 ```{r ex2-extract-solution}
-produits |>
-  select(reference) |>
+produits %>%
+  select(reference) %>%
   mutate(code = str_extract(reference, "[0-9]{3}$"))
 ```
 
@@ -193,7 +196,7 @@ produits |>
 
 ```{r demo-sub, exercise=TRUE}
 # Extraire les 3 premiers caractères
-produits |>
+produits %>%
   mutate(categorie = str_sub(reference, 1, 3))
 ```
 
@@ -207,7 +210,7 @@ produits |>
 
 ```{r demo-replace, exercise=TRUE}
 # Remplacer "€" par " euros"
-produits |>
+produits %>%
   mutate(prix_txt = str_replace(prix_txt, "€", " euros"))
 ```
 
@@ -217,7 +220,7 @@ produits |>
 
 ```{r demo-replace-all, exercise=TRUE}
 # Uniformiser les téléphones : retirer tous les séparateurs
-clients |>
+clients %>%
   mutate(tel_propre = str_replace_all(telephone, "[ .+-]", ""))
 ```
 
@@ -228,8 +231,8 @@ clients |>
 Remplacez tous les points par des tirets dans les téléphones :
 
 ```{r ex3-replace, exercise=TRUE}
-clients |>
-  select(telephone) |>
+clients %>%
+  select(telephone) %>%
   mutate(tel_tirets = str_replace_all(telephone, _____, _____))
 ```
 
@@ -240,8 +243,8 @@ mutate(tel_tirets = str_replace_all(telephone, "\\.", "-"))
 ```
 
 ```{r ex3-replace-solution}
-clients |>
-  select(telephone) |>
+clients %>%
+  select(telephone) %>%
   mutate(tel_tirets = str_replace_all(telephone, "\\.", "-"))
 ```
 
@@ -251,7 +254,7 @@ clients |>
 
 ```{r demo-remove, exercise=TRUE}
 # Retirer "€" des prix
-produits |>
+produits %>%
   mutate(prix_nombre = str_remove(prix_txt, "€"))
 ```
 
@@ -259,7 +262,7 @@ produits |>
 
 ```{r demo-remove-all, exercise=TRUE}
 # Retirer tous les espaces
-produits |>
+produits %>%
   mutate(nom_sans_espaces = str_remove_all(nom, " "))
 ```
 
@@ -312,7 +315,7 @@ quiz(
 ### Les fonctions de casse
 
 ```{r demo-case, exercise=TRUE}
-clients |>
+clients %>%
   mutate(
     nom_minuscule = str_to_lower(nom),
     nom_majuscule = str_to_upper(nom),
@@ -329,12 +332,12 @@ clients |>
 Mettez tous les emails en minuscules :
 
 ```{r ex4-case, exercise=TRUE}
-clients |>
+clients %>%
   mutate(email_propre = _____)
 ```
 
 ```{r ex4-case-solution}
-clients |>
+clients %>%
   mutate(email_propre = str_to_lower(email))
 ```
 
@@ -347,13 +350,14 @@ clients |>
 `str_trim()` supprime les espaces au **début et à la fin**.
 
 ```{r demo-trim, exercise=TRUE}
-clients |>
+clients %>%
   mutate(nom_propre = str_trim(nom))
 ```
 
 ### La fonction str_squish()
 
 `str_squish()` fait encore mieux :
+
 - Supprime les espaces au début et à la fin
 - Réduit les espaces multiples à un seul
 
@@ -367,19 +371,19 @@ str_squish(texte)
 Nettoyez les noms des clients : retirez les espaces et mettez en format titre :
 
 ```{r ex5-clean, exercise=TRUE}
-clients |>
-  mutate(nom_propre = _____ |> _____)
+clients %>%
+  mutate(nom_propre = _____ %>% _____)
 ```
 
 ```{r ex5-clean-hint}
 # Combinez str_squish() et str_to_title()
 # Utilisez le pipe pour enchaîner
-mutate(nom_propre = nom |> str_squish() |> str_to_title())
+mutate(nom_propre = nom %>% str_squish() %>% str_to_title())
 ```
 
 ```{r ex5-clean-solution}
-clients |>
-  mutate(nom_propre = nom |> str_squish() |> str_to_title())
+clients %>%
+  mutate(nom_propre = nom %>% str_squish() %>% str_to_title())
 ```
 
 ---
@@ -389,7 +393,7 @@ clients |>
 ### La fonction str_length()
 
 ```{r demo-length, exercise=TRUE}
-produits |>
+produits %>%
   mutate(longueur_nom = str_length(nom))
 ```
 
@@ -412,7 +416,7 @@ str_split("ORD-2024-001", "-")
 
 ```{r demo-concat, exercise=TRUE}
 # Combiner plusieurs colonnes
-produits |>
+produits %>%
   mutate(description = str_c(nom, " - Ref: ", reference))
 ```
 
@@ -446,14 +450,14 @@ str_c("Bonjour", "le", "monde", sep = " ")
 ```{r demo-regex, exercise=TRUE}
 emails <- c("test@email.com", "invalide", "autre@test.fr", "pas_email")
 
-tibble(email = emails) |>
+tibble(email = emails) %>%
   mutate(
     # Emails valides (simplifié)
     valide = str_detect(email, "@.+\\..+"),
     # Domaine .com
     est_com = str_detect(email, "\\.com$"),
     # Extraire le domaine
-    domaine = str_extract(email, "@(.+)") |> str_remove("@")
+    domaine = str_extract(email, "@(.+)") %>% str_remove("@")
   )
 ```
 
@@ -488,38 +492,40 @@ clients
 
 ```{r defi-final-hint-1}
 # Commencez par nettoyer les noms
-clients |>
+clients %>%
   mutate(
-    nom_propre = nom |> str_trim() |> str_to_title(),
+    nom_propre = nom %>% str_trim() %>% str_to_title(),
     email_propre = str_to_lower(email)
   )
 ```
 
 ```{r defi-final-hint-2}
 # Ajoutez la vérification email et nettoyage téléphone
-clients |>
+clients %>%
   mutate(
-    nom_propre = nom |> str_trim() |> str_to_title(),
+    nom_propre = nom %>% str_trim() %>% str_to_title(),
     email_propre = str_to_lower(email),
     email_valide = str_detect(email_propre, "@"),
-    tel_propre = str_replace_all(telephone, "[ .+-]", "")
+    # retirer les séparateurs, puis remplacer l'indicatif +33 par 0
+    tel_propre = telephone %>% str_remove_all("[ .-]") %>% str_replace("^\\+33", "0")
   )
 ```
 
 ```{r defi-final-solution}
-clients |>
+clients %>%
   mutate(
     # 1. Nettoyage noms
-    nom_propre = nom |> str_trim() |> str_to_title(),
+    nom_propre = nom %>% str_trim() %>% str_to_title(),
     # 2. Uniformisation emails
     email_propre = str_to_lower(email),
     # 3. Vérification emails
     email_valide = str_detect(email_propre, "@.+\\..+"),
-    # 4. Uniformisation téléphones
-    tel_propre = str_replace_all(telephone, "[ .+-]", "")
-  ) |>
+    # 4. Uniformisation téléphones : retirer les séparateurs,
+    #    puis remplacer l'indicatif +33 par 0 (10 chiffres)
+    tel_propre = telephone %>% str_remove_all("[ .-]") %>% str_replace("^\\+33", "0")
+  ) %>%
   # 5. Filtrer emails valides
-  filter(email_valide) |>
+  filter(email_valide) %>%
   # 6. Sélection finale
   select(nom_propre, email_propre, tel_propre)
 ```
@@ -540,7 +546,7 @@ clients |>
 
 ### Pour aller plus loin
 
-**Tutoriel suivant :** "08 - Manipulation de facteurs avec forcats"
+**Tutoriel suivant (facultatif) :** `08-forcats` (manipuler des facteurs)
 
 **Ressources :**
 
@@ -594,5 +600,5 @@ str_split(texte, "sep")       # Découper
 ---
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "Histogrammes, densités, boxplots et diagrammes en barres"
 ---
@@ -16,8 +29,8 @@ library(learnr)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-penguins <- palmerpenguins::penguins |> drop_na()
-diamonds_petit <- diamonds |> sample_n(1000)
+penguins <- palmerpenguins::penguins %>% drop_na()
+diamonds_petit <- diamonds %>% sample_n(1000)
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -25,6 +38,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ```
 
 ## Bienvenue
+
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Présentation des données »](https://gallonr.github.io/intechmer_statistique_cours/04a-Presentation_graph.html) du livre de cours.
+</div>
 
 **Objectifs :**
 
@@ -34,7 +51,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Faire des **diagrammes en barres** avec `geom_bar()` et `geom_col()`
 - ✅ Personnaliser les graphiques
 
-**Durée :** 45 minutes
 
 ---
 
@@ -48,7 +64,7 @@ L'histogramme montre la distribution d'une variable numérique.
 ggplot(penguins, aes(x = body_mass_g)) +
   geom_histogram(bins = 30, fill = "steelblue", color = "white") +
   labs(title = "Distribution de la masse corporelle",
-       x = "Masse (g)", y = "Fréquence")
+       x = "Masse (g)", y = "Effectif")
 ```
 
 ### Contrôler le nombre de bins
@@ -126,7 +142,7 @@ ggplot(penguins, aes(x = bill_length_mm, fill = species)) +
 
 ### geom_boxplot()
 
-Le boxplot montre la médiane, quartiles et valeurs aberrantes.
+Le boxplot montre la médiane, les quartiles et les valeurs extrêmes.
 
 ```{r demo-boxplot, exercise=TRUE}
 ggplot(penguins, aes(y = body_mass_g)) +
@@ -176,8 +192,8 @@ ggplot(penguins, aes(x = species, fill = species)) +
 
 ```{r demo-col, exercise=TRUE}
 # Données résumées
-resume <- penguins |>
-  group_by(species) |>
+resume <- penguins %>%
+  group_by(species) %>%
   summarise(masse_moyenne = mean(body_mass_g, na.rm = TRUE))
 
 ggplot(resume, aes(x = species, y = masse_moyenne, fill = species)) +
@@ -190,8 +206,13 @@ ggplot(resume, aes(x = species, y = masse_moyenne, fill = species)) +
 Créez un diagramme en barres montrant le nombre de manchots par espèce et par sexe :
 
 ```{r ex4-stacked, exercise=TRUE}
-ggplot(penguins, aes(x = species, fill = sex)) +
+ggplot(penguins, aes(x = _____, fill = _____)) +
   geom_bar()
+```
+
+```{r ex4-stacked-hint}
+# L'espèce en abscisse, le sexe en couleur de remplissage :
+# geom_bar() empile automatiquement les barres
 ```
 
 ```{r ex4-stacked-solution}
@@ -207,6 +228,7 @@ ggplot(penguins, aes(x = species, fill = sex)) +
 ## Défi final
 
 Créez un graphique composite montrant :
+
 1. Un histogramme de la masse corporelle
 2. Une courbe de densité superposée
 3. Séparé par espèce (couleur)
@@ -254,5 +276,5 @@ geom_col()           # Valeurs pré-calculées
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>
