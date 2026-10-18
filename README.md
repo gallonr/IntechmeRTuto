@@ -27,7 +27,7 @@ install.packages("remotes")
 remotes::install_github("gallonr/IntechmeRTuto")
 ```
 
-Les packages nécessaires aux tutoriels (tidyverse, vegan, sf, FactoMineR…) sont installés automatiquement.
+L'installation est volontairement légère : seuls `learnr`, le `tidyverse`, `readxl` et `palmerpenguins` sont installés automatiquement. Les quelques tutoriels qui ont besoin d'autres packages (`sf` pour la cartographie, `vegan` et `FactoMineR` pour l'écologie et le multivarié, `plotly`…) les signalent au lancement avec `run_tutorial()` et proposent de les installer.
 
 ---
 

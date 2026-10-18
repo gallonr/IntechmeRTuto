@@ -1,3 +1,11 @@
+# IntechmeRTuto 0.3.0
+
+## Installation allégée
+
+* Seuls `learnr`, `rmarkdown`, `tidyverse`, `readxl` et `palmerpenguins` sont installés avec le package (environ 120 packages au lieu de 190)
+* `sf`, `rnaturalearth`, `rnaturalearthdata`, `plotly`, `patchwork`, `vegan`, `betapart`, `FactoMineR` et `factoextra` deviennent optionnels (`Suggests`) : un échec d'installation de `sf` ne bloque plus le package
+* `run_tutorial()` détecte les packages manquants d'un tutoriel et propose de les installer
+
 # IntechmeRTuto 0.2.1
 
 ## Corrections

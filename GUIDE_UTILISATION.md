@@ -23,6 +23,6 @@ Suivez les tutoriels dans l'ordre des chapitres du livre de cours : voir le tabl
 
 ## En cas de problème
 
-- **Un package manque** (`there is no package called ...`) : installez-le avec `install.packages("nom_du_package")`, puis relancez le tutoriel.
+- **Un package manque** : lancez le tutoriel avec `run_tutorial()`, qui propose d'installer les packages manquants. Si vous voyez `there is no package called ...`, installez-le avec `install.packages("nom_du_package")`, puis relancez le tutoriel.
 - **Le tutoriel ne se met pas à jour** : réinstallez le package avec `remotes::install_github("gallonr/IntechmeRTuto", force = TRUE)`.
 - **Recommencer un tutoriel à zéro** : cliquez sur « Recommencer » en bas du sommaire du tutoriel.
