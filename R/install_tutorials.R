@@ -26,7 +26,7 @@ list_tutorials <- function() {
 run_tutorial <- function(name) {
   manquants <- packages_manquants(name)
   if (length(manquants) > 0) {
-    message("Le tutoriel ", name, " a besoin de packages non installés : ",
+    message("Le tutoriel ", name, " a besoin de packages non install\u00e9s : ",
             paste(manquants, collapse = ", "))
     installer <- interactive() &&
       isTRUE(utils::askYesNo("Les installer maintenant ?"))

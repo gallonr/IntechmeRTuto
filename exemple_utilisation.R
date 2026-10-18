@@ -54,4 +54,4 @@ run_tutorial("17-plotly")
 # ============================================
 # MISE À JOUR
 # ============================================
-remotes::install_github("gallonr/IntechmeRTuto", force = TRUE)
+remotes::install_github("gallonr/IntechmeRTuto")

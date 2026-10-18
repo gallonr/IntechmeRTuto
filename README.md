@@ -9,7 +9,7 @@
 
 ## 🎯 À propos
 
-Ce package propose **25 tutoriels interactifs** créés avec `learnr`. Ils accompagnent le livre de cours [*L'analyse de données en biologie marine*](https://gallonr.github.io/intechmer_statistique_cours/) (Cnam-Intechmer) : chaque chapitre du livre renvoie vers les tutoriels correspondants.
+Ce package propose **25 tutoriels interactifs** créés avec `learnr`. Ils accompagnent le livre de cours [*L'analyse de données en biologie marine*](https://gallonr.github.io/intechmer_statistique_cours/) (Cnam-Intechmer) : chaque chapitre du livre renvoie vers les tutoriels correspondants, et chaque tutoriel renvoie vers son chapitre.
 
 - ✅ **Interactif** : le code s'exécute directement dans le navigateur
 - 🧪 **Pratique** : exercices avec indices et solutions
@@ -43,12 +43,14 @@ list_tutorials()
 run_tutorial("01-objets-base")
 ```
 
-Le tutoriel s'ouvre dans le navigateur (ou dans l'onglet *Tutorial* de RStudio). La progression est sauvegardée automatiquement.
+Le tutoriel s'ouvre dans le navigateur. La progression est sauvegardée automatiquement. L'aide des fonctions est disponible avec `?run_tutorial` et `?list_tutorials`.
+
+`run_tutorial()` vérifie d'abord que les packages nécessaires au tutoriel sont installés et propose d'installer ceux qui manquent. Les tutoriels ouverts depuis l'onglet *Tutorial* de RStudio ne font pas cette vérification.
 
 Pour obtenir la dernière version des tutoriels :
 
 ```r
-remotes::install_github("gallonr/IntechmeRTuto", force = TRUE)
+remotes::install_github("gallonr/IntechmeRTuto")
 ```
 
 ---
@@ -89,9 +91,11 @@ remotes::install_github("gallonr/IntechmeRTuto", force = TRUE)
 
 | Tutoriel | Contenu | Chapitre du livre |
 |---|---|---|
-| `25-analyses-multivariees` | ACP, nMDS, classification hiérarchique | Analyses multivariées |
-| `19-analyses-ecologie` | Diversités α et β, communautés benthiques | Écologie numérique |
-| `18-cartographie` | Cartes avec `sf` et `ggplot2` | Analyses spatiales |
+| `25-analyses-multivariees` | ACP, nMDS, classification hiérarchique (*vegan, FactoMineR, factoextra*) | Analyses multivariées |
+| `19-analyses-ecologie` | Diversités α et β, communautés benthiques (*vegan, betapart*) | Écologie numérique |
+| `18-cartographie` | Cartes avec `sf` et `ggplot2` (*sf, rnaturalearth*) | Analyses spatiales |
+
+*Entre parenthèses et en italique : packages supplémentaires proposés à l'installation au lancement du tutoriel.*
 
 ### Pour aller plus loin (facultatifs)
 
@@ -100,10 +104,10 @@ remotes::install_github("gallonr/IntechmeRTuto", force = TRUE)
 | `07-stringr` | Manipuler du texte |
 | `08-forcats` | Manipuler des facteurs |
 | `09-lubridate` | Dates et heures |
-| `14-ggplot2-avance` | Annotations, combinaison de graphiques (patchwork) |
+| `14-ggplot2-avance` | Annotations, combinaison de graphiques (*patchwork*) |
 | `15-workflows` | Jointures et analyse complète |
 | `16-purrr` | Programmation fonctionnelle |
-| `17-plotly` | Graphiques interactifs |
+| `17-plotly` | Graphiques interactifs (*plotly*) |
 
 ---
 

@@ -15,6 +15,8 @@ list_tutorials()                  # liste des tutoriels
 run_tutorial("01-objets-base")    # lancer un tutoriel
 ```
 
+L'aide des fonctions est disponible avec `?run_tutorial` et `?list_tutorials`.
+
 Dans un tutoriel, vous pouvez lire les explications, exécuter du code, afficher des indices et des solutions, et répondre aux quiz. Votre progression est sauvegardée dans le navigateur.
 
 ## Ordre recommandé
@@ -24,5 +26,5 @@ Suivez les tutoriels dans l'ordre des chapitres du livre de cours : voir le tabl
 ## En cas de problème
 
 - **Un package manque** : lancez le tutoriel avec `run_tutorial()`, qui propose d'installer les packages manquants. Si vous voyez `there is no package called ...`, installez-le avec `install.packages("nom_du_package")`, puis relancez le tutoriel.
-- **Le tutoriel ne se met pas à jour** : réinstallez le package avec `remotes::install_github("gallonr/IntechmeRTuto", force = TRUE)`.
+- **Le tutoriel ne se met pas à jour** : relancez `remotes::install_github("gallonr/IntechmeRTuto")`, et ajoutez `force = TRUE` si R répond que le package est déjà à jour.
 - **Recommencer un tutoriel à zéro** : cliquez sur « Recommencer » en bas du sommaire du tutoriel.
