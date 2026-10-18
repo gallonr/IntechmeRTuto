@@ -1,6 +1,6 @@
 Package: IntechmeRTuto
 Title: Tutoriels Interactifs de Statistiques avec R
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: 
     person("Régis", "Gallon", email = "regis.gallon@lecnam.net",
            role = c("aut", "cre"))

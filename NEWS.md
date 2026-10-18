@@ -1,3 +1,28 @@
+# IntechmeRTuto 0.2.1
+
+## Corrections
+
+* Listes à puces mal affichées (ligne vide manquante) dans 17 tutoriels
+* 02-import-donnees : démonstration de `problems()` qui ne montrait aucun problème ; indice trompeur du défi final
+* 03-dplyr-base : quiz qui considérait `select(!id)` comme faux
+* 05-agregation : exercice qui additionnait des prix unitaires
+* 06-tidyr : énoncé (3 colonnes) incohérent avec la solution (5 colonnes)
+* 07-stringr : numéros de téléphone de 11 chiffres au lieu de 10 dans la solution
+* 09, 11, 15, 16 : exercices dont le code de départ contenait déjà la solution
+* 12-ggplot2-bivarie : bande « moyenne ± écart-type » présentée comme un intervalle de confiance
+* 13-ggplot2-custom : graphique de la solution vide (limites d'axe excluant 0 sur un diagramme en barres)
+* 15-workflows : régime alimentaire des manchots ; valeurs fictives signalées
+* 18-cartographie : coordonnées des îles Dream et Biscoe
+* 19-analyses-ecologie : exercice 7 (richesse identique dans toutes les stations) complété par l'indice de Shannon
+* 20-tests-statistiques : test de Student avec `var.equal = TRUE` ; définition de la p-value
+* 24-inference-puissance : données compatibles avec la normalité pour le test t
+* Noms d'espèces à jour : *Hediste diversicolor*, *Limecola balthica*
+
+## Harmonisation
+
+* Lien vers le chapitre correspondant du livre en tête de chaque tutoriel
+* Renvois « tutoriel suivant » alignés sur le parcours du README
+
 # IntechmeRTuto 0.2.0
 
 ## Nouveaux tutoriels
