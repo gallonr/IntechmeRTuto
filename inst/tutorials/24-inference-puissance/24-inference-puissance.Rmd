@@ -1,0 +1,314 @@
+---
+title: "Inférence statistique : la logique des tests"
+subtitle: "Hypothèses, p-value, risques d'erreur et puissance"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Les 7 étapes d'un test, interprétation de la p-value, risques alpha et bêta, puissance et tests multiples"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Poids (g) de 18 naissains d'huîtres après 3 mois de grossissement
+set.seed(2)
+naissains <- tibble(
+  naissain = 1:18,
+  poids_g = round(rnorm(18, mean = 13.1, sd = 1.6), 1)
+)
+
+# Simule nsim échantillons de taille n dans une population N(mu, 1.6)
+# et renvoie les p-values du test t de H0 : mu = 12
+p_simulees <- function(nsim, n, mu) {
+  replicate(nsim, t.test(rnorm(n, mean = mu, sd = 1.6), mu = 12)$p.value)
+}
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Cnam-Intechmer")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Introduction
+
+Un **test statistique** permet de décider si un écart observé dans un échantillon reflète une vraie différence dans la population, ou s'il peut s'expliquer par le seul hasard de l'échantillonnage.
+
+<div class="info-box">
+ℹ️ Ce tutoriel accompagne le chapitre [« Statistiques inférentielles »](https://gallonr.github.io/intechmer_statistique_cours/08-Stat_inference.html) du livre de cours, et prépare le TP 4.
+</div>
+
+**Objectifs d'apprentissage :**
+
+- ✅ Dérouler les **7 étapes** d'un test
+- ✅ Formuler $H_0$ et $H_1$, et choisir entre test unilatéral et bilatéral
+- ✅ Interpréter correctement une **p-value**
+- ✅ Comprendre par simulation les risques $\alpha$ et $\beta$
+- ✅ Calculer la **puissance** d'un test et dimensionner une expérience
+- ✅ Connaître le piège des **tests multiples**
+
+---
+
+## Partie 1 : La démarche d'un test {data-progressive=TRUE}
+
+### Les 7 étapes
+
+<div class="key-concept">
+1. Formuler la question biologique
+2. Formuler les hypothèses statistiques $H_0$ et $H_1$
+3. Choisir le test approprié
+4. Vérifier les conditions d'application
+5. Calculer le test
+6. Prendre une décision statistique (comparer la p-value à $\alpha$)
+7. Tirer les conclusions biologiques
+</div>
+
+### Un exemple : les naissains ont-ils atteint le poids visé ?
+
+Le cahier des charges d'une écloserie prévoit qu'après 3 mois les naissains pèsent **en moyenne 12 g**. On a pesé 18 naissains (`naissains`).
+
+- **Question biologique** : la croissance du lot s'écarte-t-elle de la norme ?
+- **Hypothèses** : $H_0 : \mu = 12$ g ; $H_1 : \mu \neq 12$ g (bilatéral)
+- **Test** : test $t$ de Student pour un échantillon
+
+```{r demo-naissains, exercise=TRUE}
+naissains %>%
+  summarise(n = n(), moyenne = mean(poids_g), ecart_type = sd(poids_g))
+
+ggplot(naissains, aes(sample = poids_g)) +
+  geom_qq() +
+  geom_qq_line(colour = "red") +
+  labs(x = "Quantiles théoriques", y = "Quantiles observés") +
+  theme_minimal()
+
+shapiro.test(naissains$poids_g)
+```
+
+### Exercice 1 : Réaliser le test
+
+Réalisez le test $t$ de $H_0 : \mu = 12$ avec `t.test()`. Au risque $\alpha = 5\,\%$, quelle est votre décision ?
+
+```{r ex1-ttest, exercise=TRUE, exercise.lines=4}
+t.test(naissains$poids_g, mu = ___)
+```
+
+```{r ex1-ttest-solution}
+test <- t.test(naissains$poids_g, mu = 12)
+test
+# p < 0.05 : on rejette H0. Le poids moyen du lot est significativement
+# différent de 12 g ; l'IC à 95 % indique de combien.
+```
+
+### Unilatéral ou bilatéral ?
+
+Si la question était « le lot pousse-t-il **plus vite** que prévu ? », on poserait $H_1 : \mu > 12$ (test unilatéral, `alternative = "greater"`). Le sens du test doit être choisi **avant** de regarder les données.
+
+```{r quiz-hypotheses}
+quiz(
+  question("Les hypothèses H0 et H1 portent sur :",
+    answer("les paramètres de la population (µ)", correct = TRUE),
+    answer("les statistiques de l'échantillon (moyenne observée)"),
+    answer("la p-value"),
+    answer("la taille de l'échantillon"),
+    allow_retry = TRUE
+  ),
+  question("Vous obtenez p = 0.003. Quelle phrase est correcte ?",
+    answer("Si H0 était vraie, un écart au moins aussi grand serait observé dans 0,3 % des échantillons", correct = TRUE),
+    answer("Il y a 0,3 % de chances que H0 soit vraie"),
+    answer("Il y a 99,7 % de chances que H1 soit vraie"),
+    answer("L'effet est très grand"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("Vous obtenez p = 0.27. Que concluez-vous ?",
+    answer("On ne rejette pas H0 : les données ne permettent pas de mettre en évidence une différence", correct = TRUE),
+    answer("On a démontré que H0 est vraie"),
+    answer("On accepte H1"),
+    answer("Le lot est conforme à 73 %"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Partie 2 : Les risques d'erreur {data-progressive=TRUE}
+
+### Deux façons de se tromper
+
+<div class="key-concept">
+| | $H_0$ vraie | $H_0$ fausse |
+|---|---|---|
+| On rejette $H_0$ | erreur de type I (risque $\alpha$) | bonne décision (puissance $1 - \beta$) |
+| On ne rejette pas $H_0$ | bonne décision | erreur de type II (risque $\beta$) |
+</div>
+
+La fonction `p_simulees(nsim, n, mu)`, préparée pour ce tutoriel, simule `nsim` échantillons de `n` naissains dans une population de moyenne `mu` (écart-type 1,6 g), et renvoie les p-values du test de $H_0 : \mu = 12$.
+
+### Exercice 2 : Le risque α
+
+Simulez 2 000 échantillons de 10 naissains dans une population où $H_0$ est **vraie** ($\mu = 12$). Quelle proportion des tests rejette $H_0$ à tort ?
+
+```{r ex2-alpha, exercise=TRUE, exercise.lines=5, exercise.timelimit=60}
+p <- p_simulees(2000, n = 10, mu = 12)
+
+```
+
+```{r ex2-alpha-hint-1}
+# mean(p < 0.05)
+```
+
+```{r ex2-alpha-solution}
+p <- p_simulees(2000, n = 10, mu = 12)
+mean(p < 0.05)   # proche de 0.05 : c'est le risque alpha
+
+ggplot(tibble(p = p), aes(x = p)) +
+  geom_histogram(breaks = seq(0, 1, 0.05), fill = "steelblue", colour = "white") +
+  labs(x = "p-value", y = "Nombre de tests") +
+  theme_minimal()
+# Sous H0, les p-values sont uniformément réparties entre 0 et 1.
+```
+
+### Exercice 3 : La puissance
+
+Reprenez la simulation avec $\mu = 13$ ($H_0$ est fausse). Quelle proportion des tests rejette $H_0$ ? C'est la **puissance** $1 - \beta$. Que vaut $\beta$ ?
+
+```{r ex3-puissance, exercise=TRUE, exercise.lines=5, exercise.timelimit=60}
+
+```
+
+```{r ex3-puissance-hint-1}
+# p <- p_simulees(2000, n = 10, mu = 13)
+# puissance <- mean(p < 0.05)
+```
+
+```{r ex3-puissance-solution}
+p <- p_simulees(2000, n = 10, mu = 13)
+puissance <- mean(p < 0.05)
+c(puissance = puissance, beta = 1 - puissance)
+```
+
+---
+
+## Partie 3 : Dimensionner une expérience {data-progressive=TRUE}
+
+### La fonction power.t.test()
+
+`power.t.test()` calcule la puissance sans simulation. Si on ne lui donne pas `n` mais `power`, elle calcule l'effectif nécessaire.
+
+```{r demo-power, exercise=TRUE}
+# Puissance pour n = 10, un écart réel de 1 g et un écart-type de 1.6 g
+power.t.test(n = 10, delta = 1, sd = 1.6, type = "one.sample")$power
+
+# Puissance en fonction de n
+tibble(n = 5:60) %>%
+  mutate(puissance = power.t.test(n = n, delta = 1, sd = 1.6,
+                                  type = "one.sample")$power) %>%
+  ggplot(aes(x = n, y = puissance)) +
+  geom_line(colour = "steelblue", linewidth = 1) +
+  geom_hline(yintercept = 0.8, linetype = "dashed") +
+  labs(x = "Taille d'échantillon n", y = "Puissance") +
+  theme_minimal()
+```
+
+### Exercice 4 : Combien de naissains peser ?
+
+Combien de naissains faut-il peser pour détecter un écart de 0,5 g avec une puissance de 80 % ?
+
+```{r ex4-effectif, exercise=TRUE, exercise.lines=4}
+power.t.test(delta = ___, sd = 1.6, power = ___, type = "one.sample")
+```
+
+```{r ex4-effectif-solution}
+res <- power.t.test(delta = 0.5, sd = 1.6, power = 0.8, type = "one.sample")
+ceiling(res$n)
+# Un petit écart demande beaucoup d'individus.
+```
+
+---
+
+## Partie 4 : Le piège des tests multiples {data-progressive=TRUE}
+
+### Multiplier les tests augmente le risque global
+
+Si l'on réalise $k$ tests indépendants au risque de 5 %, alors que $H_0$ est toujours vraie, la probabilité d'obtenir **au moins un** faux positif vaut $1 - 0.95^k$.
+
+### Exercice 5 : 15 lots conformes
+
+Un technicien teste 15 lots de naissains, tous conformes. Quelle est la probabilité qu'au moins un test soit significatif ?
+
+```{r ex5-multiples, exercise=TRUE, exercise.lines=3}
+
+```
+
+```{r ex5-multiples-solution}
+1 - 0.95^15
+# Plus d'une chance sur deux ! Solutions : un test global (ANOVA)
+# ou une correction des p-values avec p.adjust() (Bonferroni, Holm).
+```
+
+```{r quiz-final}
+quiz(
+  question("Comment augmenter la puissance d'un test ?",
+    answer("Augmenter la taille de l'échantillon", correct = TRUE),
+    answer("Réduire la variabilité des mesures (protocole plus précis)", correct = TRUE),
+    answer("Choisir alpha = 0.01 au lieu de 0.05"),
+    answer("Refaire le test jusqu'à obtenir p < 0.05"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# TEST t À UN ÉCHANTILLON
+t.test(x, mu = 12)                          # bilatéral
+t.test(x, mu = 12, alternative = "greater") # unilatéral
+
+# CONDITIONS
+shapiro.test(x)                             # H0 : normalité
+
+# PUISSANCE ET EFFECTIF
+power.t.test(n = 10, delta = 1, sd = 1.6, type = "one.sample")
+power.t.test(delta = 0.5, sd = 1.6, power = 0.8, type = "one.sample")
+
+# TESTS MULTIPLES
+1 - 0.95^k
+p.adjust(p_values, method = "holm")
+```
+
+<div class="footer">
+  <p>© Cnam-Intechmer</p>
+</div>

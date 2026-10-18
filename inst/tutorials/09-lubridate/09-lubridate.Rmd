@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
           continue: "Continuer"
           submitanswer: "Soumettre"
@@ -72,6 +72,10 @@ htmltools::img(src = "images/logo.png",
 
 ## Bienvenue {data-progressive=TRUE}
 
+<div class="info-box">
+📖 Tutoriel facultatif, pour aller plus loin que le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
+
 ### Introduction
 
 Bienvenue dans ce tutoriel sur les **dates et temps avec lubridate** !
@@ -92,7 +96,6 @@ Travailler avec des dates et des heures en R peut être compliqué : formats dif
 - Connaître dplyr
 - Bases de R
 
-**Durée estimée :** 45 minutes
 
 ---
 
@@ -128,11 +131,11 @@ ymd("20240115")
 # Format français
 dmy("15/01/2024")
 dmy("15-01-2024")
-dmy("15 janvier 2024")
+dmy("15 janvier 2024")  # mois en toutes lettres : seulement si R est configuré en français
 
 # Format américain
 mdy("01/15/2024")
-mdy("January 15, 2024")
+mdy("January 15, 2024")  # seulement si R est configuré en anglais
 ```
 
 💡 Ces fonctions sont **très flexibles** avec les séparateurs !
@@ -209,22 +212,22 @@ wday(ma_date, label = TRUE, abbr = FALSE)
 Extrayez le mois et l'année de chaque commande :
 
 ```{r ex2-extract, exercise=TRUE}
-commandes |>
+commandes %>%
   mutate(
     date = ymd(date_commande),
     mois = _____,
     annee = _____
-  ) |>
+  ) %>%
   select(id, date, mois, annee)
 ```
 
 ```{r ex2-extract-solution}
-commandes |>
+commandes %>%
   mutate(
     date = ymd(date_commande),
     mois = month(date, label = TRUE),
     annee = year(date)
-  ) |>
+  ) %>%
   select(id, date, mois, annee)
 ```
 
@@ -248,22 +251,22 @@ fin - debut  # Différence en jours
 Calculez le délai entre la commande et la livraison :
 
 ```{r ex3-delai, exercise=TRUE}
-commandes |>
+commandes %>%
   mutate(
     commande = ymd(date_commande),
     livraison = ymd(date_livraison),
     delai_jours = _____
-  ) |>
+  ) %>%
   select(id, commande, livraison, delai_jours)
 ```
 
 ```{r ex3-delai-solution}
-commandes |>
+commandes %>%
   mutate(
     commande = ymd(date_commande),
     livraison = ymd(date_livraison),
     delai_jours = livraison - commande
-  ) |>
+  ) %>%
   select(id, commande, livraison, delai_jours)
 ```
 
@@ -347,20 +350,20 @@ date_depart + period(2, "months") + period(15, "days")
 Calculez la date d'échéance (30 jours après la commande) :
 
 ```{r ex4-echeance, exercise=TRUE}
-commandes |>
+commandes %>%
   mutate(
     commande = ymd(date_commande),
     echeance = commande + _____
-  ) |>
+  ) %>%
   select(id, commande, echeance)
 ```
 
 ```{r ex4-echeance-solution}
-commandes |>
+commandes %>%
   mutate(
     commande = ymd(date_commande),
     echeance = commande + days(30)
-  ) |>
+  ) %>%
   select(id, commande, echeance)
 ```
 
@@ -380,9 +383,9 @@ floor_date(date_precise, "day")    # Début du jour
 floor_date(date_precise, "month")  # Début du mois
 floor_date(date_precise, "year")   # Début de l'année
 
-# Arrondir à la fin
-ceiling_date(date_precise, "day")
-ceiling_date(date_precise, "month")
+# Arrondir au-dessus
+ceiling_date(date_precise, "day")    # Début du jour suivant
+ceiling_date(date_precise, "month")  # Début du mois suivant
 
 # Arrondir au plus proche
 round_date(date_precise, "hour")
@@ -391,12 +394,12 @@ round_date(date_precise, "hour")
 ### Application : Grouper par mois
 
 ```{r demo-group-month, exercise=TRUE}
-commandes |>
+commandes %>%
   mutate(
     date = ymd(date_commande),
     mois = floor_date(date, "month")
-  ) |>
-  group_by(mois) |>
+  ) %>%
+  group_by(mois) %>%
   summarise(
     nb_commandes = n(),
     montant_total = sum(montant)
@@ -408,12 +411,12 @@ commandes |>
 Groupez les commandes par semaine et calculez le total :
 
 ```{r ex5-semaine, exercise=TRUE}
-commandes |>
+commandes %>%
   mutate(
     date = ymd(date_commande),
     semaine = floor_date(date, _____)
-  ) |>
-  group_by(semaine) |>
+  ) %>%
+  group_by(semaine) %>%
   summarise(
     nb_commandes = n(),
     montant_total = sum(montant)
@@ -421,12 +424,12 @@ commandes |>
 ```
 
 ```{r ex5-semaine-solution}
-commandes |>
+commandes %>%
   mutate(
     date = ymd(date_commande),
     semaine = floor_date(date, "week")
-  ) |>
-  group_by(semaine) |>
+  ) %>%
+  group_by(semaine) %>%
   summarise(
     nb_commandes = n(),
     montant_total = sum(montant)
@@ -463,18 +466,23 @@ ma_date + hours(14) + minutes(30)
 Calculez la durée de chaque événement en heures :
 
 ```{r ex6-duree, exercise=TRUE}
-evenements |>
+evenements %>%
   mutate(
-    duree_heures = as.numeric(fin - debut, units = "hours")
-  ) |>
+    duree_heures = _____
+  ) %>%
   select(nom, debut, fin, duree_heures)
 ```
 
+```{r ex6-duree-hint}
+# La soustraction de deux dates-heures donne une durée :
+# convertissez-la en heures avec as.numeric(..., units = "hours")
+```
+
 ```{r ex6-duree-solution}
-evenements |>
+evenements %>%
   mutate(
     duree_heures = as.numeric(fin - debut, units = "hours")
-  ) |>
+  ) %>%
   select(nom, debut, fin, duree_heures)
 ```
 
@@ -544,7 +552,7 @@ quarter(ma_date)
 
 ```{r defi-final-hint-2}
 # Étapes 1-4
-commandes |>
+commandes %>%
   mutate(
     commande = ymd(date_commande),
     livraison = ymd(date_livraison),
@@ -555,7 +563,7 @@ commandes |>
 ```
 
 ```{r defi-final-solution}
-commandes |>
+commandes %>%
   # 1-4. Conversions et extractions
   mutate(
     commande = ymd(date_commande),
@@ -563,14 +571,14 @@ commandes |>
     delai = as.numeric(livraison - commande),
     mois = month(commande, label = TRUE),
     trimestre = paste0("Q", quarter(commande))
-  ) |>
+  ) %>%
   # 5. Statistiques par trimestre
-  group_by(trimestre) |>
+  group_by(trimestre) %>%
   summarise(
     nb_commandes = n(),
     delai_moyen = round(mean(delai), 1),
     montant_total = sum(montant)
-  ) |>
+  ) %>%
   # 6. Tri
   arrange(trimestre)
 ```
@@ -590,7 +598,7 @@ commandes |>
 
 ### Pour aller plus loin
 
-**Tutoriel suivant :** "10 - ggplot2 - Introduction"
+**Tutoriel suivant (facultatif) :** `14-ggplot2-avance` (annotations, combinaison de graphiques)
 
 **Ressources :**
 
@@ -631,7 +639,7 @@ date + years(1)            # Ajouter 1 an
 
 # ARRONDIR
 floor_date(date, "month")    # Début du mois
-ceiling_date(date, "month")  # Fin du mois
+ceiling_date(date, "month")  # Début du mois suivant
 round_date(date, "day")      # Arrondir au jour
 
 # INTERVALLES
@@ -649,5 +657,5 @@ make_datetime(2024, 1, 15, 14, 30)  # Créer date-heure
 ---
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
           continue: "Continuer"
           submitanswer: "Soumettre"
@@ -55,8 +55,8 @@ enquete <- tibble(
 
 ventes <- tibble(
   mois = factor(
-    c("Jan", "Fev", "Mar", "Avr", "Mai", "Jui", "Jui", "Aou", "Sep", "Oct", "Nov", "Dec"),
-    levels = c("Jan", "Fev", "Mar", "Avr", "Mai", "Jui", "Jui", "Aou", "Sep", "Oct", "Nov", "Dec")
+    c("Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Juil", "Aou", "Sep", "Oct", "Nov", "Dec"),
+    levels = c("Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Juil", "Aou", "Sep", "Oct", "Nov", "Dec")
   ),
   montant = c(15000, 18000, 22000, 25000, 28000, 30000, 32000, 31000, 29000, 27000, 24000, 35000)
 )
@@ -66,9 +66,9 @@ produits_ventes <- tibble(
               "Casque", "Webcam", "Imprimante", "Scanner", "Tablette",
               "Cable HDMI", "Adaptateur", "Souris", "Clavier", "Ordinateur"),
   quantite = c(150, 2000, 800, 300, 1500, 450, 200, 180, 90, 120, 3000, 500, 1800, 750, 140)
-) |>
-  group_by(produit) |>
-  summarise(total = sum(quantite)) |>
+) %>%
+  group_by(produit) %>%
+  summarise(total = sum(quantite)) %>%
   mutate(produit = factor(produit))
 ```
 
@@ -79,6 +79,10 @@ htmltools::img(src = "images/logo.png",
 ```
 
 ## Bienvenue {data-progressive=TRUE}
+
+<div class="info-box">
+📖 Tutoriel facultatif, pour aller plus loin que le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
 
 ### Introduction
 
@@ -100,7 +104,6 @@ Les **facteurs** sont la façon dont R représente les variables catégorielles 
 - Connaître dplyr et ggplot2
 - Bases de R
 
-**Durée estimée :** 45 minutes
 
 ---
 
@@ -122,6 +125,7 @@ levels(couleurs)
 ### Pourquoi utiliser des facteurs ?
 
 **Avantages :**
+
 - ✅ Garantit que les valeurs sont valides
 - ✅ Contrôle l'ordre d'affichage (graphiques, tableaux)
 - ✅ Optimise la mémoire
@@ -181,12 +185,12 @@ sort(jours_fact)
 `fct_relevel()` permet de changer l'ordre des niveaux manuellement.
 
 ```{r demo-relevel, exercise=TRUE}
-enquete |>
+enquete %>%
   count(satisfaction)
 
 # Mettre "Neutre" en premier
-enquete |>
-  mutate(satisfaction = fct_relevel(satisfaction, "Neutre")) |>
+enquete %>%
+  mutate(satisfaction = fct_relevel(satisfaction, "Neutre")) %>%
   count(satisfaction)
 ```
 
@@ -195,8 +199,8 @@ enquete |>
 `fct_infreq()` ordonne par fréquence décroissante (le plus fréquent en premier).
 
 ```{r demo-infreq, exercise=TRUE}
-enquete |>
-  mutate(satisfaction = fct_infreq(satisfaction)) |>
+enquete %>%
+  mutate(satisfaction = fct_infreq(satisfaction)) %>%
   count(satisfaction)
 ```
 
@@ -207,14 +211,14 @@ enquete |>
 Réordonnez les tranches d'âge par fréquence et affichez le compte :
 
 ```{r ex2-infreq, exercise=TRUE}
-enquete |>
-  mutate(age_groupe = _____) |>
+enquete %>%
+  mutate(age_groupe = _____) %>%
   count(age_groupe)
 ```
 
 ```{r ex2-infreq-solution}
-enquete |>
-  mutate(age_groupe = fct_infreq(age_groupe)) |>
+enquete %>%
+  mutate(age_groupe = fct_infreq(age_groupe)) %>%
   count(age_groupe)
 ```
 
@@ -224,8 +228,8 @@ enquete |>
 
 ```{r demo-reorder, exercise=TRUE}
 # Ordonner les produits par quantité totale
-produits_ventes |>
-  mutate(produit = fct_reorder(produit, total)) |>
+produits_ventes %>%
+  mutate(produit = fct_reorder(produit, total)) %>%
   ggplot(aes(x = total, y = produit)) +
   geom_col() +
   labs(title = "Ventes par produit (ordonné)")
@@ -238,8 +242,8 @@ produits_ventes |>
 ## Section 3 : fct_rev() - Inverser l'ordre
 
 ```{r demo-rev, exercise=TRUE}
-enquete |>
-  mutate(satisfaction = fct_rev(satisfaction)) |>
+enquete %>%
+  mutate(satisfaction = fct_rev(satisfaction)) %>%
   count(satisfaction)
 ```
 
@@ -247,8 +251,8 @@ enquete |>
 
 ```{r demo-reorder-rev, exercise=TRUE}
 # Produits ordonnés par total décroissant
-produits_ventes |>
-  mutate(produit = fct_reorder(produit, total) |> fct_rev()) |>
+produits_ventes %>%
+  mutate(produit = fct_reorder(produit, total) %>% fct_rev()) %>%
   ggplot(aes(x = total, y = produit)) +
   geom_col()
 ```
@@ -305,7 +309,7 @@ quiz(
 `fct_recode()` permet de renommer des niveaux.
 
 ```{r demo-recode, exercise=TRUE}
-enquete |>
+enquete %>%
   mutate(
     satisfaction_fr = fct_recode(satisfaction,
       "Très insatisfait" = "Très insatisfait",  # Peut rester identique
@@ -314,7 +318,7 @@ enquete |>
       "Content" = "Satisfait",
       "Très content" = "Très satisfait"
     )
-  ) |>
+  ) %>%
   count(satisfaction_fr)
 ```
 
@@ -323,7 +327,7 @@ enquete |>
 Simplifiez les niveaux de satisfaction en seulement 3 catégories :
 
 ```{r ex3-recode, exercise=TRUE}
-enquete |>
+enquete %>%
   mutate(
     satisfaction_simple = fct_recode(satisfaction,
       "Négatif" = "Très insatisfait",
@@ -332,7 +336,7 @@ enquete |>
       _____ = _____,
       _____ = _____
     )
-  ) |>
+  ) %>%
   count(satisfaction_simple)
 ```
 
@@ -342,7 +346,7 @@ enquete |>
 ```
 
 ```{r ex3-recode-solution}
-enquete |>
+enquete %>%
   mutate(
     satisfaction_simple = fct_recode(satisfaction,
       "Négatif" = "Très insatisfait",
@@ -351,7 +355,7 @@ enquete |>
       "Positif" = "Satisfait",
       "Positif" = "Très satisfait"
     )
-  ) |>
+  ) %>%
   count(satisfaction_simple)
 ```
 
@@ -365,17 +369,17 @@ enquete |>
 
 ```{r demo-lump, exercise=TRUE}
 # Garder les 3 produits les plus vendus
-produits_ventes |>
-  mutate(produit_groupe = fct_lump(produit, n = 3, w = total)) |>
+produits_ventes %>%
+  mutate(produit_groupe = fct_lump(produit, n = 3, w = total)) %>%
   count(produit_groupe, wt = total, sort = TRUE)
 ```
 
 ### fct_lump_min() - Seuil minimum
 
 ```{r demo-lump-min, exercise=TRUE}
-# Garder seulement les produits avec > 500 ventes
-produits_ventes |>
-  mutate(produit_groupe = fct_lump_min(produit, min = 500, w = total)) |>
+# Garder seulement les produits avec au moins 500 ventes
+produits_ventes %>%
+  mutate(produit_groupe = fct_lump_min(produit, min = 500, w = total)) %>%
   count(produit_groupe, wt = total, sort = TRUE)
 ```
 
@@ -384,25 +388,25 @@ produits_ventes |>
 Gardez les 2 tranches d'âge les plus fréquentes, regroupez les autres en "Autres" :
 
 ```{r ex4-lump, exercise=TRUE}
-enquete |>
-  mutate(age_simplifie = fct_lump(age_groupe, n = _____)) |>
+enquete %>%
+  mutate(age_simplifie = fct_lump(age_groupe, n = _____)) %>%
   count(age_simplifie)
 ```
 
 ```{r ex4-lump-solution}
-enquete |>
-  mutate(age_simplifie = fct_lump(age_groupe, n = 2)) |>
+enquete %>%
+  mutate(age_simplifie = fct_lump(age_groupe, n = 2)) %>%
   count(age_simplifie)
 ```
 
 ### Renommer "Other"
 
 ```{r demo-lump-other, exercise=TRUE}
-produits_ventes |>
+produits_ventes %>%
   mutate(
     produit_groupe = fct_lump(produit, n = 3, w = total),
     produit_groupe = fct_recode(produit_groupe, "Autres produits" = "Other")
-  ) |>
+  ) %>%
   count(produit_groupe, wt = total)
 ```
 
@@ -414,14 +418,14 @@ produits_ventes |>
 
 ```{r demo-drop, exercise=TRUE}
 # Après un filtre, des niveaux peuvent rester vides
-satisfaction_filtre <- enquete |>
-  filter(satisfaction %in% c("Satisfait", "Très satisfait")) |>
+satisfaction_filtre <- enquete %>%
+  filter(satisfaction %in% c("Satisfait", "Très satisfait")) %>%
   pull(satisfaction)
 
 levels(satisfaction_filtre)  # Tous les niveaux sont là !
 
 # Supprimer les niveaux non utilisés
-satisfaction_filtre |> fct_drop() |> levels()
+satisfaction_filtre %>% fct_drop() %>% levels()
 ```
 
 ### fct_expand() - Ajouter des niveaux
@@ -436,14 +440,14 @@ levels(jours_etendus)
 ### fct_collapse() - Regrouper spécifiquement
 
 ```{r demo-collapse, exercise=TRUE}
-enquete |>
+enquete %>%
   mutate(
     sentiment = fct_collapse(satisfaction,
       Négatif = c("Très insatisfait", "Insatisfait"),
       Neutre = "Neutre",
       Positif = c("Satisfait", "Très satisfait")
     )
-  ) |>
+  ) %>%
   count(sentiment)
 ```
 
@@ -472,7 +476,7 @@ enquete
 
 ```{r defi-final-hint-1}
 # Étape 1 : Recoder satisfaction
-enquete |>
+enquete %>%
   mutate(
     satisfaction = fct_collapse(satisfaction,
       Négatif = c("Très insatisfait", "Insatisfait"),
@@ -484,7 +488,7 @@ enquete |>
 
 ```{r defi-final-hint-2}
 # Étapes 1-4
-enquete |>
+enquete %>%
   mutate(
     satisfaction = fct_collapse(satisfaction,
       Négatif = c("Très insatisfait", "Insatisfait"),
@@ -492,13 +496,13 @@ enquete |>
       Positif = c("Satisfait", "Très satisfait")
     ),
     age_groupe = fct_lump(age_groupe, n = 2)
-  ) |>
-  count(age_groupe, satisfaction) |>
+  ) %>%
+  count(age_groupe, satisfaction) %>%
   arrange(desc(n))
 ```
 
 ```{r defi-final-solution}
-enquete_nettoyee <- enquete |>
+enquete_nettoyee <- enquete %>%
   mutate(
     # 1. Simplifier satisfaction
     satisfaction = fct_collapse(satisfaction,
@@ -507,19 +511,19 @@ enquete_nettoyee <- enquete |>
       Positif = c("Satisfait", "Très satisfait")
     ),
     # 2. Regrouper âges
-    age_groupe = fct_lump(age_groupe, n = 2) |>
+    age_groupe = fct_lump(age_groupe, n = 2) %>%
                  fct_recode("Autres" = "Other")
   )
 
 # 3-4. Compter et trier
-resultats <- enquete_nettoyee |>
-  count(age_groupe, satisfaction) |>
+resultats <- enquete_nettoyee %>%
+  count(age_groupe, satisfaction) %>%
   arrange(desc(n))
 
 resultats
 
 # 5. Graphique
-enquete_nettoyee |>
+enquete_nettoyee %>%
   ggplot(aes(x = age_groupe, fill = satisfaction)) +
   geom_bar(position = "dodge") +
   labs(
@@ -545,7 +549,7 @@ enquete_nettoyee |>
 
 ### Pour aller plus loin
 
-**Tutoriel suivant :** "09 - Dates et temps avec lubridate"
+**Tutoriel suivant (facultatif) :** `09-lubridate` (dates et heures)
 
 **Ressources :**
 
@@ -593,5 +597,5 @@ fct_unify(list(f1, f2))     # Unifier niveaux
 ---
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

@@ -1,0 +1,389 @@
+---
+title: "Initiation aux analyses multivariées"
+subtitle: "ACP, nMDS et classification de stations"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Transformer les données, réaliser une ACP, un nMDS et une classification hiérarchique de stations marines"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(vegan)
+library(FactoMineR)
+library(factoextra)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# 24 stations le long d'un gradient estuaire -> large (données simulées)
+set.seed(10)
+nsites <- 24
+gradient <- seq(0, 1, length.out = nsites)
+
+env <- tibble(
+  station = sprintf("St%02d", 1:nsites),
+  salinite = round(25 + 10 * gradient + rnorm(nsites, 0, 0.8), 1),
+  temperature = round(17 - 3 * gradient + rnorm(nsites, 0, 0.4), 1),
+  turbidite = round(40 - 30 * gradient + rnorm(nsites, 0, 4), 1),
+  matiere_org = round(6 - 4 * gradient + rnorm(nsites, 0, 0.6), 1)
+)
+
+# Abondances de 10 espèces d'invertébrés, chacune avec un optimum le long du gradient
+especes_noms <- c("Hediste_diversicolor", "Corophium_volutator", "Peringia_ulvae",
+                  "Scrobicularia_plana", "Cerastoderma_edule", "Limecola_balthica",
+                  "Nephtys_hombergii", "Abra_alba", "Owenia_fusiformis", "Spisula_subtruncata")
+especes <- sapply(seq_along(especes_noms), function(i) {
+  optimum <- (i - 1) / (length(especes_noms) - 1)
+  rpois(nsites, lambda = 20 * exp(-((gradient - optimum)^2) / (2 * 0.2^2)))
+})
+colnames(especes) <- especes_noms
+rownames(especes) <- env$station
+especes <- as.data.frame(especes)
+
+# Variables environnementales sous forme de tableau numérique (stations en lignes)
+env_num <- env %>% column_to_rownames("station")
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Cnam-Intechmer")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Introduction
+
+Une **analyse multivariée** étudie simultanément plusieurs variables mesurées sur les mêmes objets (stations, échantillons). Elle permet de **résumer** un grand tableau en quelques axes, et de **regrouper** les objets qui se ressemblent.
+
+<div class="info-box">
+ℹ️ Ce tutoriel accompagne le chapitre [« Initiation aux analyses multivariées »](https://gallonr.github.io/intechmer_statistique_cours/10-Init_multivar.html) du livre de cours.
+</div>
+
+**Objectifs d'apprentissage :**
+
+- ✅ Préparer les données : standardiser les variables, transformer les abondances
+- ✅ Réaliser et interpréter une **ACP** (variance expliquée, cercle des corrélations, stations)
+- ✅ Réaliser et interpréter un **nMDS** (stress)
+- ✅ Regrouper des stations par **classification hiérarchique**
+- ✅ Choisir la méthode adaptée à ses données
+
+### Les données
+
+On a échantillonné 24 stations le long d'un gradient allant de l'estuaire (`St01`) vers le large (`St24`). Deux tableaux décrivent les **mêmes** stations :
+
+- `env` : 4 variables environnementales (salinité, température, turbidité, matière organique) ;
+- `especes` : abondances de 10 espèces d'invertébrés benthiques.
+
+```{r demo-donnees, exercise=TRUE}
+head(env)
+head(especes[, 1:5])
+```
+
+---
+
+## Partie 1 : Préparer les données {data-progressive=TRUE}
+
+### Pourquoi transformer ?
+
+<div class="key-concept">
+- **Variables environnementales** : elles ont des **unités différentes** (PSU, °C, NTU, %). On les **standardise** (moyenne 0, écart-type 1) pour qu'aucune ne domine l'analyse.
+- **Abondances d'espèces** : quelques espèces très abondantes peuvent dominer. La **transformation de Hellinger** (`decostand(..., method = "hellinger")`) réduit leur poids.
+</div>
+
+```{r demo-standardisation, exercise=TRUE}
+# Variances avant standardisation : la turbidité écrase les autres variables
+apply(env_num, 2, var)
+
+# Après standardisation : toutes les variances valent 1
+env_std <- scale(env_num)
+apply(env_std, 2, var)
+```
+
+### Exercice 1 : Transformation de Hellinger
+
+Appliquez la transformation de Hellinger au tableau `especes` et affichez les 3 premières lignes.
+
+```{r ex1-hellinger, exercise=TRUE, exercise.lines=4}
+especes_hel <- decostand(especes, method = ___)
+
+```
+
+```{r ex1-hellinger-solution}
+especes_hel <- decostand(especes, method = "hellinger")
+head(especes_hel, 3)
+```
+
+---
+
+## Partie 2 : L'Analyse en Composantes Principales (ACP) {data-progressive=TRUE}
+
+### Principe
+
+L'ACP crée de nouveaux axes, combinaisons des variables d'origine : le premier axe capture la plus grande part de la variabilité, le deuxième la suivante, perpendiculairement au premier, etc.
+
+```{r demo-acp, exercise=TRUE}
+# ACP normée sur les variables environnementales (scale.unit = TRUE : standardisation)
+acp_env <- PCA(env_num, scale.unit = TRUE, graph = FALSE)
+
+# Variance expliquée par chaque axe
+acp_env$eig
+
+fviz_eig(acp_env, addlabels = TRUE) +
+  labs(title = "Éboulis des valeurs propres", x = "Axe", y = "% de variance expliquée")
+```
+
+### Exercice 2 : Variance expliquée
+
+Quelle part de la variance totale les deux premiers axes expliquent-ils ensemble ? Elle se trouve dans la colonne `cumulative percentage of variance` de `acp_env$eig`.
+
+```{r ex2-variance, exercise=TRUE, exercise.lines=4}
+acp_env <- PCA(env_num, scale.unit = TRUE, graph = FALSE)
+
+```
+
+```{r ex2-variance-hint-1}
+# acp_env$eig[2, "cumulative percentage of variance"]
+```
+
+```{r ex2-variance-solution}
+acp_env <- PCA(env_num, scale.unit = TRUE, graph = FALSE)
+acp_env$eig[2, "cumulative percentage of variance"]
+# Le plan 1-2 résume l'essentiel de l'information : il suffit pour interpréter.
+```
+
+### Le cercle des corrélations et la carte des stations
+
+```{r demo-acp-graphes, exercise=TRUE}
+acp_env <- PCA(env_num, scale.unit = TRUE, graph = FALSE)
+
+# Variables : des flèches proches = variables corrélées positivement,
+# des flèches opposées = corrélées négativement
+fviz_pca_var(acp_env, repel = TRUE, col.var = "steelblue")
+
+# Stations : des stations proches ont des conditions semblables
+fviz_pca_ind(acp_env, repel = TRUE, col.ind = gradient,
+             gradient.cols = c("darkorange", "steelblue")) +
+  labs(colour = "Position\n(0 = estuaire)")
+```
+
+```{r quiz-acp}
+quiz(
+  question("Sur le cercle des corrélations, la salinité et la turbidité pointent dans des directions opposées. Cela signifie que :",
+    answer("elles sont corrélées négativement : les stations très salées sont peu turbides", correct = TRUE),
+    answer("elles ne sont pas corrélées"),
+    answer("elles sont corrélées positivement"),
+    answer("l'une des deux variables est inutile"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi réaliser une ACP normée (scale.unit = TRUE) sur ces variables ?",
+    answer("Parce qu'elles ont des unités différentes", correct = TRUE),
+    answer("Parce qu'elles ne suivent pas une loi normale"),
+    answer("Pour supprimer les valeurs manquantes"),
+    answer("Parce qu'il y a plus de stations que de variables"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Partie 3 : Le nMDS {data-progressive=TRUE}
+
+### Principe
+
+Le **nMDS** (positionnement multidimensionnel non métrique) place les stations sur un plan de façon à respecter au mieux l'**ordre** des distances entre elles. Il accepte n'importe quelle distance, notamment **Bray-Curtis**, adaptée aux abondances d'espèces.
+
+<div class="key-concept">
+**Le stress mesure la qualité de la représentation :**
+
+- < 0.05 : excellente
+- 0.05 - 0.10 : bonne
+- 0.10 - 0.20 : acceptable
+- \> 0.20 : peu fiable
+</div>
+
+### Exercice 3 : nMDS sur les communautés
+
+Réalisez un nMDS sur le tableau `especes` avec la distance de Bray-Curtis, puis affichez le stress.
+
+```{r ex3-nmds, exercise=TRUE, exercise.lines=6}
+nmds <- metaMDS(especes, distance = ___, k = 2, trace = FALSE)
+
+```
+
+```{r ex3-nmds-hint-1}
+# distance = "bray"
+# nmds$stress
+```
+
+```{r ex3-nmds-solution}
+nmds <- metaMDS(especes, distance = "bray", k = 2, trace = FALSE)
+nmds$stress
+```
+
+### Représenter le nMDS avec ggplot2
+
+```{r demo-nmds-plot, exercise=TRUE}
+nmds <- metaMDS(especes, distance = "bray", k = 2, trace = FALSE)
+
+scores(nmds, display = "sites") %>%
+  as.data.frame() %>%
+  rownames_to_column("station") %>%
+  left_join(env, by = "station") %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, colour = salinite)) +
+  geom_point(size = 3) +
+  geom_text(aes(label = station), vjust = -0.8, size = 3, show.legend = FALSE) +
+  scale_colour_viridis_c() +
+  labs(title = paste("nMDS (Bray-Curtis), stress =", round(nmds$stress, 3)),
+       colour = "Salinité") +
+  coord_equal() +
+  theme_minimal()
+```
+
+Les stations se rangent le long d'un axe qui suit la salinité : la composition des communautés change de l'estuaire vers le large.
+
+---
+
+## Partie 4 : Classification des stations {data-progressive=TRUE}
+
+### Classification hiérarchique
+
+On calcule les distances entre stations, puis on les regroupe pas à pas, des plus semblables aux plus différentes. Le résultat est un **dendrogramme**.
+
+```{r demo-hclust, exercise=TRUE}
+dist_bray <- vegdist(especes, method = "bray")
+cah <- hclust(dist_bray, method = "ward.D2")
+
+plot(cah, hang = -1, main = "Classification des stations (Bray-Curtis, Ward)",
+     xlab = "", sub = "", ylab = "Hauteur")
+rect.hclust(cah, k = 3, border = c("darkorange", "darkgreen", "steelblue"))
+```
+
+### Exercice 4 : Découper en groupes
+
+Découpez le dendrogramme en 3 groupes avec `cutree()`, ajoutez le groupe au tableau `env`, puis calculez la salinité moyenne de chaque groupe.
+
+```{r ex4-cutree, exercise=TRUE, exercise.lines=10}
+dist_bray <- vegdist(especes, method = "bray")
+cah <- hclust(dist_bray, method = "ward.D2")
+
+groupes <- cutree(cah, k = ___)
+
+```
+
+```{r ex4-cutree-hint-1}
+# env %>%
+#   mutate(groupe = factor(groupes)) %>%
+#   group_by(groupe) %>%
+#   summarise(...)
+```
+
+```{r ex4-cutree-solution}
+dist_bray <- vegdist(especes, method = "bray")
+cah <- hclust(dist_bray, method = "ward.D2")
+groupes <- cutree(cah, k = 3)
+
+env %>%
+  mutate(groupe = factor(groupes)) %>%
+  group_by(groupe) %>%
+  summarise(n = n(), salinite_moy = mean(salinite), turbidite_moy = mean(turbidite))
+# Les groupes correspondent à trois zones du gradient : estuaire, zone intermédiaire, large.
+```
+
+### Combien de groupes ?
+
+Il n'y a pas de « bon » nombre de groupes unique. On regarde les grands sauts de hauteur du dendrogramme, ou des critères comme la silhouette moyenne :
+
+```{r demo-silhouette, exercise=TRUE}
+fviz_nbclust(decostand(especes, method = "hellinger"), FUNcluster = hcut,
+             method = "silhouette", k.max = 8) +
+  labs(title = "Silhouette moyenne selon le nombre de groupes")
+```
+
+---
+
+## Défi final {data-progressive=TRUE}
+
+### Choisir la bonne méthode
+
+```{r quiz-final}
+quiz(
+  question("Vous voulez résumer 8 variables physico-chimiques mesurées sur 30 stations :",
+    answer("ACP normée", correct = TRUE),
+    answer("nMDS sur Bray-Curtis"),
+    answer("Classification sur des présences/absences"),
+    answer("Test du χ²"),
+    allow_retry = TRUE, random_answer_order = TRUE
+  ),
+  question("Vous voulez représenter la ressemblance entre communautés (abondances de 40 espèces, beaucoup de zéros) :",
+    answer("nMDS sur la distance de Bray-Curtis", correct = TRUE),
+    answer("ACP normée sur les abondances brutes"),
+    answer("ANOVA"),
+    answer("Régression linéaire"),
+    allow_retry = TRUE, random_answer_order = TRUE
+  ),
+  question("Un nMDS a un stress de 0.27. Que faites-vous ?",
+    answer("La représentation est peu fiable : on augmente le nombre de dimensions (k = 3) ou on change de méthode", correct = TRUE),
+    answer("On interprète le graphique normalement"),
+    answer("C'est excellent, le stress doit être élevé"),
+    answer("On supprime les stations éloignées"),
+    allow_retry = TRUE
+  )
+)
+```
+
+<div class="tip">
+Pour aller plus loin, le chapitre du livre présente aussi l'**AFC** (tableaux de contingence) et la **RDA** (relier directement les espèces aux variables environnementales).
+</div>
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# PRÉPARATION
+scale(env)                                  # standardiser
+decostand(especes, method = "hellinger")    # transformer les abondances
+
+# ACP (FactoMineR + factoextra)
+acp <- PCA(env, scale.unit = TRUE, graph = FALSE)
+acp$eig                                     # variance expliquée
+fviz_pca_var(acp); fviz_pca_ind(acp)
+
+# nMDS (vegan)
+nmds <- metaMDS(especes, distance = "bray", k = 2)
+nmds$stress
+
+# CLASSIFICATION
+cah <- hclust(vegdist(especes, "bray"), method = "ward.D2")
+plot(cah); cutree(cah, k = 3)
+```
+
+<div class="footer">
+  <p>© Cnam-Intechmer</p>
+</div>

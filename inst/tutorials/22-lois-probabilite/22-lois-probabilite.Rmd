@@ -1,0 +1,427 @@
+---
+title: "Échantillonnage et lois de probabilité"
+subtitle: "Population, échantillon et lois binomiale, de Poisson, normale et exponentielle"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Types de variables, plans d'échantillonnage et fonctions d, p, q, r des lois de probabilité"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Population virtuelle de 3 000 palourdes réparties dans deux zones d'un estran
+set.seed(2025)
+estran <- tibble(
+  id = 1:3000,
+  zone = rep(c("haut_estran", "bas_estran"), times = c(1200, 1800)),
+  longueur_mm = c(rnorm(1200, mean = 32, sd = 4), rnorm(1800, mean = 41, sd = 5))
+) %>%
+  mutate(longueur_mm = round(longueur_mm, 1))
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Cnam-Intechmer")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Introduction
+
+On n'étudie presque jamais une population entière : on en prélève un **échantillon**. Les **lois de probabilité** décrivent la façon dont les valeurs observées se répartissent, et permettent de calculer la probabilité d'un événement.
+
+<div class="info-box">
+ℹ️ Ce tutoriel accompagne les chapitres [« Quelques définitions en statistiques »](https://gallonr.github.io/intechmer_statistique_cours/06a-Stat_def.html) et [« Lois de distribution »](https://gallonr.github.io/intechmer_statistique_cours/06b-distribution_law.html) du livre de cours, et prépare le TP 2.
+</div>
+
+**Objectifs d'apprentissage :**
+
+- ✅ Distinguer population, échantillon et types de variables
+- ✅ Tirer un échantillon aléatoire simple et un échantillon stratifié dans R
+- ✅ Comprendre la **fluctuation d'échantillonnage**
+- ✅ Utiliser les fonctions `d...()`, `p...()`, `q...()` et `r...()` des lois de probabilité
+- ✅ Choisir la loi adaptée à une situation
+
+---
+
+## Partie 1 : Population, échantillon, variables {data-progressive=TRUE}
+
+### Les définitions
+
+<div class="key-concept">
+- **Élément** : l'unité sur laquelle on mesure (une palourde, un trait de chalut…)
+- **Population cible** : l'ensemble des éléments sur lesquels on veut conclure
+- **Population statistique** : la partie de la population réellement accessible à l'échantillonnage
+- **Échantillon** : les éléments effectivement mesurés
+</div>
+
+Les variables sont **qualitatives** (nominales ou ordinales) ou **quantitatives** (discrètes ou continues).
+
+```{r quiz-variables}
+quiz(
+  question("Le nombre de poux de mer sur un saumon est une variable :",
+    answer("quantitative discrète", correct = TRUE),
+    answer("quantitative continue"),
+    answer("qualitative ordinale"),
+    answer("qualitative nominale"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("Le stade de maturité des gonades (1 à 4) est une variable :",
+    answer("qualitative ordinale", correct = TRUE),
+    answer("quantitative continue"),
+    answer("qualitative nominale"),
+    answer("quantitative discrète"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("Une drague ne capture pas les coquilles de moins de 70 mm. Ces petites coquilles font partie :",
+    answer("de la population cible, mais pas de la population statistique", correct = TRUE),
+    answer("de la population statistique"),
+    answer("de l'échantillon"),
+    answer("ni de la population cible, ni de la population statistique"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+## Partie 2 : Plans d'échantillonnage {data-progressive=TRUE}
+
+### Une population virtuelle
+
+Le tableau `estran` contient une population **virtuelle** de 3 000 palourdes, réparties en deux zones. Comme on connaît toute la population, on peut juger la qualité d'un échantillon.
+
+```{r demo-population, exercise=TRUE}
+glimpse(estran)
+
+# Vraie moyenne de la population
+mean(estran$longueur_mm)
+
+# Moyenne par zone
+estran %>%
+  group_by(zone) %>%
+  summarise(N = n(), moyenne = mean(longueur_mm))
+```
+
+### Exercice 1 : Échantillon aléatoire simple
+
+Tirez 50 palourdes au hasard avec `slice_sample()` et calculez leur longueur moyenne. Relancez le code plusieurs fois : que constatez-vous ?
+
+```{r ex1-aleatoire, exercise=TRUE, exercise.lines=5}
+estran %>%
+  slice_sample(n = ___) %>%
+  summarise(moyenne = mean(longueur_mm))
+```
+
+```{r ex1-aleatoire-solution}
+estran %>%
+  slice_sample(n = 50) %>%
+  summarise(moyenne = mean(longueur_mm))
+# Chaque tirage donne une moyenne différente : c'est la fluctuation d'échantillonnage.
+```
+
+### Exercice 2 : Échantillon stratifié proportionnel
+
+La zone haute représente 40 % de la population et la zone basse 60 %. Pour un échantillon de 50 palourdes, combien faut-il en tirer dans chaque zone ? Réalisez ce tirage avec `group_by(zone)` puis `slice_sample(prop = ...)`.
+
+```{r ex2-stratifie, exercise=TRUE, exercise.lines=6}
+estran %>%
+  group_by(zone) %>%
+  slice_sample(prop = ___) %>%
+  ungroup() %>%
+  count(zone)
+```
+
+```{r ex2-stratifie-hint-1}
+# 50 palourdes sur 3 000, c'est 50 / 3000 de chaque zone
+```
+
+```{r ex2-stratifie-solution}
+ech_strat <- estran %>%
+  group_by(zone) %>%
+  slice_sample(prop = 50 / 3000) %>%
+  ungroup()
+
+count(ech_strat, zone)    # 20 en haut d'estran, 30 en bas d'estran
+mean(ech_strat$longueur_mm)
+```
+
+### Comparer les deux plans par simulation
+
+On répète chaque plan 1 000 fois et on regarde la dispersion des 1 000 moyennes obtenues.
+
+```{r demo-comparaison-plans, exercise=TRUE}
+ech_simple <- function() {
+  estran %>% slice_sample(n = 50) %>% pull(longueur_mm) %>% mean()
+}
+ech_strat <- function() {
+  estran %>% group_by(zone) %>% slice_sample(prop = 50 / 3000) %>%
+    pull(longueur_mm) %>% mean()
+}
+
+simulation <- tibble(simple = replicate(1000, ech_simple()),
+                     stratifie = replicate(1000, ech_strat())) %>%
+  pivot_longer(everything(), names_to = "plan", values_to = "moyenne")
+
+ggplot(simulation, aes(x = plan, y = moyenne)) +
+  geom_boxplot(fill = "grey90") +
+  geom_hline(yintercept = mean(estran$longueur_mm), colour = "red", linetype = "dashed") +
+  labs(x = "Plan d'échantillonnage", y = "Moyenne estimée (mm)") +
+  theme_minimal()
+
+simulation %>%
+  group_by(plan) %>%
+  summarise(moyenne_des_moyennes = mean(moyenne), ecart_type = sd(moyenne))
+```
+
+<div class="tip">
+Les deux plans sont **non biaisés** (leurs moyennes tombent en moyenne sur la vraie valeur, en rouge), mais le plan stratifié est plus **précis** : ses estimations sont moins dispersées, car il garantit que chaque zone est représentée selon son poids.
+</div>
+
+---
+
+## Partie 3 : Lois discrètes {data-progressive=TRUE}
+
+### Les quatre fonctions de R
+
+<div class="key-concept">
+Pour chaque loi (`binom`, `pois`, `norm`, `exp`…), R propose quatre fonctions :
+
+- `d...()` : probabilité $P(X = k)$ (loi discrète) ou densité (loi continue)
+- `p...()` : probabilité cumulée $P(X \le x)$
+- `q...()` : quantile, la valeur $x$ telle que $P(X \le x) = p$
+- `r...()` : tirage de valeurs aléatoires
+</div>
+
+### La loi binomiale
+
+Elle compte le nombre de **succès** parmi $n$ essais indépendants de même probabilité $p$. Espérance : $np$ ; variance : $np(1-p)$.
+
+**Exemple** : 90 % des œufs de turbot sont fécondés. Sur un lot de 30 œufs, le nombre d'œufs fécondés suit $B(n = 30, p = 0.9)$.
+
+```{r demo-binom, exercise=TRUE}
+dbinom(27, size = 30, prob = 0.9)   # P(X = 27)
+pbinom(25, size = 30, prob = 0.9)   # P(X <= 25)
+
+tibble(k = 18:30, proba = dbinom(k, size = 30, prob = 0.9)) %>%
+  ggplot(aes(x = k, y = proba)) +
+  geom_col(fill = "steelblue") +
+  labs(x = "Nombre d'œufs fécondés", y = "P(X = k)") +
+  theme_minimal()
+```
+
+### Exercice 3 : Au moins 28 œufs fécondés
+
+Calculez la probabilité qu'**au moins** 28 œufs sur 30 soient fécondés.
+
+```{r ex3-binom, exercise=TRUE, exercise.lines=4}
+# P(X >= 28) = 1 - P(X <= 27)
+
+```
+
+```{r ex3-binom-hint-1}
+# Attention : P(X >= 28) = 1 - P(X <= 27), pas 1 - P(X <= 28)
+# 1 - pbinom(..., size = 30, prob = 0.9)
+```
+
+```{r ex3-binom-solution}
+1 - pbinom(27, size = 30, prob = 0.9)
+# ou : pbinom(27, size = 30, prob = 0.9, lower.tail = FALSE)
+```
+
+### La loi de Poisson
+
+Elle décrit le nombre d'événements **rares et indépendants** dans un intervalle (de temps, de surface…). Son unique paramètre $\lambda$ est à la fois sa **moyenne** et sa **variance**.
+
+**Exemple** : on compte en moyenne 3 balanes par carré de 10 cm × 10 cm sur une roche.
+
+```{r demo-pois, exercise=TRUE}
+dpois(0, lambda = 3)   # probabilité d'un carré vide
+ppois(2, lambda = 3)   # P(X <= 2)
+
+# Vérification moyenne = variance par simulation
+x <- rpois(10000, lambda = 3)
+c(moyenne = mean(x), variance = var(x))
+```
+
+### Exercice 4 : Carrés très colonisés
+
+Quelle est la probabilité qu'un carré contienne **plus de 6** balanes ?
+
+```{r ex4-pois, exercise=TRUE, exercise.lines=3}
+
+```
+
+```{r ex4-pois-hint-1}
+# P(X > 6) = 1 - P(X <= 6)
+```
+
+```{r ex4-pois-solution}
+1 - ppois(6, lambda = 3)
+```
+
+```{r quiz-poisson}
+quiz(
+  question("Sur des comptages de poux de mer, vous trouvez une moyenne de 2 et une variance de 9. Qu'en concluez-vous ?",
+    answer("Les poux sont agrégés (surdispersion) : la loi de Poisson n'est pas adaptée", correct = TRUE),
+    answer("Les données suivent parfaitement une loi de Poisson"),
+    answer("Il faut utiliser une loi normale"),
+    answer("Les comptages sont faux"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+## Partie 4 : Lois continues {data-progressive=TRUE}
+
+### La loi normale
+
+Elle est définie par sa moyenne $\mu$ et son écart-type $\sigma$. Environ 95 % des valeurs sont comprises entre $\mu - 1.96\sigma$ et $\mu + 1.96\sigma$.
+
+**Exemple** : la longueur des soles débarquées suit approximativement $N(\mu = 30, \sigma = 4)$ cm. La taille minimale de capture est de 24 cm.
+
+```{r demo-norm, exercise=TRUE}
+pnorm(24, mean = 30, sd = 4)       # proportion sous la taille minimale
+qnorm(0.975, mean = 30, sd = 4)    # 97.5 % des soles mesurent moins que...
+
+tibble(x = seq(15, 45, length.out = 400), densite = dnorm(x, 30, 4)) %>%
+  ggplot(aes(x = x, y = densite)) +
+  geom_area(data = ~ filter(.x, x <= 24), fill = "tomato", alpha = 0.5) +
+  geom_line() +
+  geom_vline(xintercept = 24, linetype = "dashed") +
+  labs(x = "Longueur (cm)", y = "Densité de probabilité") +
+  theme_minimal()
+```
+
+### Exercice 5 : Proportions et quantiles
+
+Avec la même loi $N(30, 4)$ : (a) quelle proportion de soles mesure entre 28 et 35 cm ? (b) quelle longueur dépassent seulement les 5 % de soles les plus grandes ?
+
+```{r ex5-norm, exercise=TRUE, exercise.lines=5}
+# (a)
+
+# (b)
+
+```
+
+```{r ex5-norm-hint-1}
+# (a) P(28 < X < 35) = P(X < 35) - P(X < 28)
+# (b) qnorm(0.95, ...)
+```
+
+```{r ex5-norm-solution}
+pnorm(35, mean = 30, sd = 4) - pnorm(28, mean = 30, sd = 4)   # (a)
+qnorm(0.95, mean = 30, sd = 4)                                # (b)
+```
+
+### La loi exponentielle
+
+Elle décrit le **temps d'attente** entre deux événements qui surviennent au hasard avec un taux constant $\lambda$. Son espérance vaut $1/\lambda$.
+
+### Exercice 6 : Pannes d'une pompe
+
+Une pompe d'écloserie tombe en panne en moyenne une fois tous les 200 jours ($\lambda = 1/200$). Quelle est la probabilité qu'elle fonctionne **plus de 365 jours** sans panne ?
+
+```{r ex6-exp, exercise=TRUE, exercise.lines=3}
+
+```
+
+```{r ex6-exp-hint-1}
+# P(T > 365) = 1 - pexp(365, rate = ...)
+```
+
+```{r ex6-exp-solution}
+1 - pexp(365, rate = 1 / 200)
+```
+
+---
+
+## Défi final {data-progressive=TRUE}
+
+### Quelle loi pour quelle situation ?
+
+```{r quiz-final}
+quiz(
+  question("Nombre de naissains vivants parmi 500 naissains, sachant que la survie est de 70 %",
+    answer("Binomiale B(500 ; 0.7)", correct = TRUE),
+    answer("Poisson"),
+    answer("Normale"),
+    answer("Exponentielle"),
+    allow_retry = TRUE, random_answer_order = TRUE
+  ),
+  question("Nombre de colonies bactériennes sur une boîte de Petri ensemencée avec une suspension diluée",
+    answer("Poisson", correct = TRUE),
+    answer("Binomiale"),
+    answer("Normale"),
+    answer("Exponentielle"),
+    allow_retry = TRUE, random_answer_order = TRUE
+  ),
+  question("Temps entre deux détections de saumons marqués par un récepteur acoustique",
+    answer("Exponentielle", correct = TRUE),
+    answer("Binomiale"),
+    answer("Poisson"),
+    answer("Normale"),
+    allow_retry = TRUE, random_answer_order = TRUE
+  ),
+  question("Erreur de mesure d'un dosage colorimétrique de protéines",
+    answer("Normale", correct = TRUE),
+    answer("Binomiale"),
+    answer("Poisson"),
+    answer("Exponentielle"),
+    allow_retry = TRUE, random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# ÉCHANTILLONNAGE
+slice_sample(donnees, n = 50)                         # aléatoire simple
+donnees %>% group_by(strate) %>% slice_sample(prop = 0.01)  # stratifié
+
+# LOIS : d = P(X = k) ou densité, p = P(X <= x), q = quantile, r = tirage
+dbinom(k, size, prob);  pbinom(k, size, prob)
+dpois(k, lambda);       ppois(k, lambda)
+pnorm(x, mean, sd);     qnorm(p, mean, sd)
+pexp(t, rate)
+
+# PIÈGE : P(X >= k) = 1 - P(X <= k - 1) pour une loi discrète
+```
+
+<div class="footer">
+  <p>© Cnam-Intechmer</p>
+</div>

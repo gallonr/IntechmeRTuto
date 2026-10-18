@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "Nuages de points, lignes, et visualisations à deux variables"
 ---
@@ -16,8 +29,8 @@ library(learnr)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-penguins <- palmerpenguins::penguins |> drop_na()
-economics_recent <- economics |> filter(date >= "2010-01-01")
+penguins <- palmerpenguins::penguins %>% drop_na()
+economics_recent <- economics %>% filter(date >= "2010-01-01")
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -26,15 +39,18 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 
 ## Bienvenue
 
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Utilisation de ggplot2 »](https://gallonr.github.io/intechmer_statistique_cours/04b-R_ggplot2.html) du livre de cours.
+</div>
+
 **Objectifs :**
 
 - ✅ Créer des **nuages de points** avec `geom_point()`
-- ✅ Tracer des **lignes** avec `geom_line()` et `geom_path()`
+- ✅ Tracer des **lignes** avec `geom_line()`
 - ✅ Visualiser avec `geom_smooth()` et `geom_area()`
 - ✅ Créer des **violins** et **heatmaps**
 - ✅ Combiner plusieurs geoms
 
-**Durée :** 45 minutes
 
 ---
 
@@ -135,18 +151,18 @@ ggplot(economics_recent, aes(x = date, y = unemploy)) +
   labs(title = "Évolution du chômage", y = "Chômeurs (milliers)")
 ```
 
-### geom_ribbon() - Intervalle de confiance
+### geom_ribbon() - Bande autour d'une moyenne
 
 ```{r demo-ribbon, exercise=TRUE}
 # Calculer moyenne et écart-type par année
-summary_data <- penguins |>
-  mutate(year_factor = as.factor(year)) |>
-  group_by(year_factor, species) |>
+summary_data <- penguins %>%
+  mutate(year_factor = as.factor(year)) %>%
+  group_by(year_factor, species) %>%
   summarise(
     mean_mass = mean(body_mass_g),
     sd_mass = sd(body_mass_g),
     .groups = "drop"
-  ) |>
+  ) %>%
   mutate(
     ymin = mean_mass - sd_mass,
     ymax = mean_mass + sd_mass
@@ -157,6 +173,10 @@ ggplot(summary_data, aes(x = year_factor, y = mean_mass, group = species)) +
   geom_line(aes(color = species), linewidth = 1) +
   labs(title = "Masse moyenne ± écart-type")
 ```
+
+<div class="tip">
+⚠️ Une bande « moyenne ± écart-type » décrit la **dispersion des individus** : ce n'est pas un intervalle de confiance de la moyenne (voir le tutoriel `23-intervalles-confiance`).
+</div>
 
 ### Exercice 3 : Graphique en aires
 
@@ -182,7 +202,7 @@ ggplot(economics_recent, aes(x = date, y = psavert)) +
 
 ### geom_violin()
 
-Le violin plot combine densité et boxplot :
+Le violin plot représente la densité de la distribution, en miroir. On le combine souvent avec un boxplot :
 
 ```{r demo-violin, exercise=TRUE}
 ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
@@ -219,7 +239,7 @@ ggplot(penguins, aes(x = sex, y = flipper_length_mm, fill = sex)) +
 
 ```{r demo-heatmap, exercise=TRUE}
 # Compter les observations par espèce et île
-counts <- penguins |>
+counts <- penguins %>%
   count(species, island)
 
 ggplot(counts, aes(x = species, y = island, fill = n)) +
@@ -236,8 +256,8 @@ ggplot(counts, aes(x = species, y = island, fill = n)) +
 Créez une heatmap montrant la masse moyenne par espèce et sexe :
 
 ```{r ex5-heatmap, exercise=TRUE}
-resume <- penguins |>
-  group_by(species, sex) |>
+resume <- penguins %>%
+  group_by(species, sex) %>%
   summarise(masse_moy = mean(body_mass_g), .groups = "drop")
 
 ggplot(resume, aes(x = _____, y = _____, fill = _____)) +
@@ -245,8 +265,8 @@ ggplot(resume, aes(x = _____, y = _____, fill = _____)) +
 ```
 
 ```{r ex5-heatmap-solution}
-resume <- penguins |>
-  group_by(species, sex) |>
+resume <- penguins %>%
+  group_by(species, sex) %>%
   summarise(masse_moy = mean(body_mass_g), .groups = "drop")
 
 ggplot(resume, aes(x = species, y = sex, fill = masse_moy)) +
@@ -263,6 +283,7 @@ ggplot(resume, aes(x = species, y = sex, fill = masse_moy)) +
 ## Défi final
 
 Créez un graphique complexe combinant :
+
 1. Nuage de points : longueur vs profondeur du bec
 2. Courbe de tendance lissée (loess)
 3. Facettes par espèce
@@ -319,5 +340,5 @@ geom_tile(aes(fill = valeur))
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

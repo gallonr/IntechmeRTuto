@@ -1,25 +1,32 @@
 Package: IntechmeRTuto
 Title: Tutoriels Interactifs de Statistiques avec R
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     person("Régis", "Gallon", email = "regis.gallon@lecnam.net",
            role = c("aut", "cre"))
 Description: Collection de tutoriels interactifs learnr pour 
     l'apprentissage de R et des statistiques destinés aux étudiants 
-    d'Intechmer.
+    d'Intechmer. Les tutoriels accompagnent le livre de cours
+    "L'analyse de données en biologie marine".
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.0.0
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1)
 Imports:
     learnr,
+    rmarkdown,
     tidyverse,
-    gradethis,
+    readxl,
+    lubridate,
+    palmerpenguins,
+    patchwork,
+    plotly,
     sf,
     rnaturalearth,
-    rnaturalearthdata
-Suggests:
-    rmarkdown,
-    knitr
-VignetteBuilder: knitr
+    rnaturalearthdata,
+    vegan,
+    betapart,
+    FactoMineR,
+    factoextra

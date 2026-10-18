@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
 runtime: shiny_prerendered
 description: "Maîtriser mutate() et rename() pour transformer vos colonnes"
@@ -37,6 +37,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 
 ## Bienvenue
 
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
+
 ### Introduction
 
 **Objectifs :**
@@ -46,7 +50,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Renommer des colonnes avec `rename()`
 - ✅ Utiliser `transmute()` pour ne garder que les nouvelles colonnes
 
-**Durée estimée :** 45 minutes
 
 ---
 
@@ -57,7 +60,7 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 `mutate()` permet de créer ou modifier des colonnes.
 
 ```{r demo-mutate, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(moyenne = (note_maths + note_physique) / 2)
 ```
 
@@ -66,12 +69,12 @@ etudiants |>
 Créez une colonne `total` qui est la somme des notes de maths et physique :
 
 ```{r ex1-mutate, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(_____)
 ```
 
 ```{r ex1-mutate-solution}
-etudiants |>
+etudiants %>%
   mutate(total = note_maths + note_physique)
 ```
 
@@ -82,7 +85,7 @@ etudiants |>
 ### Opérateurs arithmétiques
 
 ```{r demo-operations, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(
     moyenne = (note_maths + note_physique) / 2,
     ecart = note_maths - note_physique,
@@ -95,12 +98,12 @@ etudiants |>
 Calculez le nombre d'heures d'étude par point obtenu en maths :
 
 ```{r ex2-operations, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(_____)
 ```
 
 ```{r ex2-operations-solution}
-etudiants |>
+etudiants %>%
   mutate(heures_par_point = heures_etude / note_maths)
 ```
 
@@ -115,7 +118,7 @@ if_else(condition, valeur_si_vrai, valeur_si_faux)
 ```
 
 ```{r demo-ifelse, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(
     moyenne = (note_maths + note_physique) / 2,
     resultat = if_else(moyenne >= 12, "Admis", "Recalé")
@@ -127,12 +130,12 @@ etudiants |>
 Créez une colonne `travailleur` qui vaut "Oui" si heures_etude > 15, sinon "Non" :
 
 ```{r ex3-ifelse, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(_____)
 ```
 
 ```{r ex3-ifelse-solution}
-etudiants |>
+etudiants %>%
   mutate(travailleur = if_else(heures_etude > 15, "Oui", "Non"))
 ```
 
@@ -143,7 +146,7 @@ etudiants |>
 ### Syntaxe de case_when()
 
 ```{r demo-casewhen, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(
     moyenne = (note_maths + note_physique) / 2,
     mention = case_when(
@@ -159,18 +162,19 @@ etudiants |>
 ### Exercice 4
 
 Créez une colonne `niveau` selon la note de maths :
-- >= 15 : "Excellent"
-- >= 12 : "Bon"
-- >= 10 : "Moyen"
-- < 10 : "Faible"
+
+- 15 ou plus : "Excellent"
+- de 12 à 15 : "Bon"
+- de 10 à 12 : "Moyen"
+- moins de 10 : "Faible"
 
 ```{r ex4-casewhen, exercise=TRUE}
-etudiants |>
+etudiants %>%
   mutate(_____)
 ```
 
 ```{r ex4-casewhen-solution}
-etudiants |>
+etudiants %>%
   mutate(
     niveau = case_when(
       note_maths >= 15 ~ "Excellent",
@@ -188,7 +192,7 @@ etudiants |>
 ### La fonction rename()
 
 ```{r demo-rename, exercise=TRUE}
-etudiants |>
+etudiants %>%
   rename(
     mathematiques = note_maths,
     physique = note_physique
@@ -200,12 +204,12 @@ etudiants |>
 Renommez `heures_etude` en `temps_travail` :
 
 ```{r ex5-rename, exercise=TRUE}
-etudiants |>
+etudiants %>%
   rename(_____)
 ```
 
 ```{r ex5-rename-solution}
-etudiants |>
+etudiants %>%
   rename(temps_travail = heures_etude)
 ```
 
@@ -216,25 +220,30 @@ etudiants |>
 ### Créer et ne garder que les nouvelles colonnes
 
 ```{r demo-transmute, exercise=TRUE}
-etudiants |>
+etudiants %>%
   transmute(
     nom,
     moyenne = (note_maths + note_physique) / 2
   )
 ```
 
+<div class="tip">
+💡 Depuis dplyr 1.1, on peut aussi écrire `mutate(..., .keep = "none")`, qui produit le même résultat que `transmute()`.
+</div>
+
 ---
 
 ## Défi final
 
 Créez un pipeline complet qui :
+
 1. Calcule la moyenne
 2. Détermine la mention avec case_when()
 3. Garde seulement nom, moyenne et mention
 4. Trie par moyenne décroissante
 
 ```{r defi-final, exercise=TRUE, exercise.lines=15}
-etudiants |>
+etudiants %>%
   # Votre code ici
 
 
@@ -242,17 +251,18 @@ etudiants |>
 ```
 
 ```{r defi-final-solution}
-etudiants |>
+etudiants %>%
   mutate(
     moyenne = (note_maths + note_physique) / 2,
     mention = case_when(
       moyenne >= 16 ~ "Très bien",
       moyenne >= 14 ~ "Bien",
       moyenne >= 12 ~ "Assez bien",
-      TRUE ~ "Passable"
+      moyenne >= 10 ~ "Passable",
+      TRUE ~ "Insuffisant"
     )
-  ) |>
-  select(nom, moyenne, mention) |>
+  ) %>%
+  select(nom, moyenne, mention) %>%
   arrange(desc(moyenne))
 ```
 
@@ -285,5 +295,5 @@ transmute(col1, nouvelle = calcul)
 ---
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

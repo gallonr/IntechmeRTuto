@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
           continue: "Continuer"
           submitanswer: "Soumettre"
@@ -42,6 +42,10 @@ htmltools::img(src = "images/logo.png",
 ```
 ## Bienvenue ! {data-progressive=TRUE}
 
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Initiation à R »](https://gallonr.github.io/intechmer_statistique_cours/03-Prise_en_main.html) du livre de cours.
+</div>
+
 ### Introduction
 
 Bienvenue dans ce tutoriel sur les **objets de base en R** ! Vous allez apprendre à manipuler les structures de données fondamentales du tidyverse.
@@ -62,7 +66,6 @@ Bienvenue dans ce tutoriel sur les **objets de base en R** ! Vous allez apprendr
 
 - Aucun
 
-**Durée estimée :** 45 minutes
 
 ---
 
@@ -70,7 +73,7 @@ Bienvenue dans ce tutoriel sur les **objets de base en R** ! Vous allez apprendr
 
 ### Qu'est-ce qu'un vecteur ?
 
-Un **vecteur** est la structure de données la plus simple en R. C'est une séquence d'éléments du même type. [Cliquez ici pour plus de détails](https://gallonr.github.io/intechmer_statistique_cours/firstR.html#les-vecteurs)
+Un **vecteur** est la structure de données la plus simple en R. C'est une séquence d'éléments du même type. [Cliquez ici pour plus de détails](https://gallonr.github.io/intechmer_statistique_cours/03-Prise_en_main.html#sec-vecteurs)
 
 <div class="key-concept">
 En R, même un nombre seul est un vecteur de longueur 1 !
@@ -236,7 +239,7 @@ quiz(
 
 ### Qu'est-ce qu'un tibble ?
 
-Un **tibble** est un tableau de données moderne, version améliorée du `data.frame` de base R. [Cliquez ici pour plus de détails](https://gallonr.github.io/intechmer_statistique_cours/datamining.html)
+Un **tibble** est un tableau de données moderne, version améliorée du `data.frame` de base R. [Cliquez ici pour plus de détails](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html)
 
 ```{r demo-tibble, exercise=TRUE}
 library(tibble)
@@ -258,6 +261,7 @@ Notez l'affichage élégant : types de colonnes, dimensions, etc.
 ### Exercice 4 : Créer un tibble
 
 Créez un tibble `villes` avec trois colonnes :
+
 - `nom` : Paris, Lyon, Marseille
 - `population` : 2165, 516, 870 (en milliers)
 - `superficie` : 105, 48, 241 (en km²)
@@ -312,7 +316,7 @@ etudiants[["age"]]
 
 # Méthode 3 : avec pull() du tidyverse
 library(dplyr)
-etudiants |> pull(note)
+etudiants %>% pull(note)
 ```
 
 ### Exercice 5 : Extraction de colonnes
@@ -388,6 +392,7 @@ Les listes sont très flexibles et parfaites pour stocker des résultats complex
 ### Exercice 6 : Créer une liste
 
 Créez une liste `personne` contenant :
+
 - `prenom` : votre prénom
 - `age` : votre âge (ou un âge fictif)
 - `hobbies` : un vecteur de 2-3 hobbies
@@ -444,11 +449,13 @@ ma_liste[1]
 ### Mise en pratique complète
 
 Créez un tibble `produits` représentant un catalogue avec :
+
 - 5 produits (noms de votre choix)
 - leurs prix unitaires
 - leurs quantités en stock
 
 Ensuite :
+
 1. Calculez la valeur totale du stock pour chaque produit (prix × quantité)
 2. Ajoutez cette information comme nouvelle colonne
 
@@ -481,7 +488,7 @@ produits <- tibble(
 
 ```{r defi-final-hint-2}
 # Utilisez mutate() pour ajouter une colonne
-produits <- produits |>
+produits <- produits %>%
   mutate(valeur_stock = prix * quantite)
 ```
 
@@ -497,7 +504,7 @@ produits <- tibble(
 )
 
 # Calculer la valeur du stock
-produits <- produits |>
+produits <- produits %>%
   mutate(valeur_stock = prix * quantite)
 
 # Afficher
@@ -522,10 +529,12 @@ Félicitations ! Vous maîtrisez maintenant :
 ### Pour aller plus loin
 
 **Tutoriels suivants :**
-- Tutoriel 2 : Importation de données (CSV, Excel)
-- Tutoriel 3 : Transformation avec dplyr
+
+- `02-import-donnees` : importer et explorer des données
+- `21-algorithmique` : conditions, boucles et fonctions
 
 **Ressources complémentaires :**
+
 - [R for Data Science - Ch. 20 (Vectors)](https://r4ds.hadley.nz/vectors.html)
 - [Tibble documentation](https://tibble.tidyverse.org/)
 
@@ -552,5 +561,5 @@ lst[["b"]]               # Alternative
 ---
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

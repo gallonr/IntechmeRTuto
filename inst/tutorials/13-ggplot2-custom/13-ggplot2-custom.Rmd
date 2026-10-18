@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "Maîtriser facet_wrap, facet_grid, scales et thèmes personnalisés"
 ---
@@ -16,7 +29,7 @@ library(learnr)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-penguins <- palmerpenguins::penguins |> drop_na()
+penguins <- palmerpenguins::penguins %>% drop_na()
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -24,6 +37,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ```
 
 ## Bienvenue
+
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Utilisation de ggplot2 »](https://gallonr.github.io/intechmer_statistique_cours/04b-R_ggplot2.html) du livre de cours.
+</div>
 
 **Objectifs :**
 
@@ -33,7 +50,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Créer un **thème personnalisé**
 - ✅ Contrôler les **légendes**
 
-**Durée :** 60 minutes
 
 ---
 
@@ -74,7 +90,7 @@ ggplot(penguins, aes(x = body_mass_g)) +
   geom_histogram(bins = 20, fill = "steelblue", color = "white") +
   facet_wrap(~species, ncol = 2) +
   labs(title = "Distribution de la masse par espèce",
-       x = "Masse (g)", y = "Fréquence") +
+       x = "Masse (g)", y = "Effectif") +
   theme_minimal()
 ```
 
@@ -217,12 +233,17 @@ ggplot(diamonds, aes(x = carat, y = price)) +
 ### Exercice 4 : Formater les axes
 
 Créez un graphique de la masse moyenne par espèce avec :
+
 - Axe y formaté en kilogrammes (diviser par 1000)
-- Limites de 3 à 6 kg
+- Limites de 0 à 6 kg
+
+<div class="tip">
+⚠️ Un diagramme en barres doit toujours partir de 0 : la hauteur de la barre représente la valeur. Avec des limites qui excluent 0 (par exemple de 3 à 6 kg), ggplot2 supprime les barres.
+</div>
 
 ```{r ex4-axes, exercise=TRUE}
-resume <- penguins |>
-  group_by(species) |>
+resume <- penguins %>%
+  group_by(species) %>%
   summarise(masse_kg = mean(body_mass_g) / 1000)
 
 ggplot(resume, aes(x = species, y = masse_kg, fill = species)) +
@@ -234,14 +255,14 @@ ggplot(resume, aes(x = species, y = masse_kg, fill = species)) +
 ```
 
 ```{r ex4-axes-solution}
-resume <- penguins |>
-  group_by(species) |>
+resume <- penguins %>%
+  group_by(species) %>%
   summarise(masse_kg = mean(body_mass_g) / 1000)
 
 ggplot(resume, aes(x = species, y = masse_kg, fill = species)) +
   geom_col() +
   scale_y_continuous(
-    limits = c(3, 6),
+    limits = c(0, 6),
     labels = scales::label_number(suffix = " kg")
   ) +
   labs(title = "Masse moyenne par espèce",
@@ -308,6 +329,7 @@ ggplot(penguins, aes(x = species, fill = species)) +
 ### Exercice 6 : Personnalisation complète
 
 Personnalisez ce graphique :
+
 - Titre centré, taille 16, gras
 - Pas de légende
 - Grille majeure en pointillés
@@ -376,6 +398,7 @@ ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g,
 ## Défi final
 
 Créez un graphique publication-ready :
+
 1. Facettes par île (2 colonnes)
 2. Palette viridis pour les espèces
 3. Thème personnalisé (titre centré, fond blanc)
@@ -448,5 +471,5 @@ guides(color = guide_legend(title = "..."))
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

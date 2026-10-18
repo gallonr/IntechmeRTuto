@@ -1,0 +1,1086 @@
+---
+title: "Tests statistiques en écologie marine"
+subtitle: "Comparaisons de proportions, moyennes et ANOVA"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Apprenez à choisir et réaliser les tests statistiques appropriés"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Données pour les exercices
+set.seed(42)
+
+# Données marées vertes
+bassin <- rbind(c(8,11,20,9), c(6,14,12,7))
+colnames(bassin) <- c("Artois Picardie","Seine Normandie","Loire Bretagne", "Adour Garonne")
+row.names(bassin) <- c("Pres marees vertes","Abs marees vertes")
+bassin <- as.data.frame(bassin)
+
+# Données stress thermique
+stress <- cbind(c(3,7), c(8,2))
+colnames(stress) <- c("T24","T26")
+row.names(stress) <- c("active","non-active")
+stress <- as.data.frame(stress)
+
+# Données consommation oxygène
+consom <- data.frame(
+  Control = c(0.21, 0.25, 0.14, 0.32, 0.21, 0.12, 0.14, 0.35, 0.45,
+              0.38, 0.26, 0.41, 0.47, 0.42, 0.42),
+  US = c(0.45, 0.82, 0.45, 0.47, 0.56, 0.83, 0.70, 0.85, 0.58,
+         0.74, 0.73, 0.56, 0.84, 0.52, 0.56)
+)
+
+# Données invertébrés
+Ind.gran <- data.frame(
+  Site = c("A","A","B","B","A","B","A","A","B","A","B","B","A","A","A"),
+  Ind = c(37, 72, 1200, 504, 321, 173, 49, 18, 856, 50, 274, 168, 102, 49, 20)
+)
+
+# Données pour ANOVA à 2 facteurs
+croissance <- data.frame(
+  Temperature = rep(c("15°C", "20°C", "25°C"), each = 20),
+  Nourriture = rep(rep(c("Faible", "Elevee"), each = 10), 3),
+  Croissance = c(
+    # 15°C Faible
+    rnorm(10, mean = 2.5, sd = 0.4),
+    # 15°C Elevee
+    rnorm(10, mean = 3.2, sd = 0.4),
+    # 20°C Faible
+    rnorm(10, mean = 4.5, sd = 0.5),
+    # 20°C Elevee
+    rnorm(10, mean = 6.8, sd = 0.5),
+    # 25°C Faible
+    rnorm(10, mean = 3.8, sd = 0.4),
+    # 25°C Elevee
+    rnorm(10, mean = 5.2, sd = 0.5)
+  )
+)
+croissance$Temperature <- factor(croissance$Temperature,
+                                  levels = c("15°C", "20°C", "25°C"))
+croissance$Nourriture <- factor(croissance$Nourriture,
+                                 levels = c("Faible", "Elevee"))
+
+# Données contamination Cd (simulées pour l'exercice)
+# 15 moules par population : A loin de l'usine, B à distance moyenne, C près de l'usine
+Contamination <- data.frame(
+  Population = factor(rep(c("A", "B", "C"), each = 15)),
+  Conc_Cd = round(c(rnorm(15, mean = 0.8, sd = 0.3),
+                    rnorm(15, mean = 1.0, sd = 0.3),
+                    rnorm(15, mean = 1.6, sd = 0.3)), 2)
+)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Cnam-Intechmer")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Quelques tests statistiques »](https://gallonr.github.io/intechmer_statistique_cours/09-Test_stat.html) du livre de cours.
+</div>
+
+### Introduction
+
+Bienvenue dans ce tutoriel sur les **tests statistiques** ! Vous allez apprendre à choisir et réaliser les tests appropriés pour comparer des proportions, des moyennes ou des distributions.
+
+<div class="info-box">
+ℹ️ Ce tutoriel est interactif : vous pourrez exécuter du code directement dans votre navigateur.
+</div>
+
+**Objectifs d'apprentissage :**
+
+- ✅ Comprendre les hypothèses nulles et alternatives
+- ✅ Choisir le test approprié selon le type de données
+- ✅ Vérifier les conditions d'application
+- ✅ Réaliser et interpréter un test du χ², test de Fisher
+- ✅ Réaliser et interpréter un test t de Student, test de Wilcoxon
+- ✅ Réaliser et interpréter une ANOVA à un et deux facteurs
+- ✅ Analyser les interactions entre facteurs
+
+**Prérequis :**
+
+- Bases de R et du tidyverse
+- Notions de statistiques descriptives
+
+
+---
+
+## Partie 1 : Arbre de décision {data-progressive=TRUE}
+
+### Choisir le bon test
+
+Avant de réaliser un test statistique, il faut se poser les bonnes questions :
+
+<div class="key-concept">
+**Questions clés :**
+
+1. Quel **type de données** ? (Qualitatives ou Quantitatives)
+2. **Combien de groupes** à comparer ? (2 ou k groupes)
+3. Les **conditions d'application** sont-elles respectées ? (Normalité, égalité des variances)
+</div>
+
+### Arbre de décision simplifié
+
+**TYPE DE DONNÉES**
+
+📊 **Qualitatives (proportions)** → Effectifs théoriques ≥ 5 ?
+  - ✅ OUI → **Test du χ²**
+  - ❌ NON → **Test exact de Fisher**
+
+📈 **Quantitatives (moyennes)** → Nombre de groupes ?
+  - **2 groupes** → Normalité + égalité des variances ?
+    - ✅ OUI → **Test t de Student**
+    - ❌ NON → **Test U de Wilcoxon-Mann-Whitney**
+  - **k groupes (k≥3)** → Normalité + égalité des variances ?
+    - ✅ OUI → **ANOVA**
+    - ❌ NON → **Test H de Kruskal-Wallis**
+
+<div class="tip">
+💡 **Règle d'or :** Toujours visualiser vos données AVANT de faire un test !
+</div>
+
+---
+
+## Partie 2 : Comparaison de proportions {data-progressive=TRUE}
+
+### Test du χ² (chi-carré)
+
+Le test du χ² mesure l'écart entre les **effectifs observés** et les **effectifs attendus** sous l'hypothèse nulle.
+
+<div class="key-concept">
+**Hypothèses :**
+
+- H₀ : Les proportions sont identiques entre les groupes
+- H₁ : Au moins un groupe diffère dans ces proportions
+
+**Condition :** Tous les effectifs théoriques ≥ 5
+</div>
+
+### Exemple : Marées vertes
+
+Inventaire des plages ayant subi des marées vertes par bassin versant (DCE).
+
+```{r demo-chi2, exercise=TRUE}
+# Tableau de contingence
+bassin
+
+# Visualisation
+bassin_long <- bassin %>%
+  tibble::rownames_to_column("Statut") %>%
+  pivot_longer(cols = -Statut, names_to = "Bassin", values_to = "Frequence") %>%
+  group_by(Bassin) %>%
+  mutate(Proportion = Frequence / sum(Frequence))
+
+ggplot(bassin_long, aes(x = Bassin, y = Proportion, fill = Statut)) +
+  geom_col(position = "fill", alpha = 0.8) +
+  geom_text(aes(label = Frequence), position = position_fill(vjust = 0.5),
+            color = "white", fontface = "bold", size = 5) +
+  scale_fill_manual(values = c("Pres marees vertes" = "darkgreen",
+                                "Abs marees vertes" = "steelblue")) +
+  labs(x = "Bassin versant", y = "Proportion", fill = "Statut") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+### Exercice 1 : Test du χ²
+
+Réalisez le test du χ² sur le tableau `bassin` et interprétez le résultat.
+
+```{r ex1-chi2, exercise=TRUE, exercise.lines=8}
+# Réalisez le test du χ²
+# chisq.test(...)
+
+
+
+```
+
+```{r ex1-chi2-hint-1}
+# Utilisez chisq.test() sur le tableau bassin
+test_chi2 <- chisq.test(bassin)
+```
+
+```{r ex1-chi2-solution}
+# Test du χ²
+test_chi2 <- chisq.test(bassin)
+test_chi2
+
+# Interprétation
+cat("\nInterprétation :\n")
+cat("Statistique χ² =", round(test_chi2$statistic, 2), "\n")
+cat("p-value =", round(test_chi2$p.value, 3), "\n")
+if (test_chi2$p.value > 0.05) {
+  cat("→ On ne rejette pas H₀ : les proportions sont similaires entre bassins\n")
+} else {
+  cat("→ On rejette H₀ : les proportions diffèrent entre bassins\n")
+}
+```
+
+### Test exact de Fisher
+
+Lorsque les effectifs sont **trop faibles** (< 5 dans certaines cellules), on utilise le **test exact de Fisher**.
+
+### Exemple : Stress thermique sur huîtres
+
+Expression des protéines régulant le transport des ions K⁺ après stress thermique (24°C vs 26°C).
+
+```{r demo-fisher, exercise=TRUE}
+# Tableau de contingence
+stress
+
+# Visualisation
+stress_long <- stress %>%
+  tibble::rownames_to_column("Expression") %>%
+  pivot_longer(cols = -Expression, names_to = "Temperature", values_to = "Frequence")
+
+ggplot(stress_long, aes(x = Temperature, y = Frequence, fill = Expression)) +
+  geom_col(position = "dodge", alpha = 0.8) +
+  geom_text(aes(label = Frequence), position = position_dodge(width = 0.9),
+            vjust = -0.5, fontface = "bold") +
+  scale_fill_manual(values = c("active" = "coral", "non-active" = "steelblue")) +
+  labs(x = "Température", y = "Fréquence", fill = "Expression") +
+  theme_minimal()
+
+# Test exact de Fisher
+test_fisher <- fisher.test(stress)
+test_fisher
+```
+
+### Exercice 2 : Interprétation Fisher
+
+Regardez la p-value du test de Fisher ci-dessus. Que pouvez-vous conclure ?
+
+```{r quiz-fisher}
+quiz(
+  question("Le test donne p-value ≈ 0.07. Quelle est la conclusion au risque α = 5 % ?",
+    answer("On ne rejette pas H₀ : la différence observée n'est pas significative, mais avec seulement 20 huîtres le test manque de puissance", correct = TRUE),
+    answer("On rejette H₀ : l'expression diffère entre 24°C et 26°C"),
+    answer("On a démontré que l'expression est identique aux deux températures"),
+    answer("La p-value est la probabilité que H₀ soit vraie"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Partie 3 : Comparaison de 2 moyennes {data-progressive=TRUE}
+
+### Test t de Student (paramétrique)
+
+Le test t compare les **moyennes de deux groupes** supposés suivre une loi normale avec des variances égales.
+
+<div class="key-concept">
+**Conditions d'application :**
+
+1. ✅ **Normalité** des distributions (test de Shapiro)
+2. ✅ **Égalité des variances** (test de Bartlett)
+</div>
+
+### Exemple : Consommation d'O₂
+
+Consommation d'oxygène de poissons contrôles vs exposés aux ultra-sons.
+
+```{r demo-student, exercise=TRUE}
+# Données
+consom
+
+# Visualisation
+consom_long <- consom %>%
+  pivot_longer(cols = everything(), names_to = "Traitement",
+               values_to = "Consommation")
+
+ggplot(consom_long, aes(x = Traitement, y = Consommation, fill = Traitement)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.5, size = 2.5) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 4,
+               fill = "red", color = "darkred") +
+  scale_fill_manual(values = c("Control" = "steelblue", "US" = "coral")) +
+  labs(x = "Traitement", y = "Consommation d'O₂ (mg/g/h)",
+       subtitle = "Losange rouge = moyenne") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Exercice 3 : Vérification des conditions
+
+Vérifiez la normalité des deux groupes avec le test de Shapiro.
+
+```{r ex3-shapiro, exercise=TRUE, exercise.lines=10}
+# Test de Shapiro pour Control
+shapiro_control <- shapiro.test(consom$Control)
+shapiro_control
+
+# Test de Shapiro pour US
+
+
+
+```
+
+```{r ex3-shapiro-hint-1}
+# shapiro.test(consom$US)
+```
+
+```{r ex3-shapiro-solution}
+# Test de Shapiro pour Control
+shapiro_control <- shapiro.test(consom$Control)
+cat("Control - p-value :", round(shapiro_control$p.value, 3), "\n")
+
+# Test de Shapiro pour US
+shapiro_us <- shapiro.test(consom$US)
+cat("US - p-value :", round(shapiro_us$p.value, 3), "\n")
+
+# Interprétation
+if (shapiro_control$p.value > 0.05 && shapiro_us$p.value > 0.05) {
+  cat("\nLes deux p-values > 0.05 → normalité non rejetée ✓\n")
+} else {
+  cat("\nAu moins une p-value < 0.05 → normalité rejetée\n")
+}
+```
+
+### Exercice 4 : Test de Bartlett
+
+Vérifiez l'égalité des variances avec le test de Bartlett.
+
+```{r ex4-bartlett, exercise=TRUE, exercise.lines=6}
+# Test de Bartlett sur le dataframe consom
+
+
+
+```
+
+```{r ex4-bartlett-hint-1}
+# bartlett.test(consom)
+```
+
+```{r ex4-bartlett-solution}
+# Test de Bartlett
+bartlett_test <- bartlett.test(consom)
+bartlett_test
+
+cat("\np-value =", round(bartlett_test$p.value, 3), "\n")
+if (bartlett_test$p.value > 0.05) {
+  cat("p-value > 0.05 → égalité des variances non rejetée ✓\n")
+} else {
+  cat("p-value < 0.05 → variances différentes : préférer le test de Welch\n")
+}
+```
+
+### Exercice 5 : Test t de Student
+
+Les conditions sont respectées ! Réalisez le test t unilatéral à droite (US > Control).
+
+```{r ex5-ttest, exercise=TRUE, exercise.lines=8}
+# Test t unilatéral : US > Control
+# t.test(x, y, alternative = "greater", var.equal = TRUE)
+
+
+
+
+```
+
+```{r ex5-ttest-hint-1}
+# t.test(consom$US, consom$Control, alternative = "greater", var.equal = TRUE)
+# var.equal = TRUE : test de Student (variances égales vérifiées) ;
+# sans cet argument, R réalise par défaut le test de Welch
+```
+
+```{r ex5-ttest-solution}
+# Test t unilatéral
+# var.equal = TRUE : test de Student classique (sinon R fait un test de Welch)
+test_t <- t.test(consom$US, consom$Control, alternative = "greater", var.equal = TRUE)
+test_t
+
+# Interprétation
+cat("\nInterprétation :\n")
+cat("t observé =", round(test_t$statistic, 2), "\n")
+cat("p-value =", format.pval(test_t$p.value, digits = 3), "\n")
+if (test_t$p.value < 0.05) {
+  cat("→ On rejette H₀ : la consommation d'O₂ des US est")
+  cat(" significativement supérieure à celle des contrôles\n")
+} else {
+  cat("→ On ne rejette pas H₀\n")
+}
+```
+
+### Test U de Wilcoxon-Mann-Whitney (non paramétrique)
+
+Lorsque les **conditions de normalité ne sont pas respectées**, on utilise le test U.
+
+### Exemple : Invertébrés benthiques
+
+Abondance d'invertébrés dans deux sites : A (sable hétérogène) vs B (vase).
+
+```{r demo-wilcox, exercise=TRUE}
+# Données
+head(Ind.gran, 8)
+
+# Visualisation
+ggplot(Ind.gran, aes(x = Site, y = Ind, fill = Site)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 3) +
+  stat_summary(fun = median, geom = "point", shape = 23, size = 4,
+               fill = "red", color = "darkred") +
+  scale_fill_manual(values = c("A" = "sandybrown", "B" = "darkslategray")) +
+  labs(x = "Site", y = "Nombre d'invertébrés",
+       subtitle = "Losange rouge = médiane") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Test de normalité
+shapiro.test(Ind.gran[Ind.gran$Site == "A", "Ind"])
+shapiro.test(Ind.gran[Ind.gran$Site == "B", "Ind"])
+```
+
+### Exercice 6 : Test de Wilcoxon
+
+Les données ne sont pas normales. Réalisez le test de Wilcoxon unilatéral (A < B).
+
+```{r ex6-wilcox, exercise=TRUE, exercise.lines=8}
+# Test U de Wilcoxon-Mann-Whitney
+# wilcox.test(formule, data, alternative = "less")
+
+
+
+
+```
+
+```{r ex6-wilcox-hint-1}
+# wilcox.test(Ind ~ Site, data = Ind.gran, alternative = "less")
+```
+
+```{r ex6-wilcox-solution}
+# Test de Wilcoxon
+test_wilcox <- wilcox.test(Ind ~ Site, data = Ind.gran, alternative = "less")
+test_wilcox
+
+cat("\nInterprétation :\n")
+cat("p-value =", round(test_wilcox$p.value, 4), "\n")
+if (test_wilcox$p.value < 0.05) {
+  cat("→ On rejette H₀ : le site A a significativement moins")
+  cat(" d'invertébrés que le site B\n")
+} else {
+  cat("→ On ne rejette pas H₀\n")
+}
+```
+
+---
+
+## Partie 4 : ANOVA à un facteur {data-progressive=TRUE}
+
+### Principe de l'ANOVA
+
+L'**ANOVA** (Analysis Of Variance) compare les **moyennes de k groupes** (k ≥ 2).
+
+<div class="key-concept">
+**Principe :** Décomposer la variabilité totale en :
+
+- **Variabilité inter-groupes** (entre les moyennes)
+- **Variabilité intra-groupes** (au sein des groupes)
+
+Si variabilité inter >> variabilité intra → les moyennes diffèrent
+</div>
+
+### Exemple : Contamination en Cadmium
+
+Concentration en Cd (µg/g) dans 3 populations de moules situées à distance croissante d'une usine : C près de l'usine, B à distance moyenne, A loin de l'usine (données simulées pour l'exercice).
+
+```{r demo-anova, exercise=TRUE}
+# Données
+head(Contamination, 10)
+
+# Visualisation
+ggplot(Contamination, aes(x = Population, y = Conc_Cd, fill = Population)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.4, size = 2) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 4,
+               fill = "red", color = "darkred") +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "Population", y = "Concentration en Cd (μg/g)",
+       subtitle = "Losange rouge = moyenne") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Exercice 7 : ANOVA
+
+Réalisez l'ANOVA sur la contamination en Cadmium.
+
+```{r ex7-anova, exercise=TRUE, exercise.lines=10}
+# ANOVA à un facteur
+# modele <- aov(variable ~ facteur, data = données)
+# anova(modele)
+
+
+
+
+
+```
+
+```{r ex7-anova-hint-1}
+# Contam.aov <- aov(Conc_Cd ~ Population, data = Contamination)
+# anova(Contam.aov)
+```
+
+```{r ex7-anova-solution}
+# ANOVA
+Contam.aov <- aov(Conc_Cd ~ Population, data = Contamination)
+anova_result <- anova(Contam.aov)
+anova_result
+
+cat("\nInterprétation :\n")
+cat("F =", round(anova_result$`F value`[1], 2), "\n")
+cat("p-value =", format.pval(anova_result$`Pr(>F)`[1], digits = 3), "\n")
+if (anova_result$`Pr(>F)`[1] < 0.05) {
+  cat("→ On rejette H₀ : la concentration en Cd diffère")
+  cat(" entre au moins 2 des 3 populations\n")
+} else {
+  cat("→ On ne rejette pas H₀ : pas de différence significative\n")
+}
+```
+
+### Diagnostics de l'ANOVA
+
+Après l'ANOVA, il faut **vérifier les conditions d'application** avec les graphiques de diagnostic.
+
+```{r demo-diagnostic, exercise=TRUE}
+# Ajuster le modèle
+Contam.aov <- aov(Conc_Cd ~ Population, data = Contamination)
+
+# Les 4 graphiques de diagnostic
+par(mfrow = c(2, 2))
+plot(Contam.aov)
+par(mfrow = c(1, 1))
+```
+
+<div class="tip">
+**Interprétation des 4 graphiques :**
+
+1. **Residuals vs Fitted** : Vérifie l'homoscédasticité
+   - ✅ Points dispersés aléatoirement autour de 0
+
+2. **Normal Q-Q** : Vérifie la normalité des résidus
+   - ✅ Points suivent la ligne diagonale
+
+3. **Scale-Location** : Confirme l'homogénéité de variance
+   - ✅ Ligne rouge horizontale
+
+4. **Residuals vs Leverage** : Identifie les points influents
+   - ✅ Aucun point au-delà des lignes de Cook
+</div>
+
+### Exercice 8 : Test de normalité des résidus
+
+Vérifiez la normalité des résidus avec le test de Shapiro.
+
+```{r ex8-shapiro-residus, exercise=TRUE, exercise.lines=8}
+# Ajuster le modèle
+Contam.aov <- aov(Conc_Cd ~ Population, data = Contamination)
+
+# Extraire les résidus et tester la normalité
+
+
+
+
+```
+
+```{r ex8-shapiro-residus-hint-1}
+# residus <- residuals(Contam.aov)
+# shapiro.test(residus)
+```
+
+```{r ex8-shapiro-residus-solution}
+# Résidus
+Contam.aov <- aov(Conc_Cd ~ Population, data = Contamination)
+residus <- residuals(Contam.aov)
+
+# Test de normalité
+shapiro_res <- shapiro.test(residus)
+shapiro_res
+
+cat("\np-value =", round(shapiro_res$p.value, 3), "\n")
+if (shapiro_res$p.value > 0.05) {
+  cat("p-value > 0.05 → normalité des résidus non rejetée ✓\n")
+} else {
+  cat("p-value < 0.05 → résidus non normaux : envisager Kruskal-Wallis\n")
+}
+```
+
+---
+
+## Partie 5 : ANOVA à deux facteurs {data-progressive=TRUE}
+
+### Principe de l'ANOVA à 2 facteurs
+
+L'**ANOVA à deux facteurs** permet d'étudier l'effet de **deux variables explicatives** simultanément et de détecter d'éventuelles **interactions** entre elles.
+
+<div class="key-concept">
+**Sources de variation :**
+
+1. **Effet du facteur A**
+2. **Effet du facteur B**
+3. **Interaction A × B** : l'effet de A dépend du niveau de B (et vice-versa)
+4. **Résidus** (variabilité inexpliquée)
+</div>
+
+### Qu'est-ce qu'une interaction ?
+
+Une **interaction** existe lorsque l'effet d'un facteur **change selon le niveau de l'autre facteur**.
+
+<div class="tip">
+**Exemple :** L'effet de la température sur la croissance des huîtres dépend de la quantité de nourriture disponible.
+
+- À température optimale + nourriture élevée → croissance maximale
+- À température optimale + nourriture faible → croissance modérée
+- À température extrême → peu d'effet de la nourriture
+
+→ Il y a **interaction** Température × Nourriture
+</div>
+
+### Exemple : Croissance de larves de poissons
+
+Étude de la croissance (mm/jour) de larves en fonction de :
+
+- **Facteur A** : Température (3 niveaux : 15°C, 20°C, 25°C)
+- **Facteur B** : Nourriture (2 niveaux : Faible, Élevée)
+
+```{r demo-anova2, exercise=TRUE}
+# Données
+head(croissance, 10)
+
+# Résumé par groupe
+croissance %>%
+  group_by(Temperature, Nourriture) %>%
+  summarise(
+    n = n(),
+    moyenne = round(mean(Croissance), 2),
+    ecart_type = round(sd(Croissance), 2)
+  )
+```
+
+### Visualisation des données
+
+Avant l'ANOVA, visualisons les données :
+
+```{r demo-plot-anova2, exercise=TRUE}
+# Boxplot par température et nourriture
+ggplot(croissance, aes(x = Temperature, y = Croissance, fill = Nourriture)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("Faible" = "lightblue", "Elevee" = "coral")) +
+  labs(x = "Température", y = "Croissance (mm/jour)",
+       fill = "Nourriture",
+       title = "Croissance des larves selon température et nourriture") +
+  theme_minimal()
+
+# Graphique d'interaction
+croissance_moyennes <- croissance %>%
+  group_by(Temperature, Nourriture) %>%
+  summarise(Croissance_moy = mean(Croissance))
+
+ggplot(croissance_moyennes, aes(x = Temperature, y = Croissance_moy,
+                                 color = Nourriture, group = Nourriture)) +
+  geom_line(linewidth = 1.5) +
+  geom_point(size = 4) +
+  scale_color_manual(values = c("Faible" = "blue", "Elevee" = "red")) +
+  labs(x = "Température", y = "Croissance moyenne (mm/jour)",
+       color = "Nourriture",
+       title = "Graphique d'interaction") +
+  theme_minimal()
+```
+
+<div class="key-concept">
+**Interprétation du graphique d'interaction :**
+
+- ✅ **Lignes parallèles** → PAS d'interaction (effets additifs)
+- ⚠️ **Lignes non-parallèles** → INTERACTION présente
+
+Ici, les lignes ne sont PAS parallèles → interaction probable !
+</div>
+
+### Exercice 9 : ANOVA à 2 facteurs
+
+Réalisez l'ANOVA à deux facteurs avec interaction.
+
+```{r ex9-anova2, exercise=TRUE, exercise.lines=12}
+# ANOVA à 2 facteurs avec interaction
+# modele <- aov(variable ~ facteurA * facteurB, data = données)
+# anova(modele)
+
+# Note : A * B équivaut à A + B + A:B
+# où A:B représente l'interaction
+
+
+
+
+
+```
+
+```{r ex9-anova2-hint-1}
+# croissance.aov <- aov(Croissance ~ Temperature * Nourriture,
+#                       data = croissance)
+# anova(croissance.aov)
+```
+
+```{r ex9-anova2-solution}
+# ANOVA à 2 facteurs avec interaction
+croissance.aov <- aov(Croissance ~ Temperature * Nourriture,
+                      data = croissance)
+anova_result <- anova(croissance.aov)
+anova_result
+
+cat("\nInterprétation :\n")
+effets <- c("Température", "Nourriture", "Interaction")
+for (i in 1:3) {
+  p <- anova_result$`Pr(>F)`[i]
+  cat(effets[i], ": p-value =", format.pval(p, digits = 3),
+      if (p < 0.05) "→ effet significatif\n" else "→ effet non significatif\n")
+}
+if (anova_result$`Pr(>F)`[3] < 0.05) {
+  cat("\n→ L'effet de la température dépend de la quantité de nourriture\n")
+}
+```
+
+### Interprétation de l'interaction
+
+Lorsqu'il y a une **interaction significative**, il faut interpréter les effets avec précaution :
+
+```{r demo-interaction-detail, exercise=TRUE}
+# Moyennes par combinaison
+moyennes <- croissance %>%
+  group_by(Temperature, Nourriture) %>%
+  summarise(Croissance_moy = mean(Croissance), .groups = "drop")
+
+# Tableau formaté
+moyennes_wide <- moyennes %>%
+  pivot_wider(names_from = Nourriture, values_from = Croissance_moy)
+
+moyennes_wide
+
+cat("\nObservations :\n")
+cat("- À 20°C : différence Elevee - Faible =",
+    round(moyennes$Croissance_moy[4] - moyennes$Croissance_moy[3], 2), "\n")
+cat("- À 15°C : différence Elevee - Faible =",
+    round(moyennes$Croissance_moy[2] - moyennes$Croissance_moy[1], 2), "\n")
+cat("- À 25°C : différence Elevee - Faible =",
+    round(moyennes$Croissance_moy[6] - moyennes$Croissance_moy[5], 2), "\n")
+cat("\n→ L'effet de la nourriture est BEAUCOUP plus fort à 20°C\n")
+cat("  qu'aux autres températures → INTERACTION\n")
+```
+
+### Exercice 10 : Diagnostic du modèle
+
+Vérifiez les conditions d'application avec les graphiques de diagnostic.
+
+```{r ex10-diagnostic-anova2, exercise=TRUE, exercise.lines=10}
+# Ajuster le modèle
+croissance.aov <- aov(Croissance ~ Temperature * Nourriture,
+                      data = croissance)
+
+# Graphiques de diagnostic
+
+
+
+
+```
+
+```{r ex10-diagnostic-anova2-solution}
+# Ajuster le modèle
+croissance.aov <- aov(Croissance ~ Temperature * Nourriture,
+                      data = croissance)
+
+# Graphiques de diagnostic
+par(mfrow = c(2, 2))
+plot(croissance.aov)
+par(mfrow = c(1, 1))
+
+# Test de normalité des résidus
+residus <- residuals(croissance.aov)
+shapiro_test <- shapiro.test(residus)
+
+cat("\nTest de Shapiro sur les résidus :\n")
+cat("p-value =", round(shapiro_test$p.value, 3), "\n")
+if (shapiro_test$p.value > 0.05) {
+  cat("✓ Résidus normaux\n")
+}
+
+# Test d'homogénéité des variances
+bartlett_test <- bartlett.test(Croissance ~ interaction(Temperature, Nourriture),
+                                data = croissance)
+cat("\nTest de Bartlett :\n")
+cat("p-value =", round(bartlett_test$p.value, 3), "\n")
+if (bartlett_test$p.value > 0.05) {
+  cat("✓ Variances égales\n")
+}
+```
+
+### ANOVA sans interaction
+
+Parfois, l'interaction n'est **pas significative**. Dans ce cas, on peut ajuster un modèle **additif** (sans interaction).
+
+```{r demo-anova2-additive, exercise=TRUE}
+# Modèle avec interaction
+modele_complet <- aov(Croissance ~ Temperature * Nourriture, data = croissance)
+
+# Modèle additif (sans interaction)
+modele_additif <- aov(Croissance ~ Temperature + Nourriture, data = croissance)
+
+# Comparaison des modèles
+cat("=== Modèle AVEC interaction ===\n")
+print(anova(modele_complet))
+
+cat("\n=== Modèle SANS interaction (additif) ===\n")
+print(anova(modele_additif))
+
+# Test de comparaison
+cat("\n=== Comparaison des modèles (test F) ===\n")
+anova(modele_additif, modele_complet)
+```
+
+<div class="tip">
+**Quand utiliser le modèle additif ?**
+
+Si l'interaction n'est **pas significative** (p > 0.05), on peut simplifier le modèle en retirant l'interaction. Cela augmente la puissance statistique pour tester les effets principaux.
+
+Dans notre exemple, l'interaction EST significative → on garde le modèle complet !
+</div>
+
+---
+
+## Partie 6 : Tests post-hoc {data-progressive=TRUE}
+
+### Pourquoi des tests post-hoc ?
+
+L'ANOVA nous dit qu'**au moins un groupe diffère**, mais ne nous dit pas **lesquels**.
+
+Les **tests post-hoc** permettent de faire des comparaisons **multiples** en contrôlant le risque d'erreur de type I.
+
+<div class="key-concept">
+**Tests post-hoc courants :**
+
+- **Test de Tukey (HSD)** : comparaisons deux à deux de toutes les moyennes
+- **Test de Dunnett** : comparaisons d'un groupe contrôle avec les autres
+- **Correction de Bonferroni** : ajustement strict des p-values pour comparaisons multiples
+</div>
+
+### Exercice 11 : Test de Tukey
+
+Réalisez le test de Tukey sur les 3 populations de moules contaminées.
+
+```{r ex11-tukey, exercise=TRUE, exercise.lines=10}
+# ANOVA
+Contam.aov <- aov(Conc_Cd ~ Population, data = Contamination)
+
+# Test de Tukey HSD
+# TukeyHSD(modele)
+
+
+
+
+```
+
+```{r ex11-tukey-hint-1}
+# TukeyHSD(Contam.aov)
+```
+
+```{r ex11-tukey-solution}
+# ANOVA
+Contam.aov <- aov(Conc_Cd ~ Population, data = Contamination)
+
+# Test de Tukey HSD
+tukey_result <- TukeyHSD(Contam.aov)
+tukey_result
+
+# Visualisation
+plot(tukey_result, las = 1)
+
+cat("\nInterprétation :\n")
+p_adj <- tukey_result$Population[, "p adj"]
+for (paire in names(p_adj)) {
+  cat("-", paire, ": p ajustée =", round(p_adj[paire], 3),
+      if (p_adj[paire] < 0.05) "→ différence significative\n" else "→ pas de différence significative\n")
+}
+cat("\n→ Une ANOVA significative ne signifie pas que TOUS les groupes diffèrent\n")
+```
+
+---
+
+## Partie 7 : Test de Kruskal-Wallis {data-progressive=TRUE}
+
+### Alternative non-paramétrique à l'ANOVA
+
+Le **test de Kruskal-Wallis** est l'équivalent non-paramétrique de l'ANOVA à un facteur. Il compare les **médianes** (ou distributions de rangs) de k groupes.
+
+### Exercice 12 : Kruskal-Wallis
+
+Réalisez le test de Kruskal-Wallis sur les données de contamination.
+
+```{r ex12-kruskal, exercise=TRUE, exercise.lines=8}
+# Test de Kruskal-Wallis
+# kruskal.test(variable ~ facteur, data = données)
+
+
+
+
+```
+
+```{r ex12-kruskal-hint-1}
+# kruskal.test(Conc_Cd ~ Population, data = Contamination)
+```
+
+```{r ex12-kruskal-solution}
+# Test de Kruskal-Wallis
+test_kruskal <- kruskal.test(Conc_Cd ~ Population, data = Contamination)
+test_kruskal
+
+cat("\nInterprétation :\n")
+cat("H =", round(test_kruskal$statistic, 2), "\n")
+cat("p-value =", format.pval(test_kruskal$p.value, digits = 3), "\n")
+if (test_kruskal$p.value < 0.05) {
+  cat("→ On rejette H₀ : les distributions diffèrent entre les populations\n")
+} else {
+  cat("→ On ne rejette pas H₀\n")
+}
+```
+
+---
+
+## Partie 8 : Synthèse et quiz {data-progressive=TRUE}
+
+### Tableau récapitulatif des tests
+
+```{r recap-table, exercise=TRUE}
+# Tableau récapitulatif
+recap <- data.frame(
+  Objectif = c("Comparer proportions",
+               "Comparer proportions (petits effectifs)",
+               "Comparer 2 moyennes",
+               "Comparer 2 distributions (non normal)",
+               "Comparer k moyennes",
+               "Comparer k distributions (non normal)",
+               "Comparer moyennes (2 facteurs)"),
+  Test = c("χ²", "Fisher", "Student t", "Wilcoxon U",
+           "ANOVA", "Kruskal-Wallis", "ANOVA à 2 facteurs"),
+  Type = c("Paramétrique", "Non-paramétrique", "Paramétrique",
+           "Non-paramétrique", "Paramétrique", "Non-paramétrique",
+           "Paramétrique"),
+  Fonction_R = c("chisq.test()", "fisher.test()", "t.test()",
+                 "wilcox.test()", "aov() + anova()", "kruskal.test()",
+                 "aov() avec *")
+)
+
+knitr::kable(recap)
+```
+
+### Quiz final
+
+```{r quiz-final}
+quiz(
+  question("Quelles sont les conditions pour le test t de Student ?",
+    answer("Normalité des données", correct = TRUE),
+    answer("Égalité des variances", correct = TRUE),
+    answer("Effectifs ≥ 30"),
+    answer("Indépendance des échantillons", correct = TRUE),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+
+  question("Que signifie une interaction significative dans une ANOVA à 2 facteurs ?",
+    answer("Les deux facteurs ont un effet"),
+    answer("L'effet d'un facteur dépend du niveau de l'autre facteur", correct = TRUE),
+    answer("Il faut retirer l'interaction du modèle"),
+    answer("Les facteurs sont corrélés"),
+    allow_retry = TRUE
+  ),
+
+  question("Quel test utiliser pour comparer 3 groupes avec des données non normales ?",
+    answer("ANOVA"),
+    answer("Test t de Student"),
+    answer("Test de Kruskal-Wallis", correct = TRUE),
+    answer("Test du χ²"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+
+  question("Comment interpréter une p-value = 0.03 avec α = 0.05 ?",
+    answer("On ne rejette pas H₀"),
+    answer("On rejette H₀", correct = TRUE),
+    answer("Le test n'est pas significatif"),
+    answer("Il faut refaire le test"),
+    allow_retry = TRUE
+  )
+)
+```
+
+### Points clés à retenir
+
+<div class="key-concept">
+**Les essentiels du chapitre :**
+
+✅ Toujours **visualiser** avant de tester
+
+✅ **Vérifier les conditions** : normalité, égalité des variances
+
+✅ **Tests paramétriques** : plus puissants mais conditions strictes
+
+✅ **Tests non-paramétriques** : robustes, utilisent les rangs
+
+✅ **ANOVA** : décompose la variance en sources de variation
+
+✅ **Interactions** : l'effet d'un facteur dépend de l'autre
+
+✅ **Tests post-hoc** : identifier quels groupes diffèrent
+
+✅ **p-value** : probabilité d'observer des données au moins aussi éloignées de H₀ que celles obtenues, si H₀ est vraie
+</div>
+
+---
+
+## Félicitations ! {data-progressive=TRUE}
+
+Vous avez terminé ce tutoriel sur les tests statistiques ! 🎉
+
+Vous savez maintenant :
+
+- Choisir le test approprié selon le type de données
+- Vérifier les conditions d'application
+- Réaliser et interpréter χ², Fisher, Student, Wilcoxon
+- Réaliser une ANOVA à un et deux facteurs
+- Détecter et interpréter les interactions
+- Utiliser les tests post-hoc
+
+<div class="tip">
+N'hésitez pas à refaire les exercices avec vos propres données !
+</div>
+
+**Merci et bon courage pour vos analyses ! 📊🔬**

@@ -7,6 +7,19 @@ output:
     allow_skip: true
     theme: cosmo
     css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
 runtime: shiny_prerendered
 description: "map(), map2(), pmap(), nested data et programmation fonctionnelle"
 ---
@@ -16,7 +29,7 @@ library(learnr)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-penguins <- palmerpenguins::penguins |> drop_na()
+penguins <- palmerpenguins::penguins %>% drop_na()
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -24,6 +37,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ```
 
 ## Bienvenue
+
+<div class="info-box">
+📖 Tutoriel facultatif, pour aller plus loin que le chapitre [« Tidyverse - Manipulation de données »](https://gallonr.github.io/intechmer_statistique_cours/05-R_tidyverse.html) du livre de cours.
+</div>
 
 **Objectifs :**
 
@@ -33,7 +50,6 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 - ✅ Maîtriser `map2()` et `pmap()`
 - ✅ Manipuler des **données imbriquées** (nested data)
 
-**Durée :** 75 minutes
 
 ---
 
@@ -56,7 +72,7 @@ for (i in seq_along(variables)) {
 resultats_for
 
 # AVEC MAP
-variables |> map_dbl(mean, na.rm = TRUE)
+variables %>% map_dbl(mean, na.rm = TRUE)
 ```
 
 ### map() - Retourne une liste
@@ -69,7 +85,7 @@ vecteurs <- list(
   c = 20:25
 )
 
-vecteurs |> map(sum)
+vecteurs %>% map(sum)
 ```
 
 ### Exercice 1 : Premier map()
@@ -83,7 +99,7 @@ ma_liste <- list(
   z = c(100, 200)
 )
 
-ma_liste |> map(_____)
+ma_liste %>% map(_____)
 ```
 
 ```{r ex1-map-solution}
@@ -93,7 +109,7 @@ ma_liste <- list(
   z = c(100, 200)
 )
 
-ma_liste |> map(length)
+ma_liste %>% map(length)
 ```
 
 ---
@@ -105,16 +121,16 @@ ma_liste |> map(length)
 Retournent des vecteurs atomiques au lieu de listes :
 
 ```{r demo-map-variants, exercise=TRUE}
-colonnes_num <- penguins |> select(where(is.numeric))
+colonnes_num <- penguins %>% select(where(is.numeric))
 
 # map_dbl : retourne un vecteur numérique
-colonnes_num |> map_dbl(mean, na.rm = TRUE)
+colonnes_num %>% map_dbl(mean, na.rm = TRUE)
 
 # map_chr : retourne un vecteur de caractères
-colonnes_num |> map_chr(~paste("Moyenne:", round(mean(.x, na.rm = TRUE), 1)))
+colonnes_num %>% map_chr(~paste("Moyenne:", round(mean(.x, na.rm = TRUE), 1)))
 
 # map_int : retourne un vecteur d'entiers
-list(a = 1:5, b = 1:10, c = 1:3) |> map_int(length)
+list(a = 1:5, b = 1:10, c = 1:3) %>% map_int(length)
 ```
 
 ### Syntaxe avec ~
@@ -125,13 +141,13 @@ La formule `~` crée une fonction anonyme où `.x` représente l'élément :
 # Ces trois syntaxes sont équivalentes :
 
 # 1. Fonction nommée
-penguins |> select(where(is.numeric)) |> map_dbl(mean, na.rm = TRUE)
+penguins %>% select(where(is.numeric)) %>% map_dbl(mean, na.rm = TRUE)
 
 # 2. Fonction anonyme classique
-penguins |> select(where(is.numeric)) |> map_dbl(function(x) mean(x, na.rm = TRUE))
+penguins %>% select(where(is.numeric)) %>% map_dbl(function(x) mean(x, na.rm = TRUE))
 
 # 3. Formule ~ (raccourci)
-penguins |> select(where(is.numeric)) |> map_dbl(~mean(.x, na.rm = TRUE))
+penguins %>% select(where(is.numeric)) %>% map_dbl(~mean(.x, na.rm = TRUE))
 ```
 
 ### Exercice 2 : map_dbl()
@@ -139,15 +155,15 @@ penguins |> select(where(is.numeric)) |> map_dbl(~mean(.x, na.rm = TRUE))
 Calculez l'écart-type de chaque variable numérique :
 
 ```{r ex2-map-dbl, exercise=TRUE}
-penguins |>
-  select(where(is.numeric)) |>
+penguins %>%
+  select(where(is.numeric)) %>%
   map_dbl(~_____)
 ```
 
 ```{r ex2-map-dbl-solution}
-penguins |>
-  select(where(is.numeric)) |>
-  map_dbl(~sd(.x, na.rm = TRUE)) |>
+penguins %>%
+  select(where(is.numeric)) %>%
+  map_dbl(~sd(.x, na.rm = TRUE)) %>%
   round(2)
 ```
 
@@ -176,8 +192,8 @@ especes <- unique(penguins$species)
 couleurs <- c("steelblue", "coral", "lightgreen")
 
 graphiques <- map2(especes, couleurs, function(sp, col) {
-  penguins |>
-    filter(species == sp) |>
+  penguins %>%
+    filter(species == sp) %>%
     ggplot(aes(x = body_mass_g)) +
     geom_histogram(fill = col, bins = 20) +
     labs(title = paste("Distribution -", sp)) +
@@ -211,25 +227,26 @@ map2_chr(variables, noms,
 
 ## Section 4 : pmap() - Multiple inputs
 
-### pmap() avec une liste de listes
+### pmap() avec une liste d'arguments
 
 ```{r demo-pmap, exercise=TRUE}
 # Paramètres multiples
+# Les noms de la liste doivent correspondre aux arguments de rnorm(n, mean, sd)
 params <- list(
-  moyenne = c(5, 10, 15),
-  ecart_type = c(1, 2, 3),
-  n = c(10, 20, 30)
+  n = c(10, 20, 30),
+  mean = c(5, 10, 15),
+  sd = c(1, 2, 3)
 )
 
 # Générer des échantillons aléatoires
 echantillons <- pmap(params, rnorm)
 
-echantillons |> map(summary)
+echantillons %>% map(summary)
 ```
 
 ### Exercice 4 : pmap()
 
-Créez des intervalles avec pmap() :
+Créez des suites de nombres avec pmap() et `seq(from, to, by)`. Comme les noms de la liste (`debut`, `fin`, `pas`) ne correspondent pas aux arguments de `seq()`, utilisez `..1`, `..2` et `..3` :
 
 ```{r ex4-pmap, exercise=TRUE}
 intervalles <- list(
@@ -238,7 +255,7 @@ intervalles <- list(
   pas = c(1, 1, 1)
 )
 
-pmap(intervalles, seq)
+pmap(intervalles, ~seq(from = _____, to = _____, by = _____))
 ```
 
 ```{r ex4-pmap-solution}
@@ -261,29 +278,29 @@ resultats
 
 ```{r demo-nest, exercise=TRUE}
 # Imbriquer les données par espèce
-penguins_nested <- penguins |>
-  group_by(species) |>
+penguins_nested <- penguins %>%
+  group_by(species) %>%
   nest()
 
 penguins_nested
 
 # Voir les données pour Adelie
-penguins_nested$data[[1]] |> head()
+penguins_nested$data[[1]] %>% head()
 ```
 
 ### map() sur des données imbriquées
 
 ```{r demo-nest-map, exercise=TRUE}
 # Calculer des statistiques pour chaque groupe
-penguins_nested <- penguins |>
-  group_by(species) |>
-  nest() |>
+penguins_nested <- penguins %>%
+  group_by(species) %>%
+  nest() %>%
   mutate(
     n_obs = map_int(data, nrow),
     masse_moy = map_dbl(data, ~mean(.x$body_mass_g, na.rm = TRUE))
   )
 
-penguins_nested |> select(-data)
+penguins_nested %>% select(-data)
 ```
 
 ### Exercice 5 : Nested data
@@ -291,24 +308,24 @@ penguins_nested |> select(-data)
 Calculez la corrélation entre longueur du bec et masse pour chaque espèce :
 
 ```{r ex5-nested, exercise=TRUE}
-penguins |>
-  group_by(species) |>
-  nest() |>
+penguins %>%
+  group_by(species) %>%
+  nest() %>%
   mutate(
     correlation = map_dbl(data, ~cor(.x$_____, .x$_____, use = "complete.obs"))
-  ) |>
+  ) %>%
   select(species, correlation)
 ```
 
 ```{r ex5-nested-solution}
-penguins |>
-  group_by(species) |>
-  nest() |>
+penguins %>%
+  group_by(species) %>%
+  nest() %>%
   mutate(
     correlation = map_dbl(data, ~cor(.x$bill_length_mm, .x$body_mass_g, 
                                       use = "complete.obs"))
-  ) |>
-  select(species, correlation) |>
+  ) %>%
+  select(species, correlation) %>%
   mutate(correlation = round(correlation, 3))
 ```
 
@@ -320,31 +337,31 @@ penguins |>
 
 ```{r demo-models, exercise=TRUE}
 # Régression linéaire pour chaque espèce
-models <- penguins |>
-  group_by(species) |>
-  nest() |>
+models <- penguins %>%
+  group_by(species) %>%
+  nest() %>%
   mutate(
     model = map(data, ~lm(body_mass_g ~ flipper_length_mm, data = .x)),
     r_squared = map_dbl(model, ~summary(.x)$r.squared)
   )
 
-models |> select(species, r_squared)
+models %>% select(species, r_squared)
 ```
 
 ### Extraire les coefficients
 
 ```{r demo-coefficients, exercise=TRUE}
-models <- penguins |>
-  group_by(species) |>
-  nest() |>
+models <- penguins %>%
+  group_by(species) %>%
+  nest() %>%
   mutate(
     model = map(data, ~lm(body_mass_g ~ flipper_length_mm, data = .x)),
     coefs = map(model, broom::tidy)
   )
 
 # Déimbriquer les coefficients
-models |>
-  select(species, coefs) |>
+models %>%
+  select(species, coefs) %>%
   unnest(coefs)
 ```
 
@@ -353,26 +370,26 @@ models |>
 Ajustez une régression pour chaque île et extrayez le R² :
 
 ```{r ex6-models, exercise=TRUE}
-penguins |>
-  group_by(_____) |>
-  nest() |>
+penguins %>%
+  group_by(_____) %>%
+  nest() %>%
   mutate(
     model = map(data, ~lm(_____ ~ _____, data = .x)),
     r2 = map_dbl(model, ~summary(.x)$r.squared)
-  ) |>
+  ) %>%
   select(island, r2)
 ```
 
 ```{r ex6-models-solution}
-penguins |>
-  group_by(island) |>
-  nest() |>
+penguins %>%
+  group_by(island) %>%
+  nest() %>%
   mutate(
     model = map(data, ~lm(body_mass_g ~ bill_length_mm, data = .x)),
     r2 = map_dbl(model, ~summary(.x)$r.squared)
-  ) |>
-  select(island, r2) |>
-  mutate(r2 = round(r2, 3)) |>
+  ) %>%
+  select(island, r2) %>%
+  mutate(r2 = round(r2, 3)) %>%
   arrange(desc(r2))
 ```
 
@@ -384,33 +401,38 @@ penguins |>
 
 ```{r demo-walk, exercise=TRUE}
 # map() retourne des valeurs
-penguins |> 
-  split(~species) |> 
+penguins %>% 
+  split(~species) %>% 
   map(~summarise(.x, n = n()))
 
 # walk() pour les effets de bord (affichage, sauvegarde)
-penguins |> 
-  split(~species) |> 
+penguins %>% 
+  split(~species) %>% 
   walk(~print(paste("Espèce:", unique(.x$species), "- N =", nrow(.x))))
 ```
 
 ### Exercice 7 : walk()
 
-Utilisez `walk()` pour afficher un résumé de chaque île :
+Utilisez `walk()` pour afficher, pour chaque île, son nom, le nombre d'observations et les espèces présentes :
 
 ```{r ex7-walk, exercise=TRUE}
-penguins |>
-  split(~island) |>
+penguins %>%
+  split(~island) %>%
   walk(~{
-    cat("Île:", unique(.x$island), "\n")
-    cat("Nombre:", nrow(.x), "\n")
-    cat("---\n")
+    cat("Île:", _____, "\n")
+    cat("Nombre d'observations:", _____, "\n")
+    cat("Espèces présentes:", _____, "\n\n")
   })
 ```
 
+```{r ex7-walk-hint}
+# unique(.x$island) donne le nom de l'île, nrow(.x) le nombre de lignes
+# paste(unique(.x$species), collapse = ", ") liste les espèces
+```
+
 ```{r ex7-walk-solution}
-penguins |>
-  split(~island) |>
+penguins %>%
+  split(~island) %>%
   walk(~{
     cat("=== Île:", unique(.x$island), "===\n")
     cat("Nombre d'observations:", nrow(.x), "\n")
@@ -433,9 +455,9 @@ Créez une **analyse complète** avec nested data et map() :
 3. Extraire tous les résultats
 
 ```{r defi-final, exercise=TRUE, exercise.lines=20}
-analyse_complete <- penguins |>
-  group_by(_____) |>
-  nest() |>
+analyse_complete <- penguins %>%
+  group_by(_____) %>%
+  nest() %>%
   mutate(
     # Stats descriptives
     stats = map(data, ~_____),
@@ -449,13 +471,13 @@ analyse_complete <- penguins |>
   )
 
 # Afficher résultats
-analyse_complete |> select(_____)
+analyse_complete %>% select(_____)
 ```
 
 ```{r defi-final-solution}
-analyse_complete <- penguins |>
-  group_by(species) |>
-  nest() |>
+analyse_complete <- penguins %>%
+  group_by(species) %>%
+  nest() %>%
   mutate(
     # Stats descriptives
     stats = map(data, ~tibble(
@@ -481,9 +503,9 @@ analyse_complete <- penguins |>
   )
 
 # Résumé des résultats
-analyse_complete |>
-  select(species, stats, r2) |>
-  unnest(stats) |>
+analyse_complete %>%
+  select(species, stats, r2) %>%
+  unnest(stats) %>%
   mutate(across(where(is.numeric), ~round(.x, 2)))
 
 # Afficher un graphique
@@ -512,7 +534,7 @@ map2(x, y, fonction)          # 2 inputs
 pmap(list, fonction)          # n inputs
 
 # NESTED DATA
-group_by(var) |> nest()       # Créer données imbriquées
+group_by(var) %>% nest()       # Créer données imbriquées
 unnest(col)                   # Déimbriquer
 
 # WALK - EFFETS DE BORD
@@ -520,5 +542,5 @@ walk(list, print)             # Pour affichage/sauvegarde
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

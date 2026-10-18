@@ -1,0 +1,992 @@
+---
+title: "Étude des communautés écologiques marines"
+subtitle: "Analyse de substrats meubles et rocheux"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Apprenez à analyser les communautés benthiques et leurs patrons écologiques"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(vegan)
+library(betapart)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Données exemple pour le tutoriel
+set.seed(42)
+
+# Simuler des données de communauté avec gradient environnemental
+nsites <- 20
+nsp <- 10
+
+gradient <- seq(0, 1, length.out = nsites)
+sp_mat <- matrix(nrow = nsites, ncol = nsp)
+
+for (i in 1:nsp) {
+  optimum <- (i - 1) / (nsp - 1)
+  tolerance <- 0.3
+  mu <- 15 * exp(-((gradient - optimum)^2) / (2 * tolerance^2))
+  sp_mat[, i] <- rpois(nsites, lambda = mu)
+}
+
+species <- as.data.frame(sp_mat)
+colnames(species) <- paste0("Espece_", LETTERS[1:nsp])
+rownames(species) <- paste0("Site_", sprintf("%02d", 1:nsites))
+
+# Variables environnementales
+env <- data.frame(
+  site = rownames(species),
+  profondeur = 5 + 30 * gradient + rnorm(nsites, 0, 2),
+  temperature = 18 - 5 * gradient + rnorm(nsites, 0, 0.5),
+  salinite = 32 + 3 * gradient + rnorm(nsites, 0, 0.3),
+  substrat = factor(ifelse(gradient < 0.5, "sable", "vase"))
+)
+
+# Données substrat rocheux (macroalgues)
+nalgues <- 8
+algues <- data.frame(
+  site = paste0("Station_", 1:15),
+  Laminaria_digitata = rpois(15, lambda = 25),
+  Saccorhiza_polyschides = rpois(15, lambda = 12),
+  Fucus_serratus = rpois(15, lambda = 30),
+  Delesseria_sanguinea = rpois(15, lambda = 18),
+  Lithophyllum_sp = rpois(15, lambda = 40),
+  Ulva_sp = rpois(15, lambda = 8),
+  Corallina_officinalis = rpois(15, lambda = 22),
+  Palmaria_palmata = rpois(15, lambda = 15)
+)
+
+algues_mat <- algues %>% column_to_rownames("site")
+
+# Données substrat meuble (macrofaune)
+macrofaune <- data.frame(
+  site = paste0("Station_", 1:15),
+  Abra_alba = rpois(15, lambda = 45),
+  Amphiura_filiformis = rpois(15, lambda = 12),
+  Capitella_capitata = rpois(15, lambda = 8),
+  Hediste_diversicolor = rpois(15, lambda = 15),
+  Malacoceros_fuliginosus = rpois(15, lambda = 10),
+  Nucula_nitidosa = rpois(15, lambda = 20),
+  Scolelepis_squamata = rpois(15, lambda = 18),
+  Lanice_conchilega = rpois(15, lambda = 25)
+)
+
+macrofaune_mat <- macrofaune %>% column_to_rownames("site")
+
+# Contribution locale à la β-diversité (LCBD, Legendre & De Cáceres 2013)
+# Données transformées Hellinger ; p-values par permutation des espèces
+lcbd_calc <- function(comm, nperm = 999) {
+  Y <- decostand(comm, method = "hellinger")
+  carres <- scale(Y, scale = FALSE)^2
+  lcbd <- rowSums(carres) / sum(carres)
+  lcbd_perm <- replicate(nperm, {
+    Yp <- apply(Y, 2, sample)
+    cp <- scale(Yp, scale = FALSE)^2
+    rowSums(cp) / sum(cp)
+  })
+  list(LCBD = lcbd, p.LCBD = (rowSums(lcbd_perm >= lcbd) + 1) / (nperm + 1))
+}
+
+# Objets réutilisés par plusieurs exercices (chaque exercice learnr est isolé)
+species_pa <- decostand(species, method = "pa")
+richesse <- specnumber(species)
+shannon <- diversity(species, index = "shannon")
+div_alpha <- data.frame(
+  site = rownames(species),
+  richesse = richesse,
+  shannon = shannon,
+  simpson = diversity(species, index = "simpson"),
+  pielou = shannon / log(richesse)
+)
+lcbd_res <- lcbd_calc(species)
+lcbd_values <- data.frame(
+  site = rownames(species),
+  LCBD = lcbd_res$LCBD,
+  p_value = lcbd_res$p.LCBD
+) %>%
+  arrange(desc(LCBD))
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Cnam-Intechmer")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Analyses des communautés écologiques et indicateurs benthiques »](https://gallonr.github.io/intechmer_statistique_cours/11-Init_econum.html) du livre de cours.
+</div>
+
+### Introduction
+
+Bienvenue dans ce tutoriel sur l'**étude des communautés écologiques marines** ! Vous allez apprendre à analyser la structure et la diversité des communautés benthiques.
+
+<div class="info-box">
+ℹ️ Ce tutoriel est interactif : vous pourrez exécuter du code directement dans votre navigateur.
+</div>
+
+**Objectifs d'apprentissage :**
+
+- ✅ Comprendre les concepts de diversité α, β et γ
+- ✅ Calculer les indices de diversité (Shannon, Simpson, Pielou)
+- ✅ Analyser la β-diversité et sa partition
+- ✅ Caractériser les communautés de substrat meuble et rocheux
+- ✅ Visualiser les patrons écologiques le long de gradients
+- ✅ Interpréter les courbes rang-abondance
+
+**Prérequis :**
+
+- Bases de R et du tidyverse
+- Notions d'écologie marine
+
+
+---
+
+## Partie 1 : Structure des données {data-progressive=TRUE}
+
+### La matrice site × espèce
+
+En écologie des communautés, les données sont organisées sous forme de **matrice site × espèce** :
+
+- **Lignes** = sites d'échantillonnage
+- **Colonnes** = espèces observées
+- **Valeurs** = abondances (nombre d'individus, biomasse, recouvrement, présence/absence)
+
+<div class="key-concept">
+Cette matrice est la structure de données fondamentale pour toutes les analyses de communautés !
+</div>
+
+Examinons un exemple de données :
+
+```{r demo-matrice, exercise=TRUE}
+# Afficher les 6 premières lignes
+head(species, 6)
+
+# Dimensions de la matrice
+dim(species)
+
+# Nombre de sites et d'espèces
+cat("Nombre de sites :", nrow(species), "\n")
+cat("Nombre d'espèces :", ncol(species), "\n")
+```
+
+### Exercice 1 : Explorer la matrice
+
+Calculez l'abondance totale de chaque site (somme par ligne).
+
+```{r ex1-abondance-totale, exercise=TRUE, exercise.lines=5}
+# Calculez l'abondance totale par site
+# Utilisez rowSums()
+
+
+```
+
+```{r ex1-abondance-totale-hint-1}
+# rowSums() calcule la somme de chaque ligne
+# abondances <- rowSums(...)
+```
+
+```{r ex1-abondance-totale-solution}
+abondances <- rowSums(species)
+abondances
+```
+
+### Données environnementales
+
+Les données de communautés sont souvent accompagnées de **variables environnementales** :
+
+```{r demo-env, exercise=TRUE}
+# Afficher les variables environnementales
+head(env, 6)
+
+# Résumé statistique
+summary(env[, c("profondeur", "temperature", "salinite")])
+```
+
+<div class="tip">
+Les variables environnementales permettent d'expliquer la structure des communautés (via des analyses comme la RDA).
+</div>
+
+---
+
+## Partie 2 : Diversité alpha (α) {data-progressive=TRUE}
+
+### Concepts de base
+
+La **diversité α (alpha)** mesure la diversité locale au sein d'un site. Elle peut être quantifiée par :
+
+1. **Richesse spécifique (S)** : nombre d'espèces présentes
+2. **Indices de diversité** : intègrent richesse ET équitabilité
+
+<div class="key-concept">
+**Indice de Shannon (H')**
+$$H' = -\sum_{i=1}^{S} p_i \ln(p_i)$$
+
+**Indice de Simpson (D)**
+$$D = 1 - \sum_{i=1}^{S} p_i^2$$
+
+**Équitabilité de Pielou (J')**
+$$J' = \frac{H'}{\ln(S)}$$
+</div>
+
+### Calcul de la richesse spécifique
+
+```{r demo-richesse, exercise=TRUE}
+# Calcul de la richesse pour chaque site
+richesse <- specnumber(species)
+
+# Afficher les résultats
+richesse
+
+# Richesse moyenne
+mean(richesse)
+```
+
+### Exercice 2 : Diversité de Shannon
+
+Calculez l'indice de Shannon pour tous les sites en utilisant la fonction `diversity()` du package `vegan`.
+
+```{r ex2-shannon, exercise=TRUE, exercise.lines=6}
+# Calculez l'indice de Shannon
+# diversity(data, index = "shannon")
+
+
+```
+
+```{r ex2-shannon-hint-1}
+# Utilisez diversity() avec index = "shannon"
+shannon <- diversity(species, index = "shannon")
+```
+
+```{r ex2-shannon-solution}
+shannon <- diversity(species, index = "shannon")
+shannon
+
+# Afficher la moyenne
+cat("Shannon moyen :", round(mean(shannon), 2), "\n")
+```
+
+### Tableau récapitulatif de diversité
+
+Créons un tableau avec tous les indices :
+
+```{r demo-indices-alpha, exercise=TRUE}
+# Calculer tous les indices
+richesse <- specnumber(species)
+shannon <- diversity(species, index = "shannon")
+simpson <- diversity(species, index = "simpson")
+pielou <- shannon / log(richesse)
+
+# Créer un tableau
+div_alpha <- data.frame(
+  site = rownames(species),
+  richesse = richesse,
+  shannon = shannon,
+  simpson = simpson,
+  pielou = pielou
+)
+
+head(div_alpha, 8)
+```
+
+### Exercice 3 : Visualiser la diversité
+
+Créez un graphique montrant l'évolution de la richesse spécifique le long du gradient de profondeur.
+
+```{r ex3-plot-richesse, exercise=TRUE, exercise.lines=10}
+# Combiner diversité et environnement
+div_env <- div_alpha %>%
+  left_join(env, by = "site")
+
+# Créer le graphique
+
+
+
+```
+
+```{r ex3-plot-richesse-hint-1}
+# Utilisez ggplot avec geom_point() et geom_smooth()
+# ggplot(data, aes(x = profondeur, y = richesse)) + ...
+```
+
+```{r ex3-plot-richesse-solution}
+div_env <- div_alpha %>%
+  left_join(env, by = "site")
+
+ggplot(div_env, aes(x = profondeur, y = richesse)) +
+  geom_point(size = 3, color = "steelblue") +
+  geom_smooth(method = "loess", se = TRUE, color = "darkblue") +
+  labs(title = "Richesse spécifique selon la profondeur",
+       x = "Profondeur (m)", y = "Richesse spécifique") +
+  theme_minimal()
+```
+
+---
+
+## Partie 3 : Diversité bêta (β) {data-progressive=TRUE}
+
+### Concepts de dissimilarité
+
+La **diversité β (bêta)** mesure la **différenciation entre sites**. Elle est calculée via des **indices de dissimilarité** :
+
+- **Bray-Curtis** : pour données d'abondance (0 = identiques, 1 = totalement différents)
+- **Jaccard** : pour données présence/absence
+- **Sørensen** : alternative à Jaccard
+
+<div class="key-concept">
+**Formule de Bray-Curtis**
+$$BC = \frac{\sum |x_i - y_i|}{\sum (x_i + y_i)}$$
+
+Plus BC est proche de 0, plus les sites sont similaires.
+</div>
+
+### Calcul de la matrice de dissimilarité
+
+```{r demo-dissimilarite, exercise=TRUE}
+# Calculer la matrice de dissimilarité Bray-Curtis
+dist_bray <- vegdist(species, method = "bray")
+
+# Afficher les premières valeurs
+as.matrix(dist_bray)[1:5, 1:5]
+```
+
+### Exercice 4 : Dissimilarité Jaccard
+
+Calculez la matrice de dissimilarité de Jaccard (présence/absence).
+
+```{r ex4-jaccard, exercise=TRUE, exercise.lines=8}
+# 1. Convertir en présence/absence avec decostand()
+# 2. Calculer la dissimilarité Jaccard
+
+
+
+```
+
+```{r ex4-jaccard-hint-1}
+# Étape 1 : decostand(data, method = "pa")
+# Étape 2 : vegdist(data_pa, method = "jaccard")
+```
+
+```{r ex4-jaccard-solution}
+# Convertir en présence/absence
+species_pa <- decostand(species, method = "pa")
+
+# Calculer Jaccard
+dist_jaccard <- vegdist(species_pa, method = "jaccard")
+
+# Afficher un extrait
+as.matrix(dist_jaccard)[1:5, 1:5]
+```
+
+### LCBD : sites atypiques
+
+Le **LCBD** (Local Contribution to Beta Diversity) identifie les sites qui contribuent le plus à la β-diversité totale.
+
+<div class="tip">
+Un site avec un LCBD élevé a une composition d'espèces atypique par rapport aux autres sites.
+</div>
+
+```{r demo-lcbd, exercise=TRUE}
+# Calculer LCBD
+# lcbd_calc() est une fonction préparée pour ce tutoriel
+lcbd_res <- lcbd_calc(species)
+
+# Extraire les valeurs LCBD
+lcbd_values <- data.frame(
+  site = rownames(species),
+  LCBD = lcbd_res$LCBD,
+  p_value = lcbd_res$p.LCBD
+) %>%
+  arrange(desc(LCBD))
+
+# Afficher les sites à forte contribution
+head(lcbd_values, 8)
+```
+
+### Exercice 5 : Visualiser le LCBD
+
+Créez un graphique montrant le LCBD le long du gradient de profondeur, en colorant les points significatifs (p < 0.05).
+
+```{r ex5-plot-lcbd, exercise=TRUE, exercise.lines=12}
+# Combiner LCBD et environnement
+lcbd_env <- lcbd_values %>%
+  left_join(env, by = "site")
+
+# Créer le graphique
+
+
+
+
+```
+
+```{r ex5-plot-lcbd-hint-1}
+# Utilisez aes(color = p_value < 0.05)
+# scale_color_manual() pour personnaliser les couleurs
+```
+
+```{r ex5-plot-lcbd-solution}
+lcbd_env <- lcbd_values %>%
+  left_join(env, by = "site")
+
+ggplot(lcbd_env, aes(x = profondeur, y = LCBD,
+                     color = p_value < 0.05, size = LCBD)) +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = c("grey50", "red"),
+                     labels = c("Non significatif", "Significatif")) +
+  labs(title = "Contribution locale à la β-diversité (LCBD)",
+       x = "Profondeur (m)", y = "LCBD",
+       color = "Significativité") +
+  theme_minimal()
+```
+
+### Partition de la β-diversité
+
+La β-diversité peut être décomposée en :
+
+- **Turnover** : remplacement d'espèces par d'autres
+- **Nestedness** : perte d'espèces sans remplacement
+
+```{r demo-beta-partition, exercise=TRUE}
+# Calculer la partition
+beta_core <- betapart.core(species_pa)
+beta_partition <- beta.pair(beta_core, index.family = "sorensen")
+
+# Moyennes des composantes
+mean_turnover <- mean(as.dist(beta_partition$beta.sim))
+mean_nestedness <- mean(as.dist(beta_partition$beta.sne))
+mean_total <- mean(as.dist(beta_partition$beta.sor))
+
+# Afficher les résultats
+cat("β-diversité totale (Sørensen):", round(mean_total, 3), "\n")
+cat("  - Turnover:", round(mean_turnover, 3),
+    "(", round(100*mean_turnover/mean_total, 1), "%)\n")
+cat("  - Nestedness:", round(mean_nestedness, 3),
+    "(", round(100*mean_nestedness/mean_total, 1), "%)\n")
+```
+
+---
+
+## Partie 4 : Substrat rocheux {data-progressive=TRUE}
+
+### Caractéristiques des communautés rocheuses
+
+Les **substrats rocheux** abritent principalement des **macroalgues** et organismes fixés :
+
+- **Zonation verticale** : différentes espèces selon la profondeur et l'hydrodynamisme
+- **Structure 3D** : canopée (laminaires), strate moyenne, tapis encroûtants
+- **Recouvrement** : mesuré en % de surface occupée
+
+<div class="key-concept">
+Les communautés rocheuses sont souvent structurées par :
+
+- La lumière (gradient bathymétrique)
+- L'hydrodynamisme
+- Le substrat (roche, blocs, galets)
+</div>
+
+### Explorer les données de macroalgues
+
+```{r demo-algues, exercise=TRUE}
+# Afficher les données
+head(algues_mat, 8)
+
+# Diversité des stations rocheuses
+richesse_algues <- specnumber(algues_mat)
+shannon_algues <- diversity(algues_mat, index = "shannon")
+
+data.frame(
+  station = names(richesse_algues),
+  richesse = richesse_algues,
+  shannon = shannon_algues
+)
+```
+
+### Exercice 6 : Espèces dominantes
+
+Identifiez les 3 espèces de macroalgues les plus abondantes (somme sur toutes les stations).
+
+```{r ex6-dominantes-algues, exercise=TRUE, exercise.lines=8}
+# Calculez l'abondance totale par espèce
+# Triez par ordre décroissant
+# Affichez les 3 premières
+
+
+
+```
+
+```{r ex6-dominantes-algues-hint-1}
+# colSums() calcule la somme de chaque colonne
+# sort(..., decreasing = TRUE)
+# head(..., 3)
+```
+
+```{r ex6-dominantes-algues-solution}
+# Abondance totale par espèce
+abond_totale <- colSums(algues_mat)
+
+# Trier et afficher les 3 premières
+top3 <- sort(abond_totale, decreasing = TRUE)[1:3]
+top3
+```
+
+### Courbe rang-abondance
+
+La **courbe rang-abondance** visualise la structure de dominance d'une communauté.
+
+```{r demo-rang-abondance-algues, exercise=TRUE}
+# Sélectionner une station
+station <- unlist(algues_mat[5, ])   # ligne du tableau -> vecteur
+station_sorted <- sort(station, decreasing = TRUE)
+station_sorted <- station_sorted[station_sorted > 0]
+
+# Créer le graphique
+rang_abond <- data.frame(
+  rang = 1:length(station_sorted),
+  abondance = as.numeric(station_sorted),
+  espece = names(station_sorted)
+)
+
+ggplot(rang_abond, aes(x = rang, y = abondance)) +
+  geom_line(linewidth = 1.2, color = "darkgreen") +
+  geom_point(size = 3, color = "forestgreen") +
+  scale_y_log10() +
+  labs(title = "Courbe rang-abondance (Station 5)",
+       x = "Rang", y = "Abondance (log10)") +
+  theme_minimal()
+```
+
+---
+
+## Partie 5 : Substrat meuble {data-progressive=TRUE}
+
+### Caractéristiques des communautés meubles
+
+Les **substrats meubles** (sable, vase) abritent principalement de la **macrofaune enfouie** :
+
+- **Organismes enfouis** : annélides, bivalves, crustacés
+- **Comptage individuel** : nombre d'individus par m²
+- **Sensibilité aux perturbations** : enrichissement organique, hypoxie
+
+<div class="key-concept">
+Les communautés de substrat meuble sont structurées par :
+
+- La granulométrie (sable fin → vase)
+- La teneur en matière organique
+- L'oxygénation du sédiment
+</div>
+
+### Explorer les données de macrofaune
+
+```{r demo-macrofaune, exercise=TRUE}
+# Afficher les données
+head(macrofaune_mat, 8)
+
+# Diversité des stations meubles
+richesse_macro <- specnumber(macrofaune_mat)
+shannon_macro <- diversity(macrofaune_mat, index = "shannon")
+
+data.frame(
+  station = names(richesse_macro),
+  richesse = richesse_macro,
+  shannon = shannon_macro
+)
+```
+
+### Exercice 7 : Comparaison substrats
+
+Comparez la richesse moyenne et l'indice de Shannon moyen entre substrats rocheux (macroalgues) et meubles (macrofaune). Pourquoi la richesse ne suffit-elle pas ici à distinguer les deux communautés ?
+
+```{r ex7-comparaison, exercise=TRUE, exercise.lines=10}
+# Calculez la richesse moyenne pour chaque type
+# Créez un dataframe de comparaison
+
+
+
+
+```
+
+```{r ex7-comparaison-hint-1}
+# mean(specnumber(algues_mat))
+# mean(diversity(algues_mat, index = "shannon"))
+```
+
+```{r ex7-comparaison-solution}
+# Richesse et Shannon moyens
+rich_algues <- mean(specnumber(algues_mat))
+rich_macro <- mean(specnumber(macrofaune_mat))
+shan_algues <- mean(diversity(algues_mat, index = "shannon"))
+shan_macro <- mean(diversity(macrofaune_mat, index = "shannon"))
+
+# Tableau comparatif
+data.frame(
+  substrat = c("Rocheux (algues)", "Meuble (macrofaune)"),
+  richesse_moyenne = c(rich_algues, rich_macro),
+  shannon_moyen = c(shan_algues, shan_macro)
+)
+# Les 8 espèces sont présentes dans toutes les stations : la richesse est identique.
+# Shannon, qui tient compte de l'équitabilité, distingue les deux communautés.
+```
+
+### Courbe K-dominance
+
+La **courbe K-dominance** montre la dominance cumulée des espèces :
+
+```{r demo-kdominance, exercise=TRUE}
+# Sélectionner une station
+station <- macrofaune_mat[8, ]
+
+# Préparer les données
+k_dom <- data.frame(
+  espece = names(station),
+  abondance = as.numeric(station)
+) %>%
+  arrange(desc(abondance)) %>%
+  mutate(
+    rang = row_number(),
+    cum_abondance = cumsum(abondance),
+    cum_prop = cum_abondance / sum(abondance) * 100
+  )
+
+# Graphique
+ggplot(k_dom, aes(x = rang, y = cum_prop)) +
+  geom_line(linewidth = 1.2, color = "darkblue") +
+  geom_point(size = 2.5, color = "steelblue") +
+  labs(title = "Courbe K-dominance (Station 8)",
+       x = "Rang des espèces", y = "Dominance cumulée (%)") +
+  theme_minimal()
+```
+
+### Exercice 8 : Indice de Simpson
+
+Calculez l'indice de Simpson pour toutes les stations de macrofaune et identifiez la station la plus diverse.
+
+```{r ex8-simpson-macro, exercise=TRUE, exercise.lines=10}
+# Calculez Simpson pour toutes les stations
+# Identifiez la station avec le plus fort indice
+
+
+
+```
+
+```{r ex8-simpson-macro-hint-1}
+# diversity(data, index = "simpson")
+# which.max() trouve la position du maximum
+```
+
+```{r ex8-simpson-macro-solution}
+# Calculer Simpson
+simpson_macro <- diversity(macrofaune_mat, index = "simpson")
+
+# Station la plus diverse
+station_max <- which.max(simpson_macro)
+
+cat("Station la plus diverse :", names(station_max), "\n")
+cat("Indice de Simpson :", round(simpson_macro[station_max], 3), "\n")
+
+# Afficher tous les indices
+sort(simpson_macro, decreasing = TRUE)
+```
+
+---
+
+## Partie 6 : Gradients environnementaux {data-progressive=TRUE}
+
+### Concept de gradient écologique
+
+Les communautés s'organisent le long de **gradients environnementaux** :
+
+- **Gradient bathymétrique** : côte → large
+- **Gradient trophique** : oligotrophe → eutrophe
+- **Gradient de perturbation** : pristine → perturbé
+
+<div class="key-concept">
+Chaque espèce a un **optimum écologique** le long du gradient et une **tolérance** autour de cet optimum.
+</div>
+
+### Visualiser les espèces le long du gradient
+
+```{r demo-gradient, exercise=TRUE}
+# Préparer les données en format long
+species_long <- species %>%
+  rownames_to_column("site") %>%
+  left_join(env, by = "site") %>%
+  pivot_longer(cols = starts_with("Espece"),
+               names_to = "espece",
+               values_to = "abondance")
+
+# Sélectionner quelques espèces
+especes_select <- paste0("Espece_", c("A", "C", "E", "G", "I"))
+species_subset <- species_long %>%
+  filter(espece %in% especes_select)
+
+# Graphique
+ggplot(species_subset, aes(x = profondeur, y = abondance, color = espece)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(title = "Distribution des espèces le long du gradient de profondeur",
+       x = "Profondeur (m)", y = "Abondance",
+       color = "Espèce") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+### Exercice 9 : Gradient de température
+
+Créez un graphique montrant l'indice de Shannon le long du gradient de température.
+
+```{r ex9-gradient-temp, exercise=TRUE, exercise.lines=12}
+# 1. Calculez Shannon pour tous les sites
+# 2. Combinez avec les données environnementales
+# 3. Créez le graphique température vs Shannon
+
+
+
+
+
+```
+
+```{r ex9-gradient-temp-hint-1}
+# shannon <- diversity(species, index = "shannon")
+# Créez un dataframe avec site, shannon, et température
+```
+
+```{r ex9-gradient-temp-solution}
+# Calculer Shannon
+shannon <- diversity(species, index = "shannon")
+
+# Combiner avec environnement
+div_temp <- data.frame(
+  site = rownames(species),
+  shannon = shannon
+) %>%
+  left_join(env, by = "site")
+
+# Graphique
+ggplot(div_temp, aes(x = temperature, y = shannon)) +
+  geom_point(size = 3, color = "coral") +
+  geom_smooth(method = "loess", se = TRUE, color = "darkred") +
+  labs(title = "Diversité de Shannon selon la température",
+       x = "Température (°C)", y = "Indice de Shannon") +
+  theme_minimal()
+```
+
+### Heatmap de la communauté
+
+Une **heatmap** permet de visualiser simultanément tous les sites et toutes les espèces :
+
+```{r demo-heatmap, exercise=TRUE}
+# Transformation Hellinger (recommandée pour heatmap)
+species_hel <- decostand(species, method = "hellinger")
+
+# Préparer les données pour ggplot
+heatmap_data <- species_hel %>%
+  rownames_to_column("site") %>%
+  pivot_longer(-site, names_to = "espece", values_to = "abondance")
+
+# Créer la heatmap
+ggplot(heatmap_data, aes(x = espece, y = site, fill = abondance)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "darkblue") +
+  labs(title = "Heatmap de la communauté (transformation Hellinger)",
+       x = "Espèce", y = "Site", fill = "Abondance\ntransformée") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+---
+
+## Partie 7 : Synthèse et workflow {data-progressive=TRUE}
+
+### Workflow complet d'analyse
+
+Voici un workflow type pour analyser une communauté écologique :
+
+<div class="tip">
+**Étapes recommandées :**
+
+1. **Explorer** : dimensions, distribution des abondances, espèces rares
+2. **Diversité α** : richesse, Shannon, Simpson, équitabilité
+3. **Diversité β** : dissimilarités, LCBD, partition turnover/nestedness
+4. **Visualiser** : courbes rang-abondance, heatmaps, gradients
+5. **Relier à l'environnement** : corrélations, ordinations (RDA/CCA)
+6. **Interpréter** : patrons écologiques, espèces indicatrices
+</div>
+
+### Exercice 10 : Analyse complète (Challenge)
+
+Réalisez une analyse complète d'une communauté au choix (macroalgues OU macrofaune) :
+
+1. Calculez les 4 indices de diversité α
+2. Identifiez les 3 stations les plus diverses
+3. Calculez la β-diversité moyenne (Bray-Curtis)
+4. Créez une courbe rang-abondance pour la station la plus diverse
+
+```{r ex10-analyse-complete, exercise=TRUE, exercise.lines=25}
+# Choisissez votre jeu de données
+# donnees <- algues_mat  # ou macrofaune_mat
+
+# 1. Diversité α
+
+
+
+
+
+
+# 2. Top 3 stations
+
+
+
+# 3. β-diversité moyenne
+
+
+
+# 4. Courbe rang-abondance
+
+
+
+```
+
+```{r ex10-analyse-complete-solution}
+# Choix du jeu de données
+donnees <- algues_mat
+
+# 1. Diversité α
+richesse <- specnumber(donnees)
+shannon <- diversity(donnees, index = "shannon")
+simpson <- diversity(donnees, index = "simpson")
+pielou <- shannon / log(richesse)
+
+div_summary <- data.frame(
+  station = names(richesse),
+  richesse, shannon, simpson, pielou
+)
+
+# 2. Top 3 stations (selon Shannon)
+top3_stations <- div_summary %>%
+  arrange(desc(shannon)) %>%
+  head(3)
+print("Top 3 stations les plus diverses :")
+print(top3_stations)
+
+# 3. β-diversité moyenne
+dist_bray <- vegdist(donnees, method = "bray")
+beta_mean <- mean(dist_bray)
+cat("\nβ-diversité moyenne (Bray-Curtis):", round(beta_mean, 3), "\n")
+
+# 4. Courbe rang-abondance (station la plus diverse)
+station_max <- top3_stations$station[1]
+station_data <- unlist(donnees[station_max, ])
+station_sorted <- sort(station_data, decreasing = TRUE)
+station_sorted <- station_sorted[station_sorted > 0]
+
+rang_abond <- data.frame(
+  rang = 1:length(station_sorted),
+  abondance = as.numeric(station_sorted)
+)
+
+ggplot(rang_abond, aes(x = rang, y = abondance)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3, color = "steelblue") +
+  scale_y_log10() +
+  labs(title = paste("Courbe rang-abondance -", station_max),
+       x = "Rang", y = "Abondance (log10)") +
+  theme_minimal()
+```
+
+### Points clés à retenir
+
+<div class="key-concept">
+**Les essentiels du chapitre :**
+
+✅ La **matrice site × espèce** est la structure fondamentale
+
+✅ **Diversité α** = diversité locale (richesse + équitabilité)
+
+✅ **Diversité β** = différenciation entre sites (dissimilarités)
+
+✅ **Substrat rocheux** : macroalgues, structure 3D, recouvrement
+
+✅ **Substrat meuble** : macrofaune enfouie, sensible aux perturbations
+
+✅ Les communautés s'organisent le long de **gradients environnementaux**
+
+✅ Les **courbes rang-abondance** révèlent la structure de dominance
+</div>
+
+---
+
+## Pour aller plus loin {data-progressive=TRUE}
+
+### Ressources complémentaires
+
+**Packages R recommandés :**
+
+- `vegan` : Package principal pour l'écologie des communautés
+- `adespatial` : Analyses spatiales et β-diversité (fonction `beta.div()` pour le LCBD)
+- `betapart` : Partition de la β-diversité
+- `ade4` : Analyses multivariées classiques
+
+**Documentation :**
+
+- `vignette("intro-vegan")` : Introduction au package vegan
+- [Numerical Ecology with R](https://www.springer.com/gp/book/9783319714035) (Borcard et al.)
+
+### Prochaines étapes
+
+Après ce tutoriel, vous pouvez explorer :
+
+- **Analyses d'ordination** : ACP, AFC, nMDS
+- **Analyses canoniques** : RDA, CCA (lien communauté-environnement)
+- **Classification** : clustering hiérarchique, k-means
+- **Espèces indicatrices** : IndVal, corrélations avec environnement
+
+<div class="info-box">
+💡 **Conseil pratique :** Commencez toujours par une exploration descriptive (diversité α, β) avant de passer aux analyses multivariées complexes !
+</div>
+
+---
+
+## Félicitations ! {data-progressive=TRUE}
+
+Vous avez terminé ce tutoriel sur l'étude des communautés écologiques marines ! 🎉
+
+Vous savez maintenant :
+
+- Manipuler des matrices site × espèce
+- Calculer et interpréter les indices de diversité
+- Analyser la β-diversité et les contributions locales (LCBD)
+- Caractériser les communautés de substrats rocheux et meubles
+- Visualiser les patrons écologiques le long de gradients
+
+<div class="tip">
+N'hésitez pas à refaire les exercices avec vos propres données de terrain !
+</div>
+
+**Merci et bon courage pour vos analyses ! 🌊🔬**

@@ -11,7 +11,7 @@ output:
       fr:
         button:
           runcode: "Exécuter le code"
-          hints: "Indice"
+          hint: "Indice"
           solution: "Solution"
 runtime: shiny_prerendered
 description: "Comprendre la logique de ggplot2 et créer vos premiers graphiques"
@@ -22,7 +22,7 @@ library(learnr)
 library(tidyverse)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-penguins <- palmerpenguins::penguins |> drop_na()
+penguins <- palmerpenguins::penguins %>% drop_na()
 ```
 
 ```{r logo, echo=FALSE, results='asis'}
@@ -30,6 +30,10 @@ htmltools::img(src = "images/logo.png", id = "tutorial-logo", alt = "Logo Cnam-I
 ```
 
 ## Bienvenue
+
+<div class="info-box">
+📖 Ce tutoriel accompagne le chapitre [« Présentation des données »](https://gallonr.github.io/intechmer_statistique_cours/04a-Presentation_graph.html) du livre de cours.
+</div>
 
 ### Introduction
 
@@ -45,7 +49,6 @@ ggplot2 est basé sur la "Grammaire des Graphiques" : une façon cohérente et l
 - ✅ Personnaliser avec `labs()` et `theme()`
 - ✅ Sauvegarder avec `ggsave()`
 
-**Durée :** 60 minutes
 
 ---
 
@@ -159,7 +162,7 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
 
 ```{r demo-geom-line, exercise=TRUE}
 # Données de série temporelle
-economie <- economics |> filter(date >= as.Date("2000-01-01"))
+economie <- economics %>% filter(date >= as.Date("2000-01-01"))
 
 ggplot(economie, aes(x = date, y = unemploy)) +
   geom_line(color = "darkblue")
@@ -256,6 +259,7 @@ ggsave("mon_graphique.png", mon_graphique, width = 8, height = 6, dpi = 300)
 ## Défi final
 
 Créez un graphique complet montrant la relation entre longueur des nageoires et masse, avec :
+
 - Points colorés par espèce
 - Courbe de tendance par espèce
 - Titres appropriés
@@ -310,5 +314,5 @@ ggsave("fichier.png", width = 8, height = 6)
 ```
 
 <div class="footer">
-  <p>@ Cnam-Intechmer - 2025</p>
+  <p>© Cnam-Intechmer</p>
 </div>

@@ -1,0 +1,557 @@
+---
+title: "Programmer : les bases de l'algorithmique"
+subtitle: "Conditions, boucles et fonctions en R"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Comparaisons, if/else, boucles for et while, fonctions et vectorisation"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Données utilisées dans les exercices
+captures_kg <- c(120, 85, 210, 95, 160, 140)
+temp_jour <- c(18.5, 19.2, 20.4, 21.0, 20.8, 19.9, 21.5, 22.1, 20.2, 19.0)
+poids_moules <- c(12.3, 8.7, 15.1, 10.4, 9.8, 13.6, 7.9, 11.2)
+bassins <- tibble(bassin = 1:6, oxygene = c(6.1, 4.2, 2.8, 5.5, 3.9, 7.0))
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Cnam-Intechmer")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Introduction
+
+Un **algorithme** est une suite d'instructions précises qui permet de résoudre un problème. Avant d'écrire du code, on décrit la démarche en français, puis on la traduit en R.
+
+<div class="info-box">
+ℹ️ Ce tutoriel accompagne le chapitre [« Programmer : les bases de l'algorithmique »](https://gallonr.github.io/intechmer_statistique_cours/03b-Algorithmique.html) du livre de cours.
+</div>
+
+**Objectifs d'apprentissage :**
+
+- ✅ Poser des questions à R avec les **comparaisons** et les opérateurs logiques
+- ✅ Prendre des décisions avec `if` / `else`
+- ✅ Répéter des instructions avec les boucles `for` et `while`
+- ✅ Reconnaître les quatre schémas de boucle : accumulateur, compteur, recherche, construction pas à pas
+- ✅ Écrire ses propres **fonctions**
+- ✅ Remplacer une boucle par du code **vectorisé** (`sum()`, `ifelse()`, `case_when()`)
+
+---
+
+## Partie 1 : Comparaisons et conditions {data-progressive=TRUE}
+
+### Poser une question à R
+
+Une comparaison renvoie `TRUE` (vrai) ou `FALSE` (faux) :
+
+| Question | En R |
+|---|---|
+| égal à ? | `==` |
+| différent de ? | `!=` |
+| inférieur / supérieur | `<`, `>`, `<=`, `>=` |
+| est dans la liste ? | `%in%` |
+
+On combine plusieurs questions avec `&` (ET), `|` (OU) et `!` (NON).
+
+```{r demo-comparaisons, exercise=TRUE}
+temperature <- 18
+salinite <- 36
+
+# Conditions favorables : entre 15 et 22 °C ET salinité > 30
+temperature >= 15 & temperature <= 22 & salinite > 30
+
+# Appliquée à un vecteur, une comparaison répond pour chaque élément
+longueurs <- c(23, 31, 27, 25, 29)
+longueurs >= 27
+```
+
+<div class="tip">
+⚠️ `x = 5` **range** 5 dans `x`. `x == 5` **demande** si `x` vaut 5. Ne confondez pas les deux !
+</div>
+
+### La structure if / else
+
+```{r demo-if, exercise=TRUE}
+oxygene <- 4.2   # oxygène dissous (mg/L) dans un bassin d'élevage
+
+if (oxygene < 3) {
+  etat <- "danger"
+} else if (oxygene < 5) {
+  etat <- "alerte"
+} else {
+  etat <- "normal"
+}
+etat
+```
+
+R teste les conditions **dans l'ordre** et s'arrête à la première qui est vraie. Modifiez la valeur de `oxygene` et relancez le code.
+
+### Exercice 1 : Taille minimale du bar
+
+La taille minimale de capture du bar est de 42 cm. Écrivez un `if` / `else` qui affiche `"conservé"` ou `"remis à l'eau"` selon la valeur de `longueur_bar`.
+
+```{r ex1-if, exercise=TRUE, exercise.lines=8}
+longueur_bar <- 38
+
+# Votre code ici :
+
+```
+
+```{r ex1-if-hint-1}
+# if (condition) {
+#   print("...")
+# } else {
+#   print("...")
+# }
+```
+
+```{r ex1-if-solution}
+longueur_bar <- 38
+
+if (longueur_bar >= 42) {
+  print("conservé")
+} else {
+  print("remis à l'eau")
+}
+```
+
+```{r quiz-conditions}
+quiz(
+  question("Que renvoie `if (c(40, 45) >= 42) print('ok')` ?",
+    answer("Une erreur : `if` n'accepte qu'une seule valeur TRUE/FALSE", correct = TRUE),
+    answer("`ok` deux fois"),
+    answer("`ok` une fois"),
+    answer("Rien"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+## Partie 2 : Les boucles {data-progressive=TRUE}
+
+### La boucle for
+
+Une boucle `for` répète un bloc d'instructions **pour chaque élément** d'un vecteur :
+
+```{r demo-for, exercise=TRUE}
+stations <- c("Granville", "Chausey", "Cancale")
+temperatures <- c(16.2, 15.8, 17.1)
+
+for (i in 1:length(stations)) {
+  print(paste("Station", stations[i], ":", temperatures[i], "°C"))
+}
+```
+
+### Les quatre schémas à reconnaître
+
+<div class="key-concept">
+Face à un problème, demandez-vous si vous devez :
+
+1. **Accumuler** : partir de 0 et ajouter chaque valeur (`total <- total + x`)
+2. **Compter** : partir de 0 et ajouter 1 quand une condition est vraie
+3. **Chercher** : garder en mémoire le meilleur vu jusqu'ici (maximum, minimum)
+4. **Construire pas à pas** : chaque valeur dépend de la précédente
+</div>
+
+```{r demo-accumulateur, exercise=TRUE}
+# Accumulateur : capture totale de 6 traits de chalut (kg)
+captures_kg
+
+capture_totale <- 0
+for (c_kg in captures_kg) {
+  capture_totale <- capture_totale + c_kg
+}
+capture_totale
+```
+
+### Exercice 2 : Le compteur
+
+Combien de jours la température de l'eau (`temp_jour`) a-t-elle dépassé 20 °C, seuil de stress pour les huîtres ? Utilisez une boucle et un compteur.
+
+```{r ex2-compteur, exercise=TRUE, exercise.lines=10}
+temp_jour
+
+nb_jours_chauds <- 0
+# Votre boucle ici :
+
+
+nb_jours_chauds
+```
+
+```{r ex2-compteur-hint-1}
+# for (t in temp_jour) {
+#   if (t > 20) {
+#     nb_jours_chauds <- nb_jours_chauds + 1
+#   }
+# }
+```
+
+```{r ex2-compteur-solution}
+nb_jours_chauds <- 0
+for (t in temp_jour) {
+  if (t > 20) {
+    nb_jours_chauds <- nb_jours_chauds + 1
+  }
+}
+nb_jours_chauds
+```
+
+### Exercice 3 : La recherche du maximum
+
+Trouvez avec une boucle la plus forte capture (`captures_kg`) et le numéro du trait correspondant. Vérifiez ensuite avec `max()` et `which.max()`.
+
+```{r ex3-maximum, exercise=TRUE, exercise.lines=12}
+max_capture <- captures_kg[1]
+trait_max <- 1
+
+# Votre boucle ici (commencez au trait 2) :
+
+
+c(trait = trait_max, capture = max_capture)
+```
+
+```{r ex3-maximum-hint-1}
+# for (i in 2:length(captures_kg)) {
+#   if (captures_kg[i] > max_capture) {
+#     ... mettre à jour max_capture et trait_max
+#   }
+# }
+```
+
+```{r ex3-maximum-solution}
+max_capture <- captures_kg[1]
+trait_max <- 1
+
+for (i in 2:length(captures_kg)) {
+  if (captures_kg[i] > max_capture) {
+    max_capture <- captures_kg[i]
+    trait_max <- i
+  }
+}
+c(trait = trait_max, capture = max_capture)
+
+# Vérification
+max(captures_kg)
+which.max(captures_kg)
+```
+
+### Construire pas à pas : dynamique d'un stock
+
+Un stock de 1 000 tonnes croît de 8 % par an, et on y prélève 60 tonnes chaque année. On prépare un vecteur vide, puis on le remplit case par case.
+
+```{r demo-stock, exercise=TRUE}
+n_annees <- 15
+biomasse <- numeric(n_annees + 1)   # vecteur de 16 zéros
+biomasse[1] <- 1000                 # année 0 (position 1)
+
+for (a in 1:n_annees) {
+  biomasse[a + 1] <- biomasse[a] * 1.08 - 60
+}
+
+tibble(annee = 0:n_annees, biomasse = biomasse) %>%
+  ggplot(aes(x = annee, y = biomasse)) +
+  geom_line(colour = "steelblue", linewidth = 1) +
+  geom_point() +
+  labs(x = "Année", y = "Biomasse (t)") +
+  theme_minimal()
+```
+
+Remplacez le prélèvement de 60 t par 100 t : que devient le stock ?
+
+### La boucle while
+
+Quand on ne sait pas à l'avance combien de répétitions sont nécessaires, on utilise `while` (« tant que »).
+
+### Exercice 4 : Culture de microalgues
+
+Une culture démarre à 0,5 million de cellules/mL et double chaque jour. Combien de jours faut-il pour dépasser 20 millions de cellules/mL ?
+
+```{r ex4-while, exercise=TRUE, exercise.lines=10}
+densite <- 0.5
+jour <- 0
+
+# Votre boucle while ici :
+
+
+jour
+```
+
+```{r ex4-while-hint-1}
+# while (densite <= 20) {
+#   densite <- ...
+#   jour <- ...
+# }
+```
+
+```{r ex4-while-solution}
+densite <- 0.5
+jour <- 0
+
+while (densite <= 20) {
+  densite <- densite * 2
+  jour <- jour + 1
+}
+jour
+densite
+```
+
+---
+
+## Partie 3 : Écrire ses fonctions {data-progressive=TRUE}
+
+### Structure d'une fonction
+
+Une fonction regroupe des instructions réutilisables. Elle reçoit des **arguments** et renvoie un **résultat**.
+
+```{r demo-fonction, exercise=TRUE}
+condition_fulton <- function(poids, longueur) {
+  100 * poids / longueur^3
+}
+
+# Un maquereau de 210 g et 28.5 cm
+condition_fulton(poids = 210, longueur = 28.5)
+
+# La fonction est vectorisée : elle s'applique à plusieurs poissons d'un coup
+condition_fulton(poids = c(210, 285, 180), longueur = c(28.5, 31.2, 26.8))
+```
+
+### Exercice 5 : Classer une température
+
+Écrivez une fonction `classer_temperature(t)` qui renvoie `"froid"` si t < 12 °C, `"optimal"` si 12 ≤ t ≤ 20 °C et `"stress"` si t > 20 °C. Testez-la sur 10, 12, 20 et 23 °C.
+
+```{r ex5-fonction, exercise=TRUE, exercise.lines=14}
+classer_temperature <- function(t) {
+  # Votre code ici
+
+}
+
+classer_temperature(10)
+classer_temperature(23)
+```
+
+```{r ex5-fonction-hint-1}
+# Utilisez if / else if / else dans la fonction,
+# et return(classe) à la fin
+```
+
+```{r ex5-fonction-solution}
+classer_temperature <- function(t) {
+  if (t < 12) {
+    classe <- "froid"
+  } else if (t <= 20) {
+    classe <- "optimal"
+  } else {
+    classe <- "stress"
+  }
+  return(classe)
+}
+
+classer_temperature(10)
+classer_temperature(12)
+classer_temperature(20)
+classer_temperature(23)
+```
+
+---
+
+## Partie 4 : Éviter la boucle (vectorisation) {data-progressive=TRUE}
+
+### R travaille sur des vecteurs entiers
+
+<div class="key-concept">
+| Schéma | Avec une boucle | Sans boucle |
+|---|---|---|
+| Accumulateur | `total <- total + x` | `sum(x)` |
+| Compteur | `if (t > 20) n <- n + 1` | `sum(temp_jour > 20)` |
+| Recherche | `if (x[i] > max) ...` | `max(x)`, `which.max(x)` |
+| Condition sur chaque élément | `if ... else` dans une boucle | `ifelse()`, `case_when()` |
+</div>
+
+```{r demo-vectorisation, exercise=TRUE}
+sum(captures_kg)
+sum(temp_jour > 20)   # TRUE compte pour 1, FALSE pour 0
+which.max(captures_kg)
+
+longueurs_bar <- c(38, 45, 41, 52, 43)
+ifelse(longueurs_bar >= 42, "conservé", "remis à l'eau")
+```
+
+### Exercice 6 : Moules commercialisables
+
+Les poids (g) de 8 moules sont dans `poids_moules`. Une moule est commercialisable si elle pèse au moins 10 g. **Sans boucle**, calculez : (a) le nombre de moules commercialisables ; (b) leur poids moyen.
+
+```{r ex6-vecteur, exercise=TRUE, exercise.lines=6}
+poids_moules
+
+# (a)
+
+# (b)
+
+```
+
+```{r ex6-vecteur-hint-1}
+# (a) sum(condition)
+# (b) mean(poids_moules[condition])
+```
+
+```{r ex6-vecteur-solution}
+sum(poids_moules >= 10)
+mean(poids_moules[poids_moules >= 10])
+```
+
+### Exercice 7 : État des bassins avec case_when()
+
+Ajoutez au tableau `bassins` une colonne `etat` valant `"danger"` si l'oxygène est < 3 mg/L, `"alerte"` s'il est < 5 mg/L, et `"normal"` sinon.
+
+```{r ex7-casewhen, exercise=TRUE, exercise.lines=8}
+bassins %>%
+  mutate(etat = case_when(
+    # Votre code ici
+  ))
+```
+
+```{r ex7-casewhen-hint-1}
+# case_when(condition1 ~ "valeur1",
+#           condition2 ~ "valeur2",
+#           TRUE ~ "valeur par défaut")
+```
+
+```{r ex7-casewhen-solution}
+bassins %>%
+  mutate(etat = case_when(
+    oxygene < 3 ~ "danger",
+    oxygene < 5 ~ "alerte",
+    TRUE        ~ "normal"
+  ))
+```
+
+```{r quiz-vectorisation}
+quiz(
+  question("Que renvoie `sum(c(18, 21, 22, 19) > 20)` ?",
+    answer("2", correct = TRUE),
+    answer("43"),
+    answer("TRUE"),
+    answer("Une erreur"),
+    allow_retry = TRUE
+  ),
+  question("Dans quel cas une boucle reste-t-elle indispensable ?",
+    answer("Quand chaque valeur dépend de la précédente (dynamique de population)", correct = TRUE),
+    answer("Pour calculer une moyenne"),
+    answer("Pour compter les valeurs supérieures à un seuil"),
+    answer("Pour trouver le maximum d'un vecteur"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
+)
+```
+
+---
+
+## Défi final {data-progressive=TRUE}
+
+### Croissance d'une huître
+
+Une huître pèse 5 g au 1^er^ mars. Chaque mois, elle gagne 12 % de son poids, sauf en décembre, janvier et février où elle ne grossit pas. Calculez avec une boucle son poids à la fin de chacun des 12 mois, puis représentez la courbe.
+
+```{r defi-final, exercise=TRUE, exercise.lines=20}
+mois <- c("mars", "avril", "mai", "juin", "juillet", "aout", "septembre",
+          "octobre", "novembre", "decembre", "janvier", "fevrier")
+poids_huitre <- numeric(length(mois))
+poids_actuel <- 5
+
+# Votre boucle ici :
+
+
+```
+
+```{r defi-final-hint-1}
+# Dans la boucle sur i in 1:12 :
+# si mois[i] %in% c("decembre", "janvier", "fevrier"), le poids ne change pas,
+# sinon poids_actuel <- poids_actuel * 1.12 ;
+# puis poids_huitre[i] <- poids_actuel
+```
+
+```{r defi-final-solution}
+mois <- c("mars", "avril", "mai", "juin", "juillet", "aout", "septembre",
+          "octobre", "novembre", "decembre", "janvier", "fevrier")
+poids_huitre <- numeric(length(mois))
+poids_actuel <- 5
+
+for (i in 1:length(mois)) {
+  if (!(mois[i] %in% c("decembre", "janvier", "fevrier"))) {
+    poids_actuel <- poids_actuel * 1.12
+  }
+  poids_huitre[i] <- poids_actuel
+}
+
+tibble(mois = factor(mois, levels = mois), poids = poids_huitre) %>%
+  ggplot(aes(x = mois, y = poids, group = 1)) +
+  geom_line(colour = "steelblue", linewidth = 1) +
+  geom_point() +
+  labs(x = "Mois", y = "Poids (g)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# CONDITIONS
+if (condition) { ... } else if (autre) { ... } else { ... }
+
+# BOUCLES
+for (x in vecteur) { ... }
+for (i in 1:length(vecteur)) { ... vecteur[i] ... }
+while (condition) { ... }
+
+# FONCTIONS
+ma_fonction <- function(arg1, arg2) {
+  resultat <- ...
+  return(resultat)
+}
+
+# VECTORISATION
+sum(x > seuil)              # compter
+mean(x[x > seuil])          # moyenne d'un sous-ensemble
+ifelse(cond, "oui", "non")  # condition élément par élément
+case_when(cond1 ~ "a", cond2 ~ "b", TRUE ~ "c")
+```
+
+<div class="footer">
+  <p>© Cnam-Intechmer</p>
+</div>

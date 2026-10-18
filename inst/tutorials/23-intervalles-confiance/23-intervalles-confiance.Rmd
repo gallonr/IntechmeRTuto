@@ -1,0 +1,356 @@
+---
+title: "Moyennes, variance et intervalles de confiance"
+subtitle: "Estimer un paramètre et mesurer la précision de l'estimation"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    theme: cosmo
+    css: css/custom.css
+    language:
+      fr:
+        button:
+          runcode: "Exécuter le code"
+          hint: "Indice"
+          solution: "Solution"
+          continue: "Continuer"
+          submitanswer: "Soumettre"
+          previoustopic: "Thème précédent"
+          nexttopic: "Thème suivant"
+        text:
+          startover: "Recommencer"
+          areyousure: "Êtes-vous sûr de vouloir recommencer ? (Toute progression sera perdue)"
+runtime: shiny_prerendered
+description: "Moyenne arithmétique et géométrique, variance, erreur standard, IC de Student, bootstrap et taille d'échantillon"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+)
+
+# Longueur (mm) de 20 juvéniles de daurade royale prélevés dans un bassin
+set.seed(123)
+daurades <- tibble(
+  poisson = 1:20,
+  longueur_mm = round(rnorm(20, mean = 152, sd = 12))
+)
+
+# Concentration en plomb (mg/kg p.s.) dans 25 huîtres d'un site portuaire
+plomb <- tibble(
+  huitre = 1:25,
+  plomb_mg_kg = round(rlnorm(25, meanlog = log(1.2), sdlog = 0.7), 2)
+)
+```
+
+```{r logo, echo=FALSE, results='asis'}
+htmltools::img(src = "images/logo.png",
+               id = "tutorial-logo",
+               alt = "Cnam-Intechmer")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Introduction
+
+Une moyenne calculée sur un échantillon n'est qu'une **estimation** de la vraie moyenne de la population. L'**intervalle de confiance** (IC) indique la précision de cette estimation.
+
+<div class="info-box">
+ℹ️ Ce tutoriel accompagne le chapitre [« Moyennes, variance et intervalle de confiance »](https://gallonr.github.io/intechmer_statistique_cours/07-Confident_interval.html) du livre de cours, et prépare le TP 3.
+</div>
+
+**Objectifs d'apprentissage :**
+
+- ✅ Choisir entre moyenne arithmétique, moyenne géométrique et médiane
+- ✅ Calculer une variance et comprendre le dénominateur $n - 1$
+- ✅ Distinguer **écart-type** et **erreur standard**
+- ✅ Calculer et interpréter un IC à 95 % de la moyenne
+- ✅ Construire un IC par **bootstrap**
+- ✅ Calculer la taille d'échantillon nécessaire
+
+---
+
+## Partie 1 : Position et dispersion {data-progressive=TRUE}
+
+### Moyenne, médiane, moyenne géométrique
+
+<div class="key-concept">
+- **Moyenne arithmétique** : adaptée aux distributions symétriques
+- **Médiane** : valeur centrale, peu sensible aux valeurs extrêmes
+- **Moyenne géométrique** $= e^{\text{moyenne}(\log x)}$ : adaptée aux taux multiplicatifs et aux données asymétriques (concentrations)
+</div>
+
+```{r demo-plomb, exercise=TRUE}
+ggplot(plomb, aes(x = plomb_mg_kg)) +
+  geom_histogram(bins = 10, fill = "steelblue", colour = "white") +
+  labs(x = "Plomb (mg/kg p.s.)", y = "Nombre d'huîtres") +
+  theme_minimal()
+
+plomb %>%
+  summarise(moyenne = mean(plomb_mg_kg),
+            mediane = median(plomb_mg_kg),
+            moy_geometrique = exp(mean(log(plomb_mg_kg))))
+```
+
+La distribution est **asymétrique à droite** : quelques huîtres très contaminées tirent la moyenne arithmétique vers le haut.
+
+### Exercice 1 : Taux de croissance
+
+Le nombre de cellules d'une culture est multiplié chaque jour par 1.5, 2.2, 1.8 et 1.1. Calculez la moyenne arithmétique et la moyenne géométrique de ces facteurs. Laquelle, appliquée 4 fois à 1 000 cellules, redonne le vrai effectif final `1000 * prod(facteurs)` ?
+
+```{r ex1-geometrique, exercise=TRUE, exercise.lines=8}
+facteurs <- c(1.5, 2.2, 1.8, 1.1)
+
+```
+
+```{r ex1-geometrique-hint-1}
+# moyenne géométrique : prod(facteurs)^(1/4)
+# comparez 1000 * prod(facteurs), 1000 * m_arith^4 et 1000 * m_geom^4
+```
+
+```{r ex1-geometrique-solution}
+facteurs <- c(1.5, 2.2, 1.8, 1.1)
+m_arith <- mean(facteurs)
+m_geom <- prod(facteurs)^(1/4)
+
+c(vrai = 1000 * prod(facteurs),
+  avec_arithmetique = 1000 * m_arith^4,
+  avec_geometrique = 1000 * m_geom^4)
+# Seule la moyenne géométrique redonne le vrai effectif.
+```
+
+### Variance et écart-type
+
+$$s^2 = \frac{1}{n-1}\sum (x_i - \bar{x})^2$$
+
+On divise par $n - 1$ car les écarts sont mesurés autour de $\bar{x}$, qui est par construction plus proche des données que la vraie moyenne $\mu$ : diviser par $n$ **sous-estimerait** la variance de la population.
+
+### Exercice 2 : Variance « à la main »
+
+Calculez la variance des longueurs de daurades avec la formule ci-dessus (`sum()` et `length()`), puis vérifiez avec `var()`.
+
+```{r ex2-variance, exercise=TRUE, exercise.lines=8}
+x <- daurades$longueur_mm
+n <- length(x)
+
+```
+
+```{r ex2-variance-hint-1}
+# moy <- sum(x) / n
+# sum((x - moy)^2) / (n - 1)
+```
+
+```{r ex2-variance-solution}
+x <- daurades$longueur_mm
+n <- length(x)
+moy <- sum(x) / n
+s2 <- sum((x - moy)^2) / (n - 1)
+s2
+var(x)
+```
+
+---
+
+## Partie 2 : L'intervalle de confiance de Student {data-progressive=TRUE}
+
+### Écart-type ou erreur standard ?
+
+<div class="key-concept">
+- L'**écart-type** $s$ mesure la variabilité **entre individus**.
+- L'**erreur standard** $SE = s / \sqrt{n}$ mesure la précision de **l'estimation de la moyenne**. Elle diminue quand $n$ augmente.
+</div>
+
+L'IC à 95 % de la moyenne vaut :
+
+$$\bar{x} \pm t_{0.975;\,n-1} \times SE$$
+
+### Exercice 3 : IC à la main
+
+Calculez l'IC à 95 % de la longueur moyenne des daurades. Le quantile de Student s'obtient avec `qt(0.975, df = n - 1)`. Vérifiez avec `t.test(x)$conf.int`.
+
+```{r ex3-ic, exercise=TRUE, exercise.lines=10}
+x <- daurades$longueur_mm
+n <- length(x)
+
+```
+
+```{r ex3-ic-hint-1}
+# se <- sd(x) / sqrt(n)
+# mean(x) + c(-1, 1) * qt(0.975, df = n - 1) * se
+```
+
+```{r ex3-ic-solution}
+x <- daurades$longueur_mm
+n <- length(x)
+se <- sd(x) / sqrt(n)
+mean(x) + c(-1, 1) * qt(0.975, df = n - 1) * se
+t.test(x)$conf.int
+```
+
+```{r quiz-ic}
+quiz(
+  question("Quelle phrase interprète correctement un IC à 95 % ?",
+    answer("Si l'on répétait l'échantillonnage, environ 95 % des intervalles ainsi construits contiendraient la vraie moyenne", correct = TRUE),
+    answer("95 % des poissons ont une longueur comprise dans l'intervalle"),
+    answer("Il y a 95 % de chances que la moyenne de l'échantillon soit dans l'intervalle"),
+    answer("L'intervalle contient 95 % des moyennes possibles"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("Que devient l'IC si l'on passe d'un niveau de confiance de 95 % à 99 % ?",
+    answer("Il s'élargit", correct = TRUE),
+    answer("Il se resserre"),
+    answer("Il ne change pas"),
+    allow_retry = TRUE
+  )
+)
+```
+
+### Que signifie « 95 % » ? Une simulation
+
+On simule 100 campagnes de 10 poissons dans une population $N(150, 12)$, et on calcule à chaque fois l'IC à 95 %.
+
+```{r demo-couverture, exercise=TRUE}
+ic_simule <- function(n) {
+  x <- rnorm(n, mean = 150, sd = 12)
+  ic <- t.test(x)$conf.int
+  tibble(inf = ic[1], sup = ic[2])
+}
+
+simulation <- map_dfr(1:100, ~ ic_simule(10)) %>%
+  mutate(id = row_number(),
+         contient_mu = inf <= 150 & sup >= 150)
+
+mean(simulation$contient_mu)   # proportion d'IC qui contiennent la vraie moyenne
+
+ggplot(simulation, aes(y = id, xmin = inf, xmax = sup, colour = contient_mu)) +
+  geom_linerange() +
+  geom_vline(xintercept = 150, linetype = "dashed") +
+  scale_colour_manual(values = c(`TRUE` = "grey50", `FALSE` = "red")) +
+  labs(x = "Longueur (mm)", y = "Campagne n°", colour = "Contient µ ?") +
+  theme_minimal()
+```
+
+Relancez le code : environ 5 intervalles sur 100 « ratent » la vraie valeur, sans qu'on puisse savoir lesquels.
+
+---
+
+## Partie 3 : Le bootstrap {data-progressive=TRUE}
+
+### Principe
+
+Quand les données sont asymétriques et l'échantillon petit, l'IC de Student n'est pas fiable. Le **bootstrap** rééchantillonne les données elles-mêmes, **avec remise**, pour estimer la variabilité d'une statistique (médiane, moyenne…).
+
+```{r demo-bootstrap, exercise=TRUE}
+x <- plomb$plomb_mg_kg
+
+# Un pseudo-échantillon : 25 valeurs tirées avec remise
+sample(x, replace = TRUE)
+
+# 5 000 médianes bootstrap
+medianes_boot <- replicate(5000, median(sample(x, replace = TRUE)))
+
+ggplot(tibble(mediane = medianes_boot), aes(x = mediane)) +
+  geom_histogram(bins = 30, fill = "steelblue", colour = "white") +
+  labs(x = "Médiane bootstrap (mg/kg)", y = "Effectif") +
+  theme_minimal()
+```
+
+### Exercice 4 : IC bootstrap de la médiane
+
+À partir de `medianes_boot`, calculez l'IC à 95 % de la médiane : ce sont les quantiles 2,5 % et 97,5 %.
+
+```{r ex4-bootstrap, exercise=TRUE, exercise.lines=6}
+x <- plomb$plomb_mg_kg
+medianes_boot <- replicate(5000, median(sample(x, replace = TRUE)))
+
+```
+
+```{r ex4-bootstrap-hint-1}
+# quantile(medianes_boot, c(0.025, 0.975))
+```
+
+```{r ex4-bootstrap-solution}
+x <- plomb$plomb_mg_kg
+medianes_boot <- replicate(5000, median(sample(x, replace = TRUE)))
+quantile(medianes_boot, c(0.025, 0.975))
+```
+
+---
+
+## Partie 4 : Taille d'échantillon {data-progressive=TRUE}
+
+### Combien d'individus mesurer ?
+
+Pour estimer une moyenne avec une **marge d'erreur** $\pm m$ et une confiance de 95 %, il faut environ :
+
+$$n = \frac{z_{0.975}^2 \, s^2}{m^2}$$
+
+où $s$ est l'écart-type estimé par une étude pilote.
+
+### Exercice 5 : Campagne de mesure
+
+Une étude pilote sur des merlus donne $s = 6$ cm. Combien de poissons faut-il mesurer pour une marge d'erreur de 1 cm ? Et de 0,5 cm ? Utilisez `qnorm(0.975)` et arrondissez à l'entier supérieur avec `ceiling()`.
+
+```{r ex5-taille, exercise=TRUE, exercise.lines=5}
+s <- 6
+marge <- c(1, 0.5)
+
+```
+
+```{r ex5-taille-hint-1}
+# ceiling(qnorm(0.975)^2 * s^2 / marge^2)
+```
+
+```{r ex5-taille-solution}
+s <- 6
+marge <- c(1, 0.5)
+ceiling(qnorm(0.975)^2 * s^2 / marge^2)
+# Diviser la marge par 2 demande 4 fois plus de poissons.
+```
+
+```{r quiz-taille}
+quiz(
+  question("Pour diviser la marge d'erreur par 2, il faut multiplier la taille d'échantillon par :",
+    answer("4", correct = TRUE),
+    answer("2"),
+    answer("√2"),
+    answer("8"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+## Récapitulatif
+
+```{r cheatsheet, echo=TRUE, eval=FALSE}
+# POSITION
+mean(x); median(x); exp(mean(log(x)))   # moyenne géométrique
+
+# DISPERSION
+var(x); sd(x)                           # dénominateur n - 1
+sd(x) / sqrt(length(x))                 # erreur standard
+
+# IC DE STUDENT
+t.test(x)$conf.int
+t.test(x, conf.level = 0.99)$conf.int
+
+# IC BOOTSTRAP
+boot <- replicate(5000, median(sample(x, replace = TRUE)))
+quantile(boot, c(0.025, 0.975))
+
+# TAILLE D'ÉCHANTILLON
+ceiling(qnorm(0.975)^2 * s^2 / marge^2)
+```
+
+<div class="footer">
+  <p>© Cnam-Intechmer</p>
+</div>
